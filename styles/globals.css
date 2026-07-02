@@ -149,3 +149,233 @@ input:focus, select:focus {
   text-decoration: none;
   font-size: 13px;
 }
+
+/* ── App header with user avatar ── */
+.app-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.signout-btn {
+  background: none;
+  border: 1px solid #333846;
+  color: #9aa0aa;
+  border-radius: 8px;
+  padding: 4px 9px;
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.signout-btn:hover {
+  color: #e8e9ec;
+  border-color: #4f7cff;
+}
+
+/* ── Login page ── */
+.login-wrap {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 60px 20px 48px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.login-brand {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.login-logo {
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #4f7cff 0%, #7c5cff 100%);
+  font-size: 28px;
+  font-weight: 800;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+  letter-spacing: -1px;
+}
+
+.login-title {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 8px;
+  letter-spacing: -0.5px;
+}
+
+.login-sub {
+  color: #9aa0aa;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.login-card {
+  width: 100%;
+  background: #171a21;
+  border: 1px solid #262a33;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-auth {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 11px;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  letter-spacing: -0.1px;
+}
+
+.btn-auth:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-auth:active:not(:disabled) {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.btn-google {
+  background: #ffffff;
+  color: #1a1a1a;
+}
+
+.btn-apple {
+  background: #f5f5f7;
+  color: #1a1a1a;
+}
+
+.btn-phone {
+  background: #232732;
+  color: #e8e9ec;
+  border: 1px solid #333846;
+}
+
+.btn-primary-auth {
+  background: #4f7cff;
+  color: white;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #555c6b;
+  font-size: 12px;
+  margin: 2px 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #262a33;
+}
+
+.auth-input {
+  width: 100%;
+  padding: 13px 14px;
+  border-radius: 10px;
+  border: 1px solid #333846;
+  background: #0f1115;
+  color: #e8e9ec;
+  font-size: 16px;
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: #4f7cff;
+}
+
+.otp-input {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 8px;
+}
+
+.otp-hint {
+  font-size: 13px;
+  color: #9aa0aa;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.back-link {
+  background: none;
+  border: none;
+  color: #9aa0aa;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  margin-bottom: 2px;
+}
+
+.back-link:hover {
+  color: #e8e9ec;
+}
+
+.resend-link {
+  background: none;
+  border: none;
+  color: #4f7cff;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+  text-align: center;
+}
+
+.auth-error {
+  width: 100%;
+  margin-top: 12px;
+  background: #3a1a1a;
+  color: #ff8a8a;
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: 10px;
+}
+
+.login-footer {
+  margin-top: 24px;
+  font-size: 11px;
+  color: #555c6b;
+  text-align: center;
+  line-height: 1.6;
+}

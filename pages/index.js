@@ -1,11 +1,13 @@
 import { useState, useRef } from "react";
 import Script from "next/script";
+import { signOut } from "firebase/auth";
+import { auth } from "../lib/firebase";
 import { saveExpenseToDrive } from "../lib/google";
 
 const SCOPES = "https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets";
 const SHEET_HEADER = ["Date", "Place", "Total", "HST/Tax", "Currency", "Category", "Notes", "Receipt Link"];
 
-export default function Home() {
+export default function Home({ user }) {
   const [gsiReady, setGsiReady] = useState(false);
   const [tokenClient, setTokenClient] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
@@ -135,8 +137,18 @@ export default function Home() {
     <div className="container">
       <Script src="https://accounts.google.com/gsi/client" onLoad={handleGsiLoad} />
 
-      <h1>Expense Tracker</h1>
-      <div className="subtitle">Snap a receipt. AI reads it. Saved straight to Drive.</div>
+      <div className="app-header">
+        <div>
+          <h1>BIXT</h1>
+          <div className="subtitle">Snap a receipt. AI reads it. Saved to Drive.</div>
+        </div>
+        <div className="user-menu">
+          {user?.photoURL && (
+            <img src={user.photoURL} className="avatar" alt="avatar" referrerPolicy="no-referrer" />
+          )}
+          <button className="signout-btn" onClick={() => signOut(auth)} title="Sign out">↩</button>
+        </div>
+      </div>
 
       {!accessToken && (
         <div className="card">
