@@ -47,8 +47,6 @@ export default function Home({ user }) {
   const [profile, setProfile]         = useState(null); // null until loaded/created
   const [profileChecked, setProfileChecked] = useState(false);
   const [onboardCompany, setOnboardCompany]       = useState("");
-  const [onboardHst, setOnboardHst]               = useState("");
-  const [onboardName, setOnboardName]             = useState("");
   const [onboardAccountant, setOnboardAccountant] = useState("");
   const [onboarding, setOnboarding] = useState(false);
   const [onboardError, setOnboardError] = useState("");
@@ -115,8 +113,6 @@ export default function Home({ user }) {
     try {
       const newProfile = {
         companyName: onboardCompany.trim(),
-        hstNumber: onboardHst.trim(),
-        yourName: onboardName.trim(),
         accountantName: onboardAccountant.trim(),
       };
       await saveProfile(accessToken, rootFolderId, newProfile);
@@ -467,19 +463,6 @@ export default function Home({ user }) {
             value={onboardCompany}
             onChange={(e) => setOnboardCompany(e.target.value)}
             placeholder="Acme Inc."
-          />
-
-          <label>HST / Tax Number</label>
-          <input
-            value={onboardHst}
-            onChange={(e) => setOnboardHst(e.target.value)}
-            placeholder="123456789 RT0001"
-          />
-
-          <label>Your Name</label>
-          <input
-            value={onboardName}
-            onChange={(e) => setOnboardName(e.target.value)}
           />
 
           <label>Accountant Name</label>
