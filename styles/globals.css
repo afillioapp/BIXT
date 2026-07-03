@@ -387,6 +387,28 @@ input:focus, select:focus {
 .lp-btn-phone   { background: transparent; color: #c4c8d4; border: 1px solid #2c3040; }
 .lp-btn-primary { background: #4f7cff;  color: #fff; margin-top: 4px; }
 
+/* Sign in / Sign up tabs */
+.lp-tabs {
+  display: flex;
+  background: #16181f;
+  border: 1px solid #2c3040;
+  border-radius: 10px;
+  padding: 3px;
+  margin-bottom: 18px;
+}
+.lp-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  color: #7a8091;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.lp-tab.active { background: #2a2f3d; color: #e8e9ec; }
+
 /* Divider */
 .lp-divider {
   display: flex;
