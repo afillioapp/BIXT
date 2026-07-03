@@ -6,46 +6,18 @@ import {
   OAuthProvider,
   signInWithPhoneNumber,
   RecaptchaVerifier,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
 } from "firebase/auth";
 import { auth } from "../lib/firebase";
 
-// Firebase's email/password provider needs an email-shaped identifier.
-// We let people sign in with a plain username and map it to a fake
-// internal address behind the scenes.
-const USERNAME_DOMAIN = "bixt.local";
-function usernameToEmail(username) {
-  return `${username.trim().toLowerCase().replace(/\s+/g, "")}@${USERNAME_DOMAIN}`;
-}
-
-function friendlyAuthError(err) {
-  switch (err.code) {
-    case "auth/email-already-in-use":
-      return "That username is already taken.";
-    case "auth/weak-password":
-      return "Password must be at least 6 characters.";
-    case "auth/invalid-credential":
-    case "auth/wrong-password":
-    case "auth/user-not-found":
-      return "Incorrect username or password.";
-    default:
-      return err.message;
-  }
-}
-
 export default function Login() {
   const router = useRouter();
-  const [step, setStep] = useState("options"); // 'options' | 'phone' | 'otp' | 'email'
+  const [step, setStep] = useState("splash"); // 'splash' | 'options' | 'phone' | 'otp'
+  const [mode, setMode] = useState("signin"); // 'signin' | 'signup' — copy only, both use the same providers
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [confirmResult, setConfirmResult] = useState(null);
   const [loading, setLoading] = useState(null);
   const [error, setError] = useState("");
-
-  const [emailMode, setEmailMode] = useState("signin"); // 'signin' | 'signup'
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
 
   useEffect(() => {
     const unsub = auth.onAuthStateChanged((user) => {
@@ -56,12 +28,16 @@ export default function Login() {
 
   function clearError() { setError(""); }
 
+  function chooseMode(m) {
+    clearError();
+    setMode(m);
+    setStep("options");
+  }
+
   async function signInGoogle() {
     clearError(); setLoading("google");
     try {
       const provider = new GoogleAuthProvider();
-      provider.addScope("https://www.googleapis.com/auth/drive.file");
-      provider.addScope("https://www.googleapis.com/auth/spreadsheets");
       await signInWithPopup(auth, provider);
     } catch (err) {
       if (err.code !== "auth/popup-closed-by-user") setError(err.message);
@@ -75,20 +51,6 @@ export default function Login() {
       await signInWithPopup(auth, provider);
     } catch (err) {
       if (err.code !== "auth/popup-closed-by-user") setError(err.message);
-    } finally { setLoading(null); }
-  }
-
-  async function submitEmailAuth() {
-    clearError(); setLoading("email");
-    try {
-      const email = usernameToEmail(username);
-      if (emailMode === "signup") {
-        await createUserWithEmailAndPassword(auth, email, password);
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
-      }
-    } catch (err) {
-      setError(friendlyAuthError(err));
     } finally { setLoading(null); }
   }
 
@@ -126,10 +88,33 @@ export default function Login() {
           <span className="lp-app-name">BIXT</span>
         </div>
 
-        {step === "options" && (
+        {step === "splash" && (
           <>
             <h1 className="lp-heading">Welcome</h1>
-            <p className="lp-sub">Sign in or create your account to start tracking expenses.</p>
+            <p className="lp-sub">Snap a receipt. AI reads it. Saved to Drive.</p>
+
+            <button className="lp-btn lp-btn-primary" onClick={() => chooseMode("signin")}>
+              Sign In
+            </button>
+            <button className="lp-btn lp-btn-phone" onClick={() => chooseMode("signup")}>
+              Sign Up
+            </button>
+
+            <p className="lp-terms">
+              By continuing you agree to BIXT's <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a>.
+            </p>
+          </>
+        )}
+
+        {step === "options" && (
+          <>
+            <button className="lp-back" onClick={() => { clearError(); setStep("splash"); }}>← Back</button>
+            <h1 className="lp-heading">{mode === "signup" ? "Create your account" : "Welcome back"}</h1>
+            <p className="lp-sub">
+              {mode === "signup"
+                ? "Sign up to start tracking expenses."
+                : "Sign in to continue."}
+            </p>
 
             <button className="lp-btn lp-btn-google" onClick={signInGoogle} disabled={!!loading}>
               {loading === "google" ? "Signing in…" : <><GoogleIcon /> Continue with Google</>}
@@ -145,15 +130,7 @@ export default function Login() {
               <PhoneIcon /> Continue with Phone
             </button>
 
-            <button className="lp-btn lp-btn-phone" onClick={() => { clearError(); setStep("email"); }} disabled={!!loading}>
-              <UserIcon /> Continue with Username
-            </button>
-
             {error && <p className="lp-error">{error}</p>}
-
-            <p className="lp-terms">
-              By continuing you agree to BIXT's <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a>.
-            </p>
           </>
         )}
 
@@ -209,66 +186,6 @@ export default function Login() {
             {error && <p className="lp-error">{error}</p>}
           </>
         )}
-
-        {step === "email" && (
-          <>
-            <button className="lp-back" onClick={() => { clearError(); setStep("options"); }}>← Back</button>
-            <h1 className="lp-heading">{emailMode === "signup" ? "Create account" : "Sign in"}</h1>
-            <p className="lp-sub">
-              {emailMode === "signup"
-                ? "Pick a username and password."
-                : "Enter your username and password."}
-            </p>
-
-            <div className="lp-tabs">
-              <button
-                className={`lp-tab ${emailMode === "signin" ? "active" : ""}`}
-                onClick={() => { clearError(); setEmailMode("signin"); }}
-              >
-                Sign In
-              </button>
-              <button
-                className={`lp-tab ${emailMode === "signup" ? "active" : ""}`}
-                onClick={() => { clearError(); setEmailMode("signup"); }}
-              >
-                Sign Up
-              </button>
-            </div>
-
-            <label className="lp-label">Username</label>
-            <input
-              className="lp-input"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="alireza"
-              autoFocus
-              autoCapitalize="none"
-            />
-
-            <label className="lp-label">Password</label>
-            <input
-              className="lp-input"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••"
-              onKeyDown={(e) => e.key === "Enter" && submitEmailAuth()}
-            />
-
-            <button
-              className="lp-btn lp-btn-primary"
-              onClick={submitEmailAuth}
-              disabled={username.trim().length < 3 || password.length < 6 || loading === "email"}
-            >
-              {loading === "email"
-                ? (emailMode === "signup" ? "Creating…" : "Signing in…")
-                : (emailMode === "signup" ? "Create Account" : "Sign In")}
-            </button>
-
-            {error && <p className="lp-error">{error}</p>}
-          </>
-        )}
       </div>
     </div>
   );
@@ -289,15 +206,6 @@ function AppleIcon() {
   return (
     <svg width="16" height="19" viewBox="0 0 17 20" fill="currentColor">
       <path d="M13.769 10.561c-.02-2.193 1.794-3.254 1.876-3.307-1.023-1.496-2.614-1.7-3.178-1.722-1.347-.137-2.638.797-3.322.797-.685 0-1.73-.779-2.847-.757-1.455.021-2.804.847-3.553 2.147C1.17 10.24 2.2 14.394 3.77 16.64c.782 1.103 1.703 2.337 2.912 2.292 1.175-.047 1.617-.749 3.037-.749 1.42 0 1.822.749 3.063.725 1.262-.02 2.058-1.117 2.832-2.225.896-1.272 1.264-2.506 1.283-2.571-.028-.011-2.456-.939-2.477-3.551h-.651zM11.53 3.77C12.16 3.004 12.59 1.952 12.47.88c-.904.038-2 .603-2.648 1.368-.583.673-1.093 1.75-.956 2.782.996.078 2.02-.497 2.663-1.26z"/>
-    </svg>
-  );
-}
-
-function UserIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-      <circle cx="12" cy="7" r="4"/>
     </svg>
   );
 }
