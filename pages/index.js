@@ -13,6 +13,9 @@ import {
   shareWithEmail,
   listSharedEmails,
   removeSharedEmail,
+  getProfile,
+  saveProfile,
+  ensureCompanyMonthFolders,
 } from "../lib/google";
 
 const SCOPES =
@@ -21,11 +24,34 @@ const SHEET_HEADER = [
   "Date", "Place", "Total", "HST/Tax", "Currency", "Category", "Notes", "Receipt Link",
 ];
 
+const EXT_BY_MIME = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/heic": "heic" };
+
+// "04 july 2026 Dollarama.jpg" — falls back to "Untitled" if the merchant name wasn't read.
+function formatReceiptFilename(dateStr, place, mimeType) {
+  const parsed = dateStr ? new Date(`${dateStr}T00:00:00`) : null;
+  const d = parsed && !isNaN(parsed.getTime()) ? parsed : new Date();
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = d.toLocaleString("en-US", { month: "long" }).toLowerCase();
+  const merchant = (place || "").trim().replace(/[\\/:*?"<>|]/g, "").trim();
+  const ext = EXT_BY_MIME[mimeType] || "jpg";
+  return `${day} ${month} ${d.getFullYear()} ${merchant || "Untitled"}.${ext}`;
+}
+
 export default function Home({ user }) {
   const [gsiReady, setGsiReady]     = useState(false);
   const [tokenClient, setTokenClient] = useState(null);
   const [accessToken, setAccessToken] = useState(null);
   const [rootFolderId, setRootFolderId] = useState(null);
+
+  // Onboarding
+  const [profile, setProfile]         = useState(null); // null until loaded/created
+  const [profileChecked, setProfileChecked] = useState(false);
+  const [onboardCompany, setOnboardCompany]       = useState("");
+  const [onboardHst, setOnboardHst]               = useState("");
+  const [onboardName, setOnboardName]             = useState("");
+  const [onboardAccountant, setOnboardAccountant] = useState("");
+  const [onboarding, setOnboarding] = useState(false);
+  const [onboardError, setOnboardError] = useState("");
 
   const [imagePreview, setImagePreview] = useState(null);
   const [imageBase64, setImageBase64]   = useState(null);
@@ -68,6 +94,9 @@ export default function Home({ user }) {
           // Pre-create the BIXT root folder so sharing works even before first receipt
           const id = await getRootFolderId(resp.access_token);
           setRootFolderId(id);
+          const existing = await getProfile(resp.access_token, id);
+          setProfile(existing);
+          setProfileChecked(true);
         }
       },
     });
@@ -76,6 +105,29 @@ export default function Home({ user }) {
 
   function connectGoogle() {
     if (tokenClient) tokenClient.requestAccessToken();
+  }
+
+  // ── Onboarding ─────────────────────────────────────────────────────────────
+  async function handleOnboardSubmit() {
+    if (!onboardCompany.trim()) return;
+    setOnboardError("");
+    setOnboarding(true);
+    try {
+      const newProfile = {
+        companyName: onboardCompany.trim(),
+        hstNumber: onboardHst.trim(),
+        yourName: onboardName.trim(),
+        accountantName: onboardAccountant.trim(),
+      };
+      await saveProfile(accessToken, rootFolderId, newProfile);
+      const monthLabel = new Date().toISOString().slice(0, 7);
+      await ensureCompanyMonthFolders(accessToken, rootFolderId, newProfile.companyName, monthLabel);
+      setProfile(newProfile);
+    } catch (err) {
+      setOnboardError(err.message);
+    } finally {
+      setOnboarding(false);
+    }
   }
 
   // ── Receipt capture ───────────────────────────────────────────────────────
@@ -135,12 +187,17 @@ export default function Home({ user }) {
       return;
     }
     if (!form || !imageBase64) return;
+    if (!profile?.companyName) {
+      setStatus({ type: "error", text: "Missing company profile — reload and complete setup" });
+      return;
+    }
     setSaving(true);
     setStatus({ type: "info", text: "Saving to Google Drive..." });
     try {
       const monthLabel = (form.date || new Date().toISOString().slice(0, 10)).slice(0, 7);
-      const filename   = `${form.date || "receipt"}_${(form.place || "expense").replace(/[^a-z0-9]/gi, "_")}.jpg`;
+      const filename   = formatReceiptFilename(form.date, form.place, mimeType);
       await saveExpenseToDrive(accessToken, {
+        companyName: profile.companyName,
         monthLabel,
         imageBase64,
         mimeType: mimeType || "image/jpeg",
@@ -148,7 +205,7 @@ export default function Home({ user }) {
         rowValues: [form.date, form.place, form.total, form.hst, form.currency, form.category, form.notes],
         sheetHeader: SHEET_HEADER,
       });
-      setStatus({ type: "success", text: `Saved to Drive · BIXT / ${monthLabel}` });
+      setStatus({ type: "success", text: `Saved to Drive · BIXT / ${profile.companyName} / ${monthLabel}` });
       resetForNext();
     } catch (err) {
       setStatus({ type: "error", text: err.message });
@@ -399,8 +456,67 @@ export default function Home({ user }) {
         </div>
       )}
 
+      {/* ── Onboarding ── */}
+      {accessToken && profileChecked && !profile && (
+        <div className="card">
+          <div style={{ marginBottom: 10, fontSize: 14, fontWeight: 600 }}>
+            Set up BIXT
+          </div>
+          <label>Company Name <span className="required">*</span></label>
+          <input
+            value={onboardCompany}
+            onChange={(e) => setOnboardCompany(e.target.value)}
+            placeholder="Acme Inc."
+          />
+
+          <label>HST / Tax Number</label>
+          <input
+            value={onboardHst}
+            onChange={(e) => setOnboardHst(e.target.value)}
+            placeholder="123456789 RT0001"
+          />
+
+          <label>Your Name</label>
+          <input
+            value={onboardName}
+            onChange={(e) => setOnboardName(e.target.value)}
+          />
+
+          <label>Accountant Name</label>
+          <input
+            value={onboardAccountant}
+            onChange={(e) => setOnboardAccountant(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleOnboardSubmit()}
+          />
+
+          {onboardError && <div className="status status-error">{onboardError}</div>}
+
+          <div style={{ marginTop: 16 }}>
+            <button
+              className="btn btn-primary"
+              onClick={handleOnboardSubmit}
+              disabled={!onboardCompany.trim() || onboarding}
+            >
+              Get Started
+            </button>
+          </div>
+        </div>
+      )}
+
+      {onboarding && (
+        <div className="onboarding-overlay">
+          <div className="onboarding-modal">
+            <div className="spinner" />
+            <p>Creating your folder on Google Drive…</p>
+            <p className="onboarding-path">
+              BIXT / {onboardCompany || "…"} / {new Date().getFullYear()} / {String(new Date().getMonth() + 1).padStart(2, "0")}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── Receipt capture ── */}
-      {accessToken && (
+      {accessToken && profile && (
         <div className="card">
           <input
             ref={fileInputRef}
