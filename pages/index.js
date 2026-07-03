@@ -1,6 +1,11 @@
 import { useState, useRef } from "react";
 import Script from "next/script";
-import { signOut } from "firebase/auth";
+import {
+  signOut,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  updatePassword,
+} from "firebase/auth";
 import { auth } from "../lib/firebase";
 import {
   saveExpenseToDrive,
@@ -38,6 +43,15 @@ export default function Home({ user }) {
   const [sharedList, setSharedList]       = useState(null);
   const [shareStatus, setShareStatus]     = useState(null);
   const [shareLoading, setShareLoading]   = useState(false);
+
+  // Change password
+  const [showPassword, setShowPassword]       = useState(false);
+  const [currentPassword, setCurrentPassword]  = useState("");
+  const [newPassword, setNewPassword]          = useState("");
+  const [confirmPassword, setConfirmPassword]  = useState("");
+  const [passwordStatus, setPasswordStatus]    = useState(null);
+  const [passwordLoading, setPasswordLoading]  = useState(false);
+  const hasPasswordProvider = user?.providerData?.some((p) => p.providerId === "password");
 
   const fileInputRef = useRef(null);
 
@@ -190,6 +204,45 @@ export default function Home({ user }) {
     }
   }
 
+  // ── Change password ───────────────────────────────────────────────────────
+  function openPasswordPanel() {
+    setShowPassword(true);
+    setPasswordStatus(null);
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+  }
+
+  async function handleChangePassword() {
+    if (newPassword !== confirmPassword) {
+      setPasswordStatus({ type: "error", text: "New passwords don't match" });
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordStatus({ type: "error", text: "New password must be at least 6 characters" });
+      return;
+    }
+    setPasswordLoading(true);
+    setPasswordStatus(null);
+    try {
+      const credential = EmailAuthProvider.credential(user.email, currentPassword);
+      await reauthenticateWithCredential(auth.currentUser, credential);
+      await updatePassword(auth.currentUser, newPassword);
+      setPasswordStatus({ type: "success", text: "Password changed" });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      const text =
+        err.code === "auth/invalid-credential" || err.code === "auth/wrong-password"
+          ? "Current password is incorrect"
+          : err.message;
+      setPasswordStatus({ type: "error", text });
+    } finally {
+      setPasswordLoading(false);
+    }
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="container">
@@ -208,6 +261,15 @@ export default function Home({ user }) {
               title="Share with accountant"
             >
               👤
+            </button>
+          )}
+          {hasPasswordProvider && (
+            <button
+              className="share-icon-btn"
+              onClick={openPasswordPanel}
+              title="Change password"
+            >
+              🔑
             </button>
           )}
           {user?.photoURL && (
@@ -275,6 +337,52 @@ export default function Home({ user }) {
 
           {sharedList && sharedList.length === 0 && (
             <p className="share-empty">No one else has access yet.</p>
+          )}
+        </div>
+      )}
+
+      {/* ── Change Password panel ── */}
+      {showPassword && (
+        <div className="card share-panel">
+          <div className="share-header">
+            <span>Change Password</span>
+            <button className="close-btn" onClick={() => setShowPassword(false)}>✕</button>
+          </div>
+
+          <label>Current password</label>
+          <input
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+          />
+
+          <label>New password</label>
+          <input
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+          />
+
+          <label>Confirm new password</label>
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleChangePassword()}
+          />
+
+          <div style={{ marginTop: 14 }}>
+            <button
+              className="btn btn-primary"
+              onClick={handleChangePassword}
+              disabled={!currentPassword || !newPassword || !confirmPassword || passwordLoading}
+            >
+              {passwordLoading ? "Changing…" : "Change Password"}
+            </button>
+          </div>
+
+          {passwordStatus && (
+            <div className={`status status-${passwordStatus.type}`}>{passwordStatus.text}</div>
           )}
         </div>
       )}
