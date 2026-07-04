@@ -28,6 +28,7 @@ export default function Camera({ user }) {
   const [saving, setSaving] = useState(false);
 
   const fileInputRef = useRef(null);
+  const importInputRef = useRef(null);
 
   useEffect(() => {
     if (!profileLoading && !profile) router.replace("/setup");
@@ -87,6 +88,7 @@ export default function Camera({ user }) {
     setCompressedMime(null);
     setForm(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (importInputRef.current) importInputRef.current.value = "";
   }
 
   async function handleConfirm() {
@@ -155,10 +157,23 @@ export default function Camera({ user }) {
           className="hidden-input"
           id="receiptInput"
         />
+        <input
+          ref={importInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="hidden-input"
+          id="receiptImport"
+        />
         {!imagePreview && (
-          <label htmlFor="receiptInput" className="btn btn-primary" style={{ cursor: "pointer" }}>
-            {compressing ? "Processing…" : "Take / Upload Receipt Photo"}
-          </label>
+          <>
+            <label htmlFor="receiptInput" className="btn btn-primary" style={{ cursor: "pointer" }}>
+              {compressing ? "Processing…" : "Take Receipt Photo"}
+            </label>
+            <label htmlFor="receiptImport" className="btn btn-secondary" style={{ cursor: "pointer", marginTop: 10 }}>
+              Import from Phone
+            </label>
+          </>
         )}
 
         {imagePreview && (
