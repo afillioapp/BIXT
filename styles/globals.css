@@ -195,30 +195,6 @@ input:focus, select:focus {
   line-height: 1;
 }
 
-/* ── Desktop gate ── */
-.desktop-gate {
-  display: none;
-}
-
-@media (min-width: 640px) {
-  .app-shell { display: none; }
-  .desktop-gate {
-    display: flex;
-    min-height: 100vh;
-    align-items: center;
-    justify-content: center;
-    background: #0f1115;
-    color: #c4c8d4;
-    text-align: center;
-    padding: 24px;
-  }
-  .desktop-gate-message p {
-    font-size: 15px;
-    line-height: 1.6;
-    margin: 0;
-  }
-}
-
 /* ── Onboarding ── */
 .onboarding-overlay {
   position: fixed;

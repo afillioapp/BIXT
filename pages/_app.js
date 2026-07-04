@@ -28,17 +28,9 @@ export default function App({ Component, pageProps }) {
   const showNav = !!user && !NO_NAV_ROUTES.includes(router.pathname);
 
   return (
-    <>
-      <div className="app-shell">
-        <Component {...pageProps} user={user} />
-        {showNav && <BottomNav />}
-      </div>
-      <div className="desktop-gate">
-        <div className="desktop-gate-message">
-          <div className="lp-logo" style={{ margin: "0 auto 16px" }}>B</div>
-          <p>BIXT is designed for mobile.<br />Open it on your phone.</p>
-        </div>
-      </div>
-    </>
+    <div className="app-shell">
+      <Component {...pageProps} user={user} />
+      {showNav && <BottomNav />}
+    </div>
   );
 }
