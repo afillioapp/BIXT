@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="bxp-brand">
+    <img src="icons/icon32.png" alt="" width="24" height="24" />
+    <span>BX</span>
+  </div>
+
+  <div id="bxp-loading" class="bxp-status">Checking connection…</div>
+
+  <div id="bxp-connect" class="bxp-hidden">
+    <p class="bxp-sub">Connect Google Drive to capture receipts from your browser.</p>
+    <button id="bxp-connect-btn" class="bxp-btn bxp-btn-primary">Connect Google Drive</button>
+    <p id="bxp-connect-error" class="bxp-error"></p>
+  </div>
+
+  <div id="bxp-setup" class="bxp-hidden">
+    <p class="bxp-sub">No BX workspace found yet. Set one up (or use the phone app first, then reopen this).</p>
+    <label>Company Name</label>
+    <input id="bxp-company" placeholder="Acme Inc." />
+    <label>Accountant's Gmail</label>
+    <input id="bxp-accountant" type="email" placeholder="accountant@firm.com" />
+    <button id="bxp-setup-btn" class="bxp-btn bxp-btn-primary">Get Started</button>
+    <p id="bxp-setup-error" class="bxp-error"></p>
+  </div>
+
+  <div id="bxp-connected" class="bxp-hidden">
+    <p class="bxp-sub">Connected to <strong id="bxp-company-name"></strong></p>
+    <button id="bxp-capture-btn" class="bxp-btn bxp-btn-primary">Capture Now</button>
+    <p class="bxp-hint">Or press <kbd>Ctrl+Shift+B</kbd> (<kbd>Cmd+Shift+B</kbd> on Mac) on any page.</p>
+    <button id="bxp-disconnect-btn" class="bxp-btn bxp-btn-secondary">Disconnect</button>
+  </div>
+
+  <script src="drive.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

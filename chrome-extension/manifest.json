@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "BX Receipt Capture",
+  "short_name": "BX",
+  "version": "0.1.0",
+  "description": "Capture online purchase receipts straight from your browser into BX — select a region, AI reads it, saved to your BX Google Drive folder.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": ["activeTab", "scripting", "identity", "storage"],
+  "host_permissions": ["https://bixt.vercel.app/*", "https://www.googleapis.com/*", "https://sheets.googleapis.com/*"],
+  "oauth2": {
+    "client_id": "REPLACE_WITH_CHROME_EXTENSION_OAUTH_CLIENT_ID.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/drive.file",
+      "https://www.googleapis.com/auth/spreadsheets"
+    ]
+  },
+  "commands": {
+    "capture-receipt": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+B",
+        "mac": "Command+Shift+B"
+      },
+      "description": "Capture a receipt from the current page"
+    }
+  }
+}
