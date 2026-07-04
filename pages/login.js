@@ -2,12 +2,21 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import {
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   OAuthProvider,
   signInWithPhoneNumber,
   RecaptchaVerifier,
 } from "firebase/auth";
 import { auth } from "../lib/firebase";
+
+// Popups are blocked or mishandled on most mobile browsers (especially
+// Safari/PWAs) — use the full-page redirect flow there instead, and reserve
+// popups for desktop where they work fine and feel less disruptive.
+function isMobile() {
+  return typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
 
 export default function Login() {
   const router = useRouter();
@@ -26,6 +35,12 @@ export default function Login() {
     return unsub;
   }, []);
 
+  // Surfaces any error from a redirect-based sign-in that just completed
+  // (e.g. returning from Google/Apple on mobile).
+  useEffect(() => {
+    getRedirectResult(auth).catch((err) => setError(err.message));
+  }, []);
+
   function clearError() { setError(""); }
 
   function chooseMode(m) {
@@ -38,6 +53,10 @@ export default function Login() {
     clearError(); setLoading("google");
     try {
       const provider = new GoogleAuthProvider();
+      if (isMobile()) {
+        await signInWithRedirect(auth, provider);
+        return;
+      }
       await signInWithPopup(auth, provider);
     } catch (err) {
       if (err.code !== "auth/popup-closed-by-user") setError(err.message);
@@ -48,6 +67,10 @@ export default function Login() {
     clearError(); setLoading("apple");
     try {
       const provider = new OAuthProvider("apple.com");
+      if (isMobile()) {
+        await signInWithRedirect(auth, provider);
+        return;
+      }
       await signInWithPopup(auth, provider);
     } catch (err) {
       if (err.code !== "auth/popup-closed-by-user") setError(err.message);
