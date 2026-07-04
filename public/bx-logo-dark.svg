@@ -1,0 +1,11 @@
+<svg width="180" height="48" viewBox="0 0 180 48" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bxLogoDarkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#16a34a"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="4" width="40" height="40" rx="11" fill="url(#bxLogoDarkGrad)"/>
+  <text x="20" y="32" text-anchor="middle" font-family="-apple-system, Helvetica, Arial, sans-serif" font-size="19" font-weight="800" fill="#080b09">B</text>
+  <text x="54" y="32" font-family="-apple-system, Helvetica, Arial, sans-serif" font-size="24" font-weight="700" letter-spacing="0.5" fill="#080b09">BX</text>
+</svg>

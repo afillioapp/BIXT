@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import Head from "next/head";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import BottomNav from "../components/BottomNav";
@@ -41,9 +42,15 @@ export default function App({ Component, pageProps }) {
   const showNav = !!user && !NO_NAV_ROUTES.includes(router.pathname);
 
   return (
-    <div className="app-shell">
-      <Component {...pageProps} user={user} />
-      {showNav && <BottomNav />}
-    </div>
+    <>
+      <Head>
+        <title>BX</title>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+      </Head>
+      <div className="app-shell">
+        <Component {...pageProps} user={user} />
+        {showNav && <BottomNav />}
+      </div>
+    </>
   );
 }

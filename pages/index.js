@@ -119,7 +119,7 @@ export default function Camera({ user }) {
       <div className="container">
         <div className="app-header">
           <div>
-            <h1>BIXT</h1>
+            <h1>BX</h1>
           </div>
         </div>
         {needsConnect ? (
@@ -140,7 +140,7 @@ export default function Camera({ user }) {
     <div className="container">
       <div className="app-header">
         <div>
-          <h1>BIXT</h1>
+          <h1>BX</h1>
           <div className="subtitle">{profile.companyName}</div>
         </div>
       </div>

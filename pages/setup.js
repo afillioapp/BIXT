@@ -50,9 +50,9 @@ export default function Setup({ user }) {
         <div className="onboarding-overlay" style={{ position: "static", minHeight: "100vh" }}>
           <div className="onboarding-modal">
             <div className="success-check">✓</div>
-            <p style={{ fontSize: 18, fontWeight: 600, color: "#e8e9ec" }}>You're all set</p>
+            <p style={{ fontSize: 18, fontWeight: 600, color: "var(--text)" }}>You're all set</p>
             <p className="onboarding-path">
-              BIXT - {companyName} / {new Date().getFullYear()} / {new Date().toLocaleString("en-US", { month: "long" })}
+              BX - {companyName} / {new Date().getFullYear()} / {new Date().toLocaleString("en-US", { month: "long" })}
             </p>
           </div>
         </div>
@@ -64,7 +64,7 @@ export default function Setup({ user }) {
     <div className="container">
       <div className="app-header">
         <div>
-          <h1>BIXT</h1>
+          <h1>BX</h1>
           <div className="subtitle">Let's set up your workspace.</div>
         </div>
       </div>
@@ -119,7 +119,7 @@ export default function Setup({ user }) {
             <div className="spinner" />
             <p>Creating your folder on Google Drive…</p>
             <p className="onboarding-path">
-              BIXT - {companyName || "…"} / {new Date().getFullYear()} / {new Date().toLocaleString("en-US", { month: "long" })}
+              BX - {companyName || "…"} / {new Date().getFullYear()} / {new Date().toLocaleString("en-US", { month: "long" })}
             </p>
           </div>
         </div>

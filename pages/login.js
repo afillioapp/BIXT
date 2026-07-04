@@ -107,8 +107,8 @@ export default function Login() {
 
         {/* Brand */}
         <div className="lp-brand">
-          <div className="lp-logo">B</div>
-          <span className="lp-app-name">BIXT</span>
+          <img src="/bx-icon.svg" alt="" className="lp-logo-img" />
+          <span className="lp-app-name">BX</span>
         </div>
 
         {step === "splash" && (
@@ -124,7 +124,7 @@ export default function Login() {
             </button>
 
             <p className="lp-terms">
-              By continuing you agree to BIXT's <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a>.
+              By continuing you agree to BX's <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a>.
             </p>
           </>
         )}

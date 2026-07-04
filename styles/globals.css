@@ -1,3 +1,15 @@
+:root {
+  --bg: #080b09;
+  --surface: #0f1410;
+  --card: #1a2420;
+  --accent: #22c55e;
+  --accent-dark: #16a34a;
+  --text: #ffffff;
+  --muted: #6b7d72;
+  --border: #2a3830;
+  --error: #ff4d4d;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -5,8 +17,8 @@
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background: #0f1115;
-  color: #e8e9ec;
+  background: var(--bg);
+  color: var(--text);
 }
 
 .container {
@@ -23,14 +35,14 @@ h1 {
 }
 
 .subtitle {
-  color: #9aa0aa;
+  color: var(--muted);
   font-size: 13px;
   margin-bottom: 24px;
 }
 
 .card {
-  background: #171a21;
-  border: 1px solid #262a33;
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 20px;
   margin-bottom: 16px;
@@ -57,19 +69,19 @@ h1 {
 }
 
 .btn-primary {
-  background: #4f7cff;
-  color: white;
+  background: var(--accent);
+  color: var(--bg);
 }
 
 .btn-secondary {
-  background: #232732;
-  color: #e8e9ec;
-  border: 1px solid #333846;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .btn-success {
-  background: #2fb872;
-  color: white;
+  background: var(--accent);
+  color: var(--bg);
 }
 
 .btn:active {
@@ -79,7 +91,7 @@ h1 {
 label {
   display: block;
   font-size: 12px;
-  color: #9aa0aa;
+  color: var(--muted);
   margin-bottom: 6px;
   margin-top: 14px;
   font-weight: 600;
@@ -91,15 +103,15 @@ input, select {
   width: 100%;
   padding: 12px;
   border-radius: 8px;
-  border: 1px solid #333846;
-  background: #0f1115;
-  color: #e8e9ec;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
   font-size: 15px;
 }
 
 input:focus, select:focus {
   outline: none;
-  border-color: #4f7cff;
+  border-color: var(--accent);
 }
 
 .receipt-preview {
@@ -117,9 +129,9 @@ input:focus, select:focus {
   margin-bottom: 12px;
 }
 
-.status-info { background: #1a2438; color: #7ea6ff; }
-.status-error { background: #3a1a1a; color: #ff8a8a; }
-.status-success { background: #123626; color: #5fe0a3; }
+.status-info { background: rgba(34, 197, 94, 0.08); color: var(--muted); }
+.status-error { background: rgba(255, 77, 77, 0.12); color: var(--error); }
+.status-success { background: rgba(34, 197, 94, 0.15); color: var(--accent); }
 
 .hidden-input {
   display: none;
@@ -130,8 +142,8 @@ input:focus, select:focus {
   font-size: 11px;
   padding: 3px 8px;
   border-radius: 6px;
-  background: #232732;
-  color: #9aa0aa;
+  background: var(--surface);
+  color: var(--muted);
   margin-left: 6px;
 }
 
@@ -145,7 +157,7 @@ input:focus, select:focus {
 }
 
 .link {
-  color: #4f7cff;
+  color: var(--accent);
   text-decoration: none;
   font-size: 13px;
 }
@@ -167,8 +179,8 @@ input:focus, select:focus {
   max-width: 480px;
   margin: 0 auto;
   display: flex;
-  background: #13161e;
-  border-top: 1px solid #242830;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
   padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
   z-index: 40;
 }
@@ -180,14 +192,14 @@ input:focus, select:focus {
   align-items: center;
   gap: 2px;
   padding: 6px 0;
-  color: #6b7180;
+  color: var(--muted);
   text-decoration: none;
   font-size: 11px;
   border-radius: 10px;
 }
 
 .bottom-nav-tab.active {
-  color: #4f7cff;
+  color: var(--accent);
 }
 
 .bottom-nav-icon {
@@ -199,7 +211,7 @@ input:focus, select:focus {
 .onboarding-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10, 11, 15, 0.85);
+  background: rgba(8, 11, 9, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -208,8 +220,8 @@ input:focus, select:focus {
 }
 
 .onboarding-modal {
-  background: #171a21;
-  border: 1px solid #262a33;
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 14px;
   padding: 32px 24px;
   text-align: center;
@@ -219,21 +231,21 @@ input:focus, select:focus {
 .onboarding-modal p {
   margin: 14px 0 0;
   font-size: 14px;
-  color: #c4c8d4;
+  color: var(--text);
 }
 
 .onboarding-path {
   margin-top: 8px !important;
   font-size: 13px !important;
-  color: #7a8091 !important;
+  color: var(--muted) !important;
   font-family: monospace;
 }
 
 .spinner {
   width: 28px;
   height: 28px;
-  border: 3px solid #262a33;
-  border-top-color: #4f7cff;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
   border-radius: 50%;
   margin: 0 auto;
   animation: spin 0.8s linear infinite;
@@ -244,15 +256,15 @@ input:focus, select:focus {
 }
 
 .required {
-  color: #ff6b6b;
+  color: var(--error);
 }
 
 .success-check {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: #123626;
-  color: #5fe0a3;
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent);
   font-size: 28px;
   font-weight: 700;
   display: flex;
@@ -279,8 +291,8 @@ input:focus, select:focus {
   height: 56px;
   border-radius: 50%;
   border: none;
-  background: #2fb872;
-  color: white;
+  background: var(--accent);
+  color: var(--bg);
   font-size: 22px;
   font-weight: 700;
   cursor: pointer;
@@ -303,7 +315,7 @@ input:focus, select:focus {
   padding: 12px 16px;
   text-decoration: none;
   color: inherit;
-  border-bottom: 1px solid #1c1f27;
+  border-bottom: 1px solid var(--border);
 }
 
 .history-row:last-child { border-bottom: none; }
@@ -318,7 +330,7 @@ input:focus, select:focus {
 .history-place {
   font-size: 14px;
   font-weight: 600;
-  color: #e8e9ec;
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -326,20 +338,20 @@ input:focus, select:focus {
 
 .history-date {
   font-size: 12px;
-  color: #7a8091;
+  color: var(--muted);
 }
 
 .history-total {
   font-size: 14px;
   font-weight: 600;
-  color: #5fe0a3;
+  color: var(--accent);
   flex-shrink: 0;
 }
 
 /* ── Settings ── */
 .settings-value {
   font-size: 15px;
-  color: #e8e9ec;
+  color: var(--text);
   padding: 4px 0 2px;
 }
 
@@ -353,7 +365,7 @@ input:focus, select:focus {
 
 .settings-edit-hint {
   font-size: 12px;
-  color: #4f7cff;
+  color: var(--accent);
   font-weight: 600;
   flex-shrink: 0;
 }
@@ -365,15 +377,15 @@ input:focus, select:focus {
   align-items: center;
   justify-content: center;
   padding: 24px 16px;
-  background: #0f1115;
-  background-image: radial-gradient(ellipse at 50% 0%, rgba(79,124,255,0.08) 0%, transparent 70%);
+  background: var(--bg);
+  background-image: radial-gradient(ellipse at 50% 0%, rgba(34, 197, 94, 0.10) 0%, transparent 70%);
 }
 
 .lp-card {
   width: 100%;
   max-width: 400px;
-  background: #13161e;
-  border: 1px solid #242830;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 20px;
   padding: 32px 28px 28px;
   display: flex;
@@ -389,25 +401,19 @@ input:focus, select:focus {
   margin-bottom: 28px;
 }
 
-.lp-logo {
+.lp-logo-img {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #4f7cff 0%, #7c5cff 100%);
-  font-size: 17px;
-  font-weight: 800;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
+  display: block;
 }
 
 .lp-app-name {
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.5px;
-  color: #e8e9ec;
+  color: var(--text);
 }
 
 .lp-heading {
@@ -420,7 +426,7 @@ input:focus, select:focus {
 
 .lp-sub {
   font-size: 14px;
-  color: #7a8091;
+  color: var(--muted);
   margin: 0 0 24px;
   line-height: 1.5;
 }
@@ -447,29 +453,30 @@ input:focus, select:focus {
 .lp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .lp-btn:active:not(:disabled) { transform: scale(0.985); opacity: 0.88; }
 
+/* Google/Apple brand buttons keep their own brand-mandated colors, not the app palette */
 .lp-btn-google  { background: #fff;     color: #111; }
 .lp-btn-apple   { background: #f0f0f2;  color: #111; }
-.lp-btn-phone   { background: transparent; color: #c4c8d4; border: 1px solid #2c3040; }
-.lp-btn-primary { background: #4f7cff;  color: #fff; margin-top: 4px; }
+.lp-btn-phone   { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.lp-btn-primary { background: var(--accent);  color: var(--bg); margin-top: 4px; }
 
 /* Divider */
 .lp-divider {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #3a3f4e;
+  color: var(--muted);
   font-size: 12px;
   margin: 4px 0 10px;
 }
 .lp-divider::before, .lp-divider::after {
-  content: ""; flex: 1; height: 1px; background: #242830;
+  content: ""; flex: 1; height: 1px; background: var(--border);
 }
 
 /* Form fields */
 .lp-label {
   font-size: 12px;
   font-weight: 600;
-  color: #7a8091;
+  color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 6px;
@@ -480,13 +487,13 @@ input:focus, select:focus {
   width: 100%;
   padding: 13px 14px;
   border-radius: 10px;
-  border: 1px solid #2c3040;
-  background: #0c0e14;
-  color: #e8e9ec;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
   font-size: 16px;
   margin-bottom: 14px;
 }
-.lp-input:focus { outline: none; border-color: #4f7cff; }
+.lp-input:focus { outline: none; border-color: var(--accent); }
 
 .lp-otp {
   text-align: center;
@@ -498,23 +505,23 @@ input:focus, select:focus {
 /* Back / resend */
 .lp-back {
   background: none; border: none;
-  color: #7a8091; font-size: 13px;
+  color: var(--muted); font-size: 13px;
   cursor: pointer; padding: 0;
   text-align: left; margin-bottom: 16px;
 }
-.lp-back:hover { color: #e8e9ec; }
+.lp-back:hover { color: var(--text); }
 
 .lp-resend {
   background: none; border: none;
-  color: #4f7cff; font-size: 13px;
+  color: var(--accent); font-size: 13px;
   cursor: pointer; padding: 10px 0 0;
   text-align: center; width: 100%;
 }
 
 /* Error */
 .lp-error {
-  background: #2e1515;
-  color: #ff8a8a;
+  background: rgba(255, 77, 77, 0.12);
+  color: var(--error);
   font-size: 13px;
   padding: 10px 14px;
   border-radius: 10px;
@@ -524,9 +531,9 @@ input:focus, select:focus {
 /* Terms */
 .lp-terms {
   font-size: 11px;
-  color: #3a3f4e;
+  color: var(--muted);
   text-align: center;
   margin-top: 20px;
   line-height: 1.6;
 }
-.lp-terms a { color: #4f7cff; text-decoration: none; }
+.lp-terms a { color: var(--accent); text-decoration: none; }
