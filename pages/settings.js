@@ -6,7 +6,7 @@ import { listSharedEmails, removeSharedEmail, shareWithEmail, saveProfile } from
 import DriveFallback from "../components/DriveFallback";
 
 export default function Settings({ user }) {
-  const { accessToken, rootFolderId, profile, profileLoading, needsConnect, loadError, requestAccess, retryConnection, reloadProfile } = useDrive(user);
+  const { accessToken, rootFolderId, profile, profileLoading, needsConnect, loadError, driveEmail, requestAccess, retryConnection, reloadProfile, disconnect } = useDrive(user);
   const [accountantEmail, setAccountantEmail] = useState("");
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -68,8 +68,17 @@ export default function Settings({ user }) {
         <label>Company</label>
         <div className="settings-value">{profile.companyName}</div>
 
-        <label>Connected Google Account</label>
-        <div className="settings-value">{user?.email}</div>
+        <label>Signed in as</label>
+        <div className="settings-value">{user?.email || user?.phoneNumber || "—"}</div>
+
+        <label>Receipts saved to Google Drive of</label>
+        <div className="settings-value">{driveEmail || "—"}</div>
+        {driveEmail && user?.email && driveEmail.toLowerCase() !== user.email.toLowerCase() && (
+          <div className="status status-info" style={{ marginTop: 6 }}>
+            Note: your receipts are stored in {driveEmail}'s Google Drive, which is a different
+            account than the one you signed in with.
+          </div>
+        )}
 
         <label>Accountant's Gmail</label>
         {editing ? (
@@ -108,7 +117,15 @@ export default function Settings({ user }) {
       </div>
 
       <div className="card">
-        <button className="btn btn-secondary" onClick={() => signOut(auth)}>
+        <button
+          className="btn btn-secondary"
+          onClick={async () => {
+            // Let go of the Drive grant first, so the next person signing in
+            // on this device can't silently inherit this user's Drive.
+            await disconnect();
+            await signOut(auth);
+          }}
+        >
           Sign Out
         </button>
       </div>
