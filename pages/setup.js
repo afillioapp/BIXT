@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useDrive } from "../lib/useDrive";
 import {
   getCompanyRootFolderId,
+  findExistingCompanyRootFolder,
   shareWithEmail,
   saveProfile,
   ensureMonthFolders,
@@ -28,7 +29,11 @@ export default function Setup({ user }) {
     setError("");
     setCreating(true);
     try {
-      const rootId = await getCompanyRootFolderId(accessToken, companyName.trim());
+      // Safety net: if a BX folder already exists (e.g. this page was reached
+      // because a flaky connection hid it), reuse it — never create a second
+      // company folder and fork the user's books.
+      const existingRootId = await findExistingCompanyRootFolder(accessToken);
+      const rootId = existingRootId || (await getCompanyRootFolderId(accessToken, companyName.trim()));
       await shareWithEmail(accessToken, rootId, accountantEmail.trim(), "reader");
       await saveProfile(accessToken, rootId, {
         companyName: companyName.trim(),

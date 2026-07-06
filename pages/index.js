@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useDrive } from "../lib/useDrive";
 import { compressImage } from "../lib/image";
 import { saveExpenseToDrive } from "../lib/google";
+import DriveFallback from "../components/DriveFallback";
 
 // "04 july 2026 Dollarama.jpg" — falls back to "Untitled" if the merchant name wasn't read.
 function formatReceiptFilename(dateStr, place) {
@@ -16,7 +17,17 @@ function formatReceiptFilename(dateStr, place) {
 
 export default function Camera({ user }) {
   const router = useRouter();
-  const { accessToken, rootFolderId, profile, profileLoading, needsConnect, requestAccess } = useDrive(user);
+  const {
+    accessToken,
+    rootFolderId,
+    profile,
+    profileLoading,
+    needsConnect,
+    loadError,
+    requestAccess,
+    refreshAccessToken,
+    retryConnection,
+  } = useDrive(user);
 
   const [imagePreview, setImagePreview] = useState(null);
   const [compressedBase64, setCompressedBase64] = useState(null);
@@ -30,9 +41,14 @@ export default function Camera({ user }) {
   const fileInputRef = useRef(null);
   const importInputRef = useRef(null);
 
+  // Only send someone to onboarding when we positively know they have no BX
+  // folder — i.e. Drive answered us. A connection problem (loadError) or a
+  // missing token (needsConnect) must never re-onboard an existing customer.
   useEffect(() => {
-    if (!profileLoading && !profile) router.replace("/setup");
-  }, [profileLoading, profile]);
+    if (!profileLoading && !profile && accessToken && !loadError && !needsConnect) {
+      router.replace("/setup");
+    }
+  }, [profileLoading, profile, accessToken, loadError, needsConnect]);
 
   async function handleFileChange(e) {
     const file = e.target.files[0];
@@ -100,18 +116,27 @@ export default function Camera({ user }) {
     if (!form || !compressedBase64 || !rootFolderId) return;
     setSaving(true);
     setStatus({ type: "info", text: "Saving to Google Drive..." });
-    try {
-      const filename = formatReceiptFilename(form.date, form.place);
-      await saveExpenseToDrive(accessToken, {
+    const doSave = (token) =>
+      saveExpenseToDrive(token, {
         rootId: rootFolderId,
         imageBase64: compressedBase64,
         mimeType: compressedMime,
-        filename,
+        filename: formatReceiptFilename(form.date, form.place),
         place: form.place,
         total: form.total,
         hst: form.hst,
         date: form.date,
       });
+    try {
+      try {
+        await doSave(accessToken);
+      } catch (err) {
+        // Expired Drive token (401): silently fetch a fresh one and retry
+        // once, so "left the tab open for an hour" doesn't fail the save.
+        if (!/\(401\)/.test(err.message || "")) throw err;
+        const freshToken = await refreshAccessToken();
+        await doSave(freshToken);
+      }
       setStatus({ type: "success", text: "Saved" });
       resetForNext();
     } catch (err) {
@@ -129,16 +154,12 @@ export default function Camera({ user }) {
             <h1>BX</h1>
           </div>
         </div>
-        {needsConnect ? (
-          <div className="card">
-            <div style={{ marginBottom: 10, fontSize: 14 }}>Connect your Google Drive to continue</div>
-            <button className="btn btn-primary" onClick={requestAccess}>Connect Google Drive</button>
-          </div>
-        ) : (
-          <div className="card">
-            <div style={{ fontSize: 14 }}>Loading…</div>
-          </div>
-        )}
+        <DriveFallback
+          needsConnect={needsConnect}
+          loadError={loadError}
+          onConnect={requestAccess}
+          onRetry={retryConnection}
+        />
       </div>
     );
   }

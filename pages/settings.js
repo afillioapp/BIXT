@@ -3,9 +3,10 @@ import { signOut } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { useDrive } from "../lib/useDrive";
 import { listSharedEmails, removeSharedEmail, shareWithEmail, saveProfile } from "../lib/google";
+import DriveFallback from "../components/DriveFallback";
 
 export default function Settings({ user }) {
-  const { accessToken, rootFolderId, profile, profileLoading, reloadProfile } = useDrive(user);
+  const { accessToken, rootFolderId, profile, profileLoading, needsConnect, loadError, requestAccess, retryConnection, reloadProfile } = useDrive(user);
   const [accountantEmail, setAccountantEmail] = useState("");
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -47,7 +48,12 @@ export default function Settings({ user }) {
     return (
       <div className="container">
         <div className="app-header"><div><h1>Settings</h1></div></div>
-        <div className="card"><div style={{ fontSize: 14 }}>Loading…</div></div>
+        <DriveFallback
+          needsConnect={needsConnect}
+          loadError={loadError}
+          onConnect={requestAccess}
+          onRetry={retryConnection}
+        />
       </div>
     );
   }

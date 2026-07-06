@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { useDrive } from "../lib/useDrive";
 import { findMonthExpenseSheetId, listExpenseRows } from "../lib/google";
+import DriveFallback from "../components/DriveFallback";
 
 function prevMonthDate(d) {
   return new Date(d.getFullYear(), d.getMonth() - 1, 1);
 }
 
 export default function History({ user }) {
-  const { accessToken, rootFolderId, profile, profileLoading } = useDrive(user);
+  const { accessToken, rootFolderId, profile, profileLoading, needsConnect, loadError, requestAccess, retryConnection } = useDrive(user);
   const [rows, setRows] = useState(null);
   const [error, setError] = useState("");
 
@@ -41,7 +42,12 @@ export default function History({ user }) {
     return (
       <div className="container">
         <div className="app-header"><div><h1>History</h1></div></div>
-        <div className="card"><div style={{ fontSize: 14 }}>Loading…</div></div>
+        <DriveFallback
+          needsConnect={needsConnect}
+          loadError={loadError}
+          onConnect={requestAccess}
+          onRetry={retryConnection}
+        />
       </div>
     );
   }
