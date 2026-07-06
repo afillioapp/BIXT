@@ -11,11 +11,27 @@ import {
 } from "firebase/auth";
 import { auth } from "../lib/firebase";
 
-// Popups are blocked or mishandled on most mobile browsers (especially
-// Safari/PWAs) — use the full-page redirect flow there instead, and reserve
-// popups for desktop where they work fine and feel less disruptive.
-function isMobile() {
-  return typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+// Try the popup flow first everywhere — it's the only flow that works
+// reliably now that Safari/Chrome block third-party storage — and fall back
+// to the full-page redirect only when the browser refuses the popup outright.
+// (The redirect flow additionally relies on next.config.js proxying
+// /__/auth/* so the sign-in helper is same-site.)
+const POPUP_FALLBACK_CODES = [
+  "auth/popup-blocked",
+  "auth/cancelled-popup-request",
+  "auth/operation-not-supported-in-this-environment",
+];
+
+async function signInPreferringPopup(provider) {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (err) {
+    if (POPUP_FALLBACK_CODES.includes(err.code)) {
+      await signInWithRedirect(auth, provider);
+      return;
+    }
+    throw err;
+  }
 }
 
 export default function Login() {
@@ -53,11 +69,7 @@ export default function Login() {
     clearError(); setLoading("google");
     try {
       const provider = new GoogleAuthProvider();
-      if (isMobile()) {
-        await signInWithRedirect(auth, provider);
-        return;
-      }
-      await signInWithPopup(auth, provider);
+      await signInPreferringPopup(provider);
     } catch (err) {
       if (err.code !== "auth/popup-closed-by-user") setError(err.message);
     } finally { setLoading(null); }
@@ -67,11 +79,7 @@ export default function Login() {
     clearError(); setLoading("apple");
     try {
       const provider = new OAuthProvider("apple.com");
-      if (isMobile()) {
-        await signInWithRedirect(auth, provider);
-        return;
-      }
-      await signInWithPopup(auth, provider);
+      await signInPreferringPopup(provider);
     } catch (err) {
       if (err.code !== "auth/popup-closed-by-user") setError(err.message);
     } finally { setLoading(null); }
