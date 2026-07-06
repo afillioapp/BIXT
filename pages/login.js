@@ -134,6 +134,10 @@ export default function Login() {
             <p className="lp-terms">
               By continuing you agree to BX's <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a>.
             </p>
+
+            {/* A failed redirect sign-in lands back on this splash step — the
+                error must be visible here or it silently disappears. */}
+            {error && <p className="lp-error">{error}</p>}
           </>
         )}
 
