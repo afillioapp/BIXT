@@ -18,21 +18,36 @@ export default function Settings({ user }) {
 
   async function handleSaveAccountant() {
     if (!accountantEmail.trim() || !rootFolderId) return;
+    const newEmail = accountantEmail.trim();
     setSaving(true);
     setStatus(null);
     try {
+      // BX manages all read access on this folder, so any reader other than
+      // the new accountant is stale and must go. Compare case-insensitively —
+      // Google normalizes email casing, and an exact-string match used to let
+      // the old accountant silently keep access forever.
       const current = await listSharedEmails(accessToken, rootFolderId);
-      const oldPerm = current.find((p) => p.emailAddress === profile.accountantEmail);
-      if (oldPerm && profile.accountantEmail !== accountantEmail.trim()) {
-        await removeSharedEmail(accessToken, rootFolderId, oldPerm.id);
+      const staleReaders = current.filter(
+        (p) => p.role === "reader" && (p.emailAddress || "").toLowerCase() !== newEmail.toLowerCase()
+      );
+      for (const perm of staleReaders) {
+        try {
+          await removeSharedEmail(accessToken, rootFolderId, perm.id);
+        } catch {
+          throw new Error(
+            `We couldn't remove ${perm.emailAddress}'s access — they may still be able to view your files. Please try again.`
+          );
+        }
       }
-      const alreadyShared = current.some((p) => p.emailAddress === accountantEmail.trim());
+      const alreadyShared = current.some(
+        (p) => (p.emailAddress || "").toLowerCase() === newEmail.toLowerCase()
+      );
       if (!alreadyShared) {
-        await shareWithEmail(accessToken, rootFolderId, accountantEmail.trim(), "reader");
+        await shareWithEmail(accessToken, rootFolderId, newEmail, "reader");
       }
       await saveProfile(accessToken, rootFolderId, {
         companyName: profile.companyName,
-        accountantEmail: accountantEmail.trim(),
+        accountantEmail: newEmail,
       });
       setStatus({ type: "success", text: "Accountant updated" });
       setEditing(false);
