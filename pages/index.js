@@ -57,9 +57,14 @@ export default function Camera({ user }) {
     setExtracting(true);
     setStatus({ type: "info", text: "Reading receipt..." });
     try {
+      // The extract endpoint only serves signed-in users; prove who we are.
+      const idToken = await user.getIdToken();
       const res = await fetch("/api/extract", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
         body: JSON.stringify({ imageBase64: base64, mediaType }),
       });
       const data = await res.json();

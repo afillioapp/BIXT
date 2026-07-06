@@ -1,5 +1,11 @@
 // Server-side route: keeps your ANTHROPIC_API_KEY secret.
 // Receives a base64 receipt image, asks Claude to read it, returns structured JSON.
+//
+// Access control: callers must present a Firebase ID token (proof of a
+// signed-in BX user) in the Authorization header. Without this, the endpoint
+// would be an open proxy to the Anthropic API on our bill.
+
+import { createRemoteJWKSet, jwtVerify } from "jose";
 
 export const config = {
   api: {
@@ -8,6 +14,53 @@ export const config = {
     },
   },
 };
+
+// Firebase signs ID tokens with Google-hosted keys; verifying against them
+// needs no service-account secret on our side.
+const FIREBASE_JWKS = createRemoteJWKSet(
+  new URL("https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com")
+);
+
+// Returns the caller's Firebase user id, or null if the token is missing/bad.
+async function verifyCaller(req) {
+  const header = req.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+  if (!token) return null;
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  if (!projectId) return null;
+  try {
+    const { payload } = await jwtVerify(token, FIREBASE_JWKS, {
+      issuer: `https://securetoken.google.com/${projectId}`,
+      audience: projectId,
+    });
+    return payload.sub || null;
+  } catch {
+    return null;
+  }
+}
+
+// Per-user scan budget. In-memory, so each serverless instance counts
+// separately — coarse, but enough to keep any single account from burning
+// meaningful API spend.
+const RATE_LIMIT = 30; // scans
+const RATE_WINDOW_MS = 60 * 60 * 1000; // per hour
+const usageByUid = new Map();
+
+function overRateLimit(uid) {
+  const now = Date.now();
+  const recent = (usageByUid.get(uid) || []).filter((t) => now - t < RATE_WINDOW_MS);
+  if (recent.length >= RATE_LIMIT) {
+    usageByUid.set(uid, recent);
+    return true;
+  }
+  recent.push(now);
+  usageByUid.set(uid, recent);
+  return false;
+}
+
+// A receipt photo is compressed to ~200KB client-side before upload; anything
+// wildly larger than that is not a legitimate request from our app.
+const MAX_IMAGE_BASE64_CHARS = 7 * 1024 * 1024; // ~5MB of image data
 
 const CATEGORIES = [
   "Meals & Entertainment",
@@ -26,9 +79,20 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  const uid = await verifyCaller(req);
+  if (!uid) {
+    return res.status(401).json({ error: "Please sign in again to scan receipts." });
+  }
+  if (overRateLimit(uid)) {
+    return res.status(429).json({ error: "Too many scans in the last hour. Please try again later." });
+  }
+
   const { imageBase64, mediaType } = req.body || {};
   if (!imageBase64) {
     return res.status(400).json({ error: "Missing imageBase64" });
+  }
+  if (typeof imageBase64 !== "string" || imageBase64.length > MAX_IMAGE_BASE64_CHARS) {
+    return res.status(413).json({ error: "Image is too large." });
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
