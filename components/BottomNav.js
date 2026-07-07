@@ -5,7 +5,7 @@ import { useRouter } from "next/router";
 // tabs flank it.
 const TABS = [
   { href: "/history", icon: "🗂", label: "History" },
-  { href: "/", icon: "📷", label: "Camera", primary: true },
+  { href: "/", icon: "📷", label: "Home", primary: true },
   { href: "/settings", icon: "⚙️", label: "Settings" },
 ];
 

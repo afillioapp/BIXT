@@ -168,8 +168,10 @@ export default function Camera({ user }) {
     <div className="container">
       <div className="app-header">
         <div>
-          <div className="subtitle">BX</div>
-          <h1>Hi, {profile.companyName}</h1>
+          {/* Greet the person; phone sign-ins have no display name, so fall
+              back to the company. Company name always shows as the subheader. */}
+          <h1>Hi, {(user?.displayName || "").trim().split(/\s+/)[0] || profile.companyName}</h1>
+          <div className="subtitle">{profile.companyName}</div>
         </div>
       </div>
 
