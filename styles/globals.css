@@ -418,6 +418,15 @@ input:focus, select:focus {
   background-image: radial-gradient(ellipse at 50% 0%, rgba(34, 197, 94, 0.10) 0%, transparent 70%);
 }
 
+/* On phones, pin the sign-in card to the bottom so the buttons sit in
+   thumb reach instead of mid-screen. Desktop stays centered. */
+@media (max-width: 600px) {
+  .lp-bg {
+    align-items: flex-end;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+}
+
 .lp-card {
   width: 100%;
   max-width: 400px;
