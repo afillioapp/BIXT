@@ -230,6 +230,20 @@ input:focus, select:focus {
   filter: brightness(1.1);
 }
 
+/* Capture buttons pinned above the bottom nav, within thumb reach */
+.capture-actions {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  max-width: 448px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 30;
+}
+
 /* ── Onboarding ── */
 .onboarding-overlay {
   position: fixed;

@@ -173,35 +173,39 @@ export default function Camera({ user }) {
         </div>
       </div>
 
-      <div className="card">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={handleFileChange}
-          className="hidden-input"
-          id="receiptInput"
-        />
-        <input
-          ref={importInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden-input"
-          id="receiptImport"
-        />
-        {!imagePreview && (
-          <>
-            <label htmlFor="receiptInput" className="btn btn-primary" style={{ cursor: "pointer" }}>
-              {compressing ? "Processing…" : "Take Receipt Photo"}
-            </label>
-            <label htmlFor="receiptImport" className="btn btn-secondary" style={{ cursor: "pointer", marginTop: 10 }}>
-              Import from Phone
-            </label>
-          </>
-        )}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        onChange={handleFileChange}
+        className="hidden-input"
+        id="receiptInput"
+      />
+      <input
+        ref={importInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="hidden-input"
+        id="receiptImport"
+      />
 
+      {/* Capture actions live at the bottom of the screen, in thumb reach —
+          not at the top under the header. */}
+      {!imagePreview && (
+        <div className="capture-actions">
+          <label htmlFor="receiptInput" className="btn btn-primary" style={{ cursor: "pointer" }}>
+            {compressing ? "Processing…" : "Take Receipt Photo"}
+          </label>
+          <label htmlFor="receiptImport" className="btn btn-secondary" style={{ cursor: "pointer" }}>
+            Import from Phone
+          </label>
+        </div>
+      )}
+
+      {(imagePreview || status || form) && (
+      <div className="card">
         {imagePreview && (
           <img src={imagePreview} className="receipt-preview" alt="receipt" />
         )}
@@ -263,6 +267,7 @@ export default function Camera({ user }) {
           </>
         )}
       </div>
+      )}
     </div>
   );
 }
