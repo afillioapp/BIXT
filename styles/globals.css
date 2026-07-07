@@ -207,6 +207,29 @@ input:focus, select:focus {
   line-height: 1;
 }
 
+/* Raised center camera action */
+.bottom-nav-primary-circle {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -30px;
+  border: 3px solid var(--bg);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.bottom-nav-primary-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.bottom-nav-primary.active .bottom-nav-primary-circle {
+  filter: brightness(1.1);
+}
+
 /* ── Onboarding ── */
 .onboarding-overlay {
   position: fixed;
