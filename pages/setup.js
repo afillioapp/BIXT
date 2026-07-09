@@ -9,6 +9,8 @@ import {
   ensureMonthFolders,
 } from "../lib/google";
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function Setup({ user }) {
   const router = useRouter();
   const { accessToken, profile, profileLoading, needsConnect, requestAccess } = useDrive(user);
@@ -18,14 +20,26 @@ export default function Setup({ user }) {
   const [creating, setCreating] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
+  const [confirming, setConfirming] = useState(false);
 
   // Already set up? Don't let them redo it by mistake.
   useEffect(() => {
     if (!profileLoading && profile) router.replace("/");
   }, [profileLoading, profile]);
 
-  async function handleSubmit() {
+  // First tap just validates and shows a plain-language confirmation before
+  // any sharing happens; the actual work runs from handleConfirmShare.
+  function handleGetStarted() {
     if (!companyName.trim() || !accountantEmail.trim() || !accessToken) return;
+    if (!EMAIL_RE.test(accountantEmail.trim())) {
+      setError("That doesn't look like an email address");
+      return;
+    }
+    setError("");
+    setConfirming(true);
+  }
+
+  async function handleConfirmShare() {
     setError("");
     setCreating(true);
     try {
@@ -85,7 +99,7 @@ export default function Setup({ user }) {
         </div>
       )}
 
-      {accessToken && (
+      {accessToken && !confirming && (
         <div className="card">
           <label>Company Name <span className="required">*</span></label>
           <input
@@ -101,7 +115,7 @@ export default function Setup({ user }) {
             value={accountantEmail}
             onChange={(e) => setAccountantEmail(e.target.value)}
             placeholder="accountant@firm.com"
-            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+            onKeyDown={(e) => e.key === "Enter" && handleGetStarted()}
           />
 
           {error && <div className="status status-error">{error}</div>}
@@ -109,10 +123,31 @@ export default function Setup({ user }) {
           <div style={{ marginTop: 16 }}>
             <button
               className="btn btn-primary"
-              onClick={handleSubmit}
-              disabled={!companyName.trim() || !accountantEmail.trim() || creating}
+              onClick={handleGetStarted}
+              disabled={!companyName.trim() || !accountantEmail.trim()}
             >
-              {creating ? "Setting up..." : "Get Started"}
+              Get Started
+            </button>
+          </div>
+        </div>
+      )}
+
+      {accessToken && confirming && (
+        <div className="card">
+          <p>We'll give read-only access to {accountantEmail.trim()}. Correct?</p>
+
+          {error && <div className="status status-error">{error}</div>}
+
+          <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
+            <button className="btn btn-primary" onClick={handleConfirmShare} disabled={creating}>
+              {creating ? "Setting up..." : "Yes, share"}
+            </button>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setConfirming(false)}
+              disabled={creating}
+            >
+              Edit
             </button>
           </div>
         </div>

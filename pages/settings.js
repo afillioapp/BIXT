@@ -5,10 +5,13 @@ import { useDrive } from "../lib/useDrive";
 import { listSharedEmails, removeSharedEmail, shareWithEmail, saveProfile } from "../lib/google";
 import DriveFallback from "../components/DriveFallback";
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function Settings({ user }) {
   const { accessToken, rootFolderId, profile, profileLoading, needsConnect, loadError, driveEmail, requestAccess, retryConnection, reloadProfile, disconnect } = useDrive(user);
   const [accountantEmail, setAccountantEmail] = useState("");
   const [editing, setEditing] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState(null);
 
@@ -16,8 +19,19 @@ export default function Settings({ user }) {
     if (profile) setAccountantEmail(profile.accountantEmail || "");
   }, [profile]);
 
-  async function handleSaveAccountant() {
+  // First tap just validates and shows a plain-language confirmation before
+  // any sharing changes happen; the actual work runs from handleConfirmShare.
+  function handleSaveAccountant() {
     if (!accountantEmail.trim() || !rootFolderId) return;
+    if (!EMAIL_RE.test(accountantEmail.trim())) {
+      setStatus({ type: "error", text: "That doesn't look like an email address" });
+      return;
+    }
+    setStatus(null);
+    setConfirming(true);
+  }
+
+  async function handleConfirmShare() {
     const newEmail = accountantEmail.trim();
     setSaving(true);
     setStatus(null);
@@ -51,6 +65,7 @@ export default function Settings({ user }) {
       });
       setStatus({ type: "success", text: "Accountant updated" });
       setEditing(false);
+      setConfirming(false);
       reloadProfile();
     } catch (err) {
       setStatus({ type: "error", text: err.message });
@@ -96,7 +111,27 @@ export default function Settings({ user }) {
         )}
 
         <label>Accountant's Gmail</label>
-        {editing ? (
+        {editing && confirming ? (
+          <>
+            <p>We'll give read-only access to {accountantEmail.trim()}. Correct?</p>
+            <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
+              <button
+                className="btn btn-primary"
+                onClick={handleConfirmShare}
+                disabled={saving}
+              >
+                {saving ? "Saving…" : "Yes, share"}
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setConfirming(false)}
+                disabled={saving}
+              >
+                Edit
+              </button>
+            </div>
+          </>
+        ) : editing ? (
           <>
             <input
               type="email"
@@ -111,11 +146,11 @@ export default function Settings({ user }) {
                 onClick={handleSaveAccountant}
                 disabled={saving || !accountantEmail.trim()}
               >
-                {saving ? "Saving…" : "Save"}
+                Save
               </button>
               <button
                 className="btn btn-secondary"
-                onClick={() => { setEditing(false); setAccountantEmail(profile.accountantEmail || ""); }}
+                onClick={() => { setEditing(false); setConfirming(false); setAccountantEmail(profile.accountantEmail || ""); }}
                 disabled={saving}
               >
                 Cancel
