@@ -81,11 +81,11 @@ export default function Setup({ user }) {
 
   return (
     <div className="container">
-      <div className="app-header">
-        <div>
-          <h1>BX</h1>
-          <div className="subtitle">Let's set up your workspace.</div>
-        </div>
+      <div className="onboarding-header">
+        <div className="onboarding-step">{confirming ? "Step 2 of 2" : "Step 1 of 2"}</div>
+        <h1 className="onboarding-title">
+          {confirming ? "Confirm accountant access" : "Set up your workspace"}
+        </h1>
       </div>
 
       {!accessToken && (
@@ -103,6 +103,7 @@ export default function Setup({ user }) {
         <div className="card">
           <label>Company Name <span className="required">*</span></label>
           <input
+            className="onboarding-input"
             value={companyName}
             onChange={(e) => setCompanyName(e.target.value)}
             placeholder="Acme Inc."
@@ -111,6 +112,7 @@ export default function Setup({ user }) {
 
           <label>Accountant's Gmail <span className="required">*</span></label>
           <input
+            className="onboarding-input"
             type="email"
             value={accountantEmail}
             onChange={(e) => setAccountantEmail(e.target.value)}

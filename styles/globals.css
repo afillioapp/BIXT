@@ -501,6 +501,31 @@ input:focus, select:focus {
 }
 
 /* ── Onboarding ── */
+.onboarding-header {
+  margin-bottom: 20px;
+}
+
+.onboarding-step {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.onboarding-title {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.onboarding-input {
+  border-radius: 14px !important;
+}
+
 .onboarding-overlay {
   position: fixed;
   inset: 0;
