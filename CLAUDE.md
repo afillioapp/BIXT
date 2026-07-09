@@ -150,13 +150,16 @@ Set in Vercel only — no `.env.local` exists in this repo:
 
 ## Known, deliberate gaps (not bugs)
 
-Two features are documented as intentionally deferred, pending a product
-decision — don't build these speculatively:
+One feature remains intentionally deferred, pending a product decision —
+don't build it speculatively:
 
-- **Biometric check** for returning users (e.g. WebAuthn/Face ID) — not
-  built; returning users currently go straight to a silent Drive reconnect.
 - **2-step/email verification** after signup — not built; signup currently
   goes straight from Google sign-in to the onboarding form.
+
+(The formerly-deferred **biometric check** shipped 2026-07-08 as an opt-in
+local device lock: `lib/biometric.js` + `components/BiometricGate.js`,
+toggled in Settings. It's a WebAuthn platform-authenticator gate stored in
+localStorage — a casual-access lock, deliberately not server-verified auth.)
 
 See `BX Blueprint/BX-Blueprint.md` for the full status of every step in
 both journeys, including what's fixed, what's untested, and what's blocking.
