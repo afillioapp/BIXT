@@ -715,6 +715,45 @@ input:focus, select:focus {
   50% { opacity: 1; }
 }
 
+/* ── Biometric lock screen (same visual family as the splash loader) ── */
+.lock-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: var(--bg);
+  padding: 24px;
+  z-index: 100;
+  text-align: center;
+}
+
+.lock-logo {
+  width: 110px;
+  height: auto;
+  margin-bottom: 8px;
+}
+
+.lock-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.lock-btn,
+.lock-btn-secondary {
+  width: 100%;
+  max-width: 320px;
+}
+
+.lock-error {
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 0;
+}
+
 /* ── Login page ── */
 .lp-bg {
   min-height: 100vh;

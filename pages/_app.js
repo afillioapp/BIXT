@@ -5,6 +5,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import BottomNav from "../components/BottomNav";
 import SplashLoader from "../components/SplashLoader";
+import BiometricGate from "../components/BiometricGate";
 import "../styles/globals.css";
 
 const PUBLIC_ROUTES = ["/login"];
@@ -49,8 +50,10 @@ export default function App({ Component, pageProps }) {
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </Head>
       <div className="app-shell">
-        <Component {...pageProps} user={user} />
-        {showNav && <BottomNav />}
+        <BiometricGate user={user}>
+          <Component {...pageProps} user={user} />
+          {showNav && <BottomNav />}
+        </BiometricGate>
       </div>
     </>
   );
