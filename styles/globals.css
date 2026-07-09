@@ -621,49 +621,23 @@ input:focus, select:focus {
 .tick-btn:active:not(:disabled) { opacity: 0.85; }
 
 /* ── History ── */
-.history-list {
-  padding: 4px 0;
-}
-
-.history-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 16px;
-  text-decoration: none;
-  color: inherit;
-  border-bottom: 1px solid var(--border);
-}
-
-.history-row:last-child { border-bottom: none; }
-
-.history-row-main {
+.history-groups {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  min-width: 0;
+  gap: 4px;
 }
 
-.history-place {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.history-group {
+  margin-bottom: 12px;
 }
 
-.history-date {
+.history-group-header {
   font-size: 12px;
-  color: var(--muted);
-}
-
-.history-total {
-  font-size: 14px;
   font-weight: 600;
-  color: var(--accent);
-  flex-shrink: 0;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 4px 8px;
 }
 
 /* ── Settings ── */

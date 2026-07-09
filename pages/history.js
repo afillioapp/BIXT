@@ -1,10 +1,36 @@
 import { useState, useEffect } from "react";
 import { useDrive } from "../lib/useDrive";
 import { findMonthExpenseSheetId, listExpenseRows } from "../lib/google";
+import { categoryIcon } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
 
 function prevMonthDate(d) {
   return new Date(d.getFullYear(), d.getMonth() - 1, 1);
+}
+
+// Rows arrive already sorted most-recent-first; bucket consecutive rows that
+// share a date under one header instead of repeating it as a section per row.
+function groupByDate(rows) {
+  const groups = [];
+  const byDate = new Map();
+  for (const r of rows) {
+    const key = r.date || "Unknown date";
+    let group = byDate.get(key);
+    if (!group) {
+      group = { date: key, rows: [] };
+      byDate.set(key, group);
+      groups.push(group);
+    }
+    group.rows.push(r);
+  }
+  return groups;
+}
+
+function formatDateHeader(dateStr) {
+  if (!dateStr) return "Unknown date";
+  const d = new Date(`${dateStr}T00:00:00`);
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 }
 
 export default function History({ user }) {
@@ -72,21 +98,31 @@ export default function History({ user }) {
       )}
 
       {rows && rows.length > 0 && (
-        <div className="card history-list">
-          {rows.map((r, i) => (
-            <a
-              key={i}
-              className="history-row"
-              href={r.receiptLink || undefined}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <div className="history-row-main">
-                <span className="history-place">{r.place || "Untitled"}</span>
-                <span className="history-date">{r.date}</span>
+        <div className="history-groups">
+          {groupByDate(rows).map((group) => (
+            <div key={group.date} className="history-group">
+              <div className="history-group-header">{formatDateHeader(group.date)}</div>
+              <div className="card receipt-list">
+                {group.rows.map((r, i) => (
+                  <a
+                    key={i}
+                    className="receipt-row"
+                    href={r.receiptLink || undefined}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span className="receipt-icon" aria-hidden="true">
+                      {categoryIcon(r.category)}
+                    </span>
+                    <div className="receipt-row-main">
+                      <span className="receipt-place">{r.place || "Untitled"}</span>
+                      <span className="receipt-date">{r.date}</span>
+                    </div>
+                    <span className="receipt-amount">{r.total}</span>
+                  </a>
+                ))}
               </div>
-              <span className="history-total">{r.total}</span>
-            </a>
+            </div>
           ))}
         </div>
       )}
