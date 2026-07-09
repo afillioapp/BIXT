@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useDrive } from "../lib/useDrive";
 import { findMonthExpenseSheetId, listExpenseRows } from "../lib/google";
-import { latestReceipts, categoryIcon, weeklyTotals, categoryTotals } from "../lib/insights";
+import { latestReceipts, categoryIcon, weeklyTotals, categoryTotals, formatCurrency } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
 import InsightCards from "../components/InsightCards";
 
@@ -101,6 +101,7 @@ export default function Home({ user }) {
   const latest = rows ? latestReceipts(rows, 4) : [];
   const now = new Date();
   const monthTag = now.toLocaleString("en-US", { month: "long", year: "numeric" });
+  const monthData = rows ? categoryTotals(rows, now) : null;
 
   return (
     <div className="container">
@@ -108,18 +109,26 @@ export default function Home({ user }) {
         <div>
           <div className="dash-greeting">{greetingForHour()}</div>
           <h1>{firstName}</h1>
+          <div className="dash-company">{profile.companyName}</div>
         </div>
         <div className="dash-avatar" aria-hidden="true">
           {initialsFor(user?.displayName, profile.companyName)}
         </div>
       </div>
 
+      {monthData && (
+        <div className="dash-total">
+          <span className="dash-total-label">Total expenses · {now.toLocaleString("en-US", { month: "long" })}</span>
+          <span className="dash-total-amount">{formatCurrency(monthData.total, { decimals: 2 })}</span>
+        </div>
+      )}
+
       {error && <div className="status status-error">{error}</div>}
 
       {rows !== null && (
         <InsightCards
           weekly={weeklyTotals(rows, now)}
-          categoryData={categoryTotals(rows, now)}
+          categoryData={monthData}
           monthTag={monthTag}
         />
       )}

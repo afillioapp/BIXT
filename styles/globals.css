@@ -191,6 +191,37 @@ input:focus, select:focus {
   flex-shrink: 0;
 }
 
+.dash-company {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* Month-total strip between the header and the insight cards */
+.dash-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 2px 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+
+.dash-total-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dash-total-amount {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+}
+
 /* ── Insight cards (swipeable) ── */
 .insight-cards-wrap {
   margin: 4px 0 6px;
