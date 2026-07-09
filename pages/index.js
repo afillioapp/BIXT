@@ -3,8 +3,9 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useDrive } from "../lib/useDrive";
 import { findMonthExpenseSheetId, listExpenseRows } from "../lib/google";
-import { latestReceipts, categoryIcon } from "../lib/insights";
+import { latestReceipts, categoryIcon, weeklyTotals, categoryTotals } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
+import InsightCards from "../components/InsightCards";
 
 function prevMonthDate(d) {
   return new Date(d.getFullYear(), d.getMonth() - 1, 1);
@@ -98,6 +99,8 @@ export default function Home({ user }) {
 
   const firstName = (user?.displayName || "").trim().split(/\s+/)[0] || profile.companyName;
   const latest = rows ? latestReceipts(rows, 4) : [];
+  const now = new Date();
+  const monthTag = now.toLocaleString("en-US", { month: "long", year: "numeric" });
 
   return (
     <div className="container">
@@ -113,7 +116,13 @@ export default function Home({ user }) {
 
       {error && <div className="status status-error">{error}</div>}
 
-      {/* Insight cards (weekly spend + by-category) land here in the next commit */}
+      {rows !== null && (
+        <InsightCards
+          weekly={weeklyTotals(rows, now)}
+          categoryData={categoryTotals(rows, now)}
+          monthTag={monthTag}
+        />
+      )}
 
       <div className="section-header">
         <span className="section-title">Latest receipts</span>

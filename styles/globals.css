@@ -191,6 +191,147 @@ input:focus, select:focus {
   flex-shrink: 0;
 }
 
+/* ── Insight cards (swipeable) ── */
+.insight-cards-wrap {
+  margin: 4px 0 6px;
+}
+
+.insight-cards-scroll {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.insight-cards-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.insight-card {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  box-sizing: border-box;
+}
+
+.insight-card-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(34, 197, 94, 0.12);
+  padding: 3px 9px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.insight-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.insight-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.insight-card-change {
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.insight-card-change.up {
+  color: var(--error);
+}
+
+.insight-card-change.down {
+  color: var(--accent);
+}
+
+.insight-card-change.flat {
+  color: var(--muted);
+}
+
+.weekly-chart {
+  width: 100%;
+  height: auto;
+  margin-top: 4px;
+}
+
+.insight-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 10px 0 4px;
+}
+
+.insight-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border);
+  transition: background 0.15s, width 0.15s;
+}
+
+.insight-dot.active {
+  background: var(--accent);
+  width: 16px;
+}
+
+.donut-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.donut-legend {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.donut-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.donut-legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.donut-legend-name {
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.donut-legend-percent {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
 .section-header {
   display: flex;
   align-items: center;
