@@ -596,95 +596,101 @@ input:focus, select:focus {
   z-index: 30;
 }
 
-/* ── Onboarding ── */
-.onboarding-header {
-  margin-bottom: 20px;
+/* ── Onboarding (single screen — owner override on the handoff's 2-step
+   flow: no progress segments, no second page; "Get Started" swaps its own
+   button area in place for the inline confirm). ── */
+.onboard-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 70px 28px calc(28px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
 }
 
-.onboarding-step {
-  font-size: 12px;
+.onboard-title {
+  font-family: var(--font-serif);
+  font-size: 27px;
   font-weight: 600;
-  color: var(--accent);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 8px;
+  color: var(--text);
+  margin: 0 0 26px;
 }
 
-.onboarding-title {
+.onboard-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.onboard-spacer {
+  flex: 1;
+}
+
+.onboard-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.onboard-confirm-text {
+  font-size: 14px;
+  color: var(--text);
+  text-align: center;
+}
+
+.onboard-confirm .btn {
+  width: 100%;
+}
+
+/* Onboarding success */
+.onboard-success {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 16px;
+}
+
+.onboard-success-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.onboard-success-title {
+  font-family: var(--font-serif);
   font-size: 24px;
-  font-weight: 700;
-  letter-spacing: -0.3px;
-  line-height: 1.25;
+  font-weight: 600;
+  color: var(--text);
   margin: 0;
 }
 
-.onboarding-input {
-  border-radius: 14px !important;
+.onboard-success-copy {
+  font-size: 14px;
+  color: var(--ink-soft);
 }
 
-.onboarding-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(8, 11, 9, 0.85);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-  padding: 24px;
-}
-
-.onboarding-modal {
+.onboard-path-chip {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 32px 24px;
-  text-align: center;
-  max-width: 340px;
-}
-
-.onboarding-modal p {
-  margin: 14px 0 0;
-  font-size: 14px;
+  padding: 12px 18px;
+  font-size: 13px;
   color: var(--text);
+  font-family: "SF Mono", Menlo, monospace;
 }
 
-.onboarding-path {
-  margin-top: 8px !important;
-  font-size: 13px !important;
-  color: var(--muted) !important;
-  font-family: monospace;
-}
-
-.spinner {
-  width: 28px;
-  height: 28px;
-  border: 3px solid var(--border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  margin: 0 auto;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.required {
-  color: var(--error);
-}
-
-.success-check {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: rgba(34, 197, 94, 0.15);
-  color: var(--accent);
-  font-size: 28px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto;
+.onboard-success-btn {
+  width: 100%;
+  margin-top: 14px;
 }
 
 /* ── Receipt confirm row ── */
@@ -769,9 +775,11 @@ input:focus, select:focus {
   z-index: 100;
 }
 
-.splash-loader-logo {
-  width: 140px;
-  height: auto;
+.splash-loader-wordmark {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  letter-spacing: 0.5px;
+  color: var(--text);
   animation: splash-pulse 1.6s ease-in-out infinite;
 }
 
@@ -819,191 +827,144 @@ input:focus, select:focus {
   margin-bottom: 0;
 }
 
-/* ── Login page ── */
+/* ── Login page (splash / sign-in / phone auth) ──
+   One-screen-at-a-time layout per the design handoff: full-height column,
+   top-anchored back-chevron/wordmark, bottom-anchored primary action. */
 .lp-bg {
   min-height: 100vh;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px 16px;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 70px 28px calc(28px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
   background: var(--bg);
-  background-image: radial-gradient(ellipse at 50% 0%, rgba(34, 197, 94, 0.10) 0%, transparent 70%);
 }
 
-/* On phones, pin the sign-in card to the bottom so the buttons sit in
-   thumb reach instead of mid-screen. Desktop stays centered. */
-@media (max-width: 600px) {
-  .lp-bg {
-    align-items: flex-end;
-    padding-bottom: calc(20px + env(safe-area-inset-bottom));
-  }
+/* Small top-left wordmark on the sign-in screen. */
+.lp-wordmark {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  color: var(--text);
 }
 
-.lp-card {
-  width: 100%;
-  max-width: 400px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  padding: 32px 28px 28px;
+/* Vertically centered hero block (headline + description) between the
+   wordmark and the buttons. */
+.lp-hero {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0;
-}
-
-/* Brand row */
-.lp-brand {
-  display: flex;
-  align-items: center;
+  justify-content: center;
   gap: 10px;
-  margin-bottom: 28px;
+  margin-top: -40px;
 }
 
-.lp-logo-img {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  flex-shrink: 0;
-  display: block;
-}
-
-.lp-app-name {
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: var(--text);
-}
-
-.lp-heading {
-  font-size: 26px;
-  font-weight: 700;
-  margin: 0 0 8px;
-  letter-spacing: -0.5px;
-  line-height: 1.2;
-}
-
-/* Large centered tagline on the main sign-in screen, replacing the old
-   two-step "Welcome" splash. */
 .lp-tagline {
-  font-size: 24px;
-  font-weight: 700;
-  text-align: center;
-  letter-spacing: -0.3px;
-  line-height: 1.35;
-  margin: 12px 0 32px;
+  font-family: var(--font-serif);
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.28;
   color: var(--text);
+  margin: 0;
 }
 
 .lp-sub {
   font-size: 14px;
-  color: var(--muted);
-  margin: 0 0 24px;
+  color: var(--ink-soft);
   line-height: 1.5;
+  max-width: 280px;
+  margin: 0;
 }
 
-/* Auth buttons */
-.lp-btn {
+/* Tighter sub-line used under the phone-entry/phone-code headlines (no
+   hero centering there — the input sits right below). */
+.lp-sub-tight {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin: 0 0 28px;
+}
+
+.lp-buttons {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
   gap: 10px;
-  width: 100%;
-  padding: 13px 16px;
-  border-radius: 12px;
-  border: none;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s, transform 0.1s;
-  margin-bottom: 10px;
 }
 
-.lp-btn:last-of-type { margin-bottom: 0; }
-
-.lp-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.lp-btn:active:not(:disabled) { transform: scale(0.985); opacity: 0.88; }
-
-/* Google/Apple brand buttons keep their own brand-mandated colors, not the app palette */
-.lp-btn-google  { background: #fff;     color: #111; }
-.lp-btn-apple   { background: #f0f0f2;  color: #111; }
-.lp-btn-phone   { background: transparent; color: var(--muted); border: 1px solid var(--border); }
-.lp-btn-primary { background: var(--accent);  color: var(--bg); margin-top: 4px; }
-
-/* Divider */
-.lp-divider {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--muted);
-  font-size: 12px;
-  margin: 4px 0 10px;
-}
-.lp-divider::before, .lp-divider::after {
-  content: ""; flex: 1; height: 1px; background: var(--border);
-}
-
-/* Form fields */
-.lp-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 6px;
-  display: block;
-}
+.lp-buttons .btn { margin: 0; }
 
 .lp-input {
-  width: 100%;
-  padding: 13px 14px;
-  border-radius: 10px;
+  height: 52px;
+  border-radius: 14px;
   border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
+  background: var(--card);
+  padding: 0 16px;
   font-size: 16px;
-  margin-bottom: 14px;
+  color: var(--text);
+  margin-bottom: 16px;
+  font-family: var(--font-sans);
 }
-.lp-input:focus { outline: none; border-color: var(--accent); }
+.lp-input:focus { outline: none; border-color: var(--text); }
 
 .lp-otp {
   text-align: center;
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: 10px;
+  font-size: 22px;
+  letter-spacing: 8px;
 }
 
-/* Back / resend */
-.lp-back {
-  background: none; border: none;
-  color: var(--muted); font-size: 13px;
-  cursor: pointer; padding: 0;
-  text-align: left; margin-bottom: 16px;
+.lp-heading {
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 8px;
 }
-.lp-back:hover { color: var(--text); }
+
+/* Back chevron */
+.lp-back {
+  align-self: flex-start;
+  border: none;
+  background: none;
+  padding: 0;
+  margin-bottom: 24px;
+  cursor: pointer;
+}
+
+/* Pushes the bottom-anchored primary button down on phoneEntry/phoneCode,
+   which don't use .lp-hero's flex centering. */
+.lp-spacer {
+  flex: 1;
+}
 
 .lp-resend {
-  background: none; border: none;
-  color: var(--accent); font-size: 13px;
-  cursor: pointer; padding: 10px 0 0;
-  text-align: center; width: 100%;
-}
-
-/* Error */
-.lp-error {
-  background: rgba(255, 77, 77, 0.12);
-  color: var(--error);
-  font-size: 13px;
-  padding: 10px 14px;
-  border-radius: 10px;
+  align-self: center;
   margin-top: 8px;
 }
 
-/* Terms */
-.lp-terms {
-  font-size: 11px;
-  color: var(--muted);
-  text-align: center;
-  margin-top: 20px;
-  line-height: 1.6;
+.lp-error {
+  background: var(--surface2);
+  color: var(--error);
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  margin-bottom: 14px;
 }
-.lp-terms a { color: var(--accent); text-decoration: none; }
+
+.lp-terms {
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 16px;
+  line-height: 1.5;
+}
+.lp-terms a { color: inherit; text-decoration: underline; }
+
+/* Generic quiet underlined text link (resend code, sign out, edit link…) */
+.quiet-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--muted);
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}

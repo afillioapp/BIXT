@@ -106,96 +106,109 @@ export default function Login() {
 
   return (
     <div className="lp-bg">
-      <div className="lp-card">
+      {step === "main" && (
+        <>
+          {/* Brand — text wordmark only, no logo image (design handoff). */}
+          <div className="lp-wordmark">BXT</div>
 
-        {/* Brand */}
-        <div className="lp-brand">
-          <img src="/bx-icon.svg" alt="" className="lp-logo-img" />
-          <span className="lp-app-name">BX</span>
-        </div>
+          <div className="lp-hero">
+            <h1 className="lp-tagline">Every receipt,<br />filed by itself.</h1>
+            <p className="lp-sub">
+              Snap a photo. BXT reads it, saves it to your Google Drive, and shares it with your
+              accountant automatically.
+            </p>
+          </div>
 
-        {step === "main" && (
-          <>
-            <h1 className="lp-tagline">Snap a receipt. AI reads it. Saved to Drive.</h1>
+          {/* A failed redirect sign-in lands back on this main step — the
+              error must be visible here or it silently disappears. */}
+          {error && <div className="lp-error">{error}</div>}
 
-            <button className="lp-btn lp-btn-google" onClick={signInGoogle} disabled={!!loading}>
+          <div className="lp-buttons">
+            <button className="btn btn-secondary" onClick={signInGoogle} disabled={!!loading}>
               {loading === "google" ? "Signing in…" : <><GoogleIcon /> Continue with Google</>}
             </button>
 
-            <button className="lp-btn lp-btn-apple" onClick={signInApple} disabled={!!loading}>
+            <button className="btn btn-primary" onClick={signInApple} disabled={!!loading}>
               {loading === "apple" ? "Signing in…" : <><AppleIcon /> Continue with Apple</>}
             </button>
 
-            <div className="lp-divider"><span>or</span></div>
-
-            <button className="lp-btn lp-btn-phone" onClick={() => { clearError(); setStep("phone"); }} disabled={!!loading}>
-              <PhoneIcon /> Continue with Phone
+            <button className="btn btn-secondary" onClick={() => { clearError(); setStep("phone"); }} disabled={!!loading}>
+              Continue with Phone
             </button>
+          </div>
 
-            <p className="lp-terms">
-              By continuing you agree to BX's <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a>.
-            </p>
+          <p className="lp-terms">
+            By continuing you agree to BXT's <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a>
+          </p>
+        </>
+      )}
 
-            {/* A failed redirect sign-in lands back on this main step — the
-                error must be visible here or it silently disappears. */}
-            {error && <p className="lp-error">{error}</p>}
-          </>
-        )}
+      {step === "phone" && (
+        <>
+          <button className="lp-back" onClick={() => { clearError(); setStep("main"); }} aria-label="Back">
+            <BackChevron />
+          </button>
+          <h1 className="lp-heading">What's your number?</h1>
+          <p className="lp-sub-tight">We'll text you a 6-digit code.</p>
+          <input
+            className="lp-input"
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="(555) 123-4567"
+            autoFocus
+          />
+          {error && <div className="lp-error">{error}</div>}
+          <div className="lp-spacer" />
+          <button
+            className="btn btn-primary"
+            onClick={sendOTP}
+            disabled={phone.length < 7 || loading === "phone"}
+          >
+            {loading === "phone" ? "Sending…" : "Send code"}
+          </button>
+          <div id="recaptcha-container" />
+        </>
+      )}
 
-        {step === "phone" && (
-          <>
-            <button className="lp-back" onClick={() => { clearError(); setStep("main"); }}>← Back</button>
-            <h1 className="lp-heading">Your phone number</h1>
-            <p className="lp-sub">We'll send a one-time code to verify it's you.</p>
-            <label className="lp-label">Phone number</label>
-            <input
-              className="lp-input"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+1 416 555 0100"
-              autoFocus
-            />
-            <button
-              className="lp-btn lp-btn-primary"
-              onClick={sendOTP}
-              disabled={phone.length < 7 || loading === "phone"}
-            >
-              {loading === "phone" ? "Sending…" : "Send Code"}
-            </button>
-            {error && <p className="lp-error">{error}</p>}
-            <div id="recaptcha-container" />
-          </>
-        )}
-
-        {step === "otp" && (
-          <>
-            <button className="lp-back" onClick={() => { clearError(); setStep("phone"); }}>← Back</button>
-            <h1 className="lp-heading">Enter the code</h1>
-            <p className="lp-sub">6-digit code sent to <strong>{phone}</strong></p>
-            <input
-              className="lp-input lp-otp"
-              type="number"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.slice(0, 6))}
-              placeholder="· · · · · ·"
-              autoFocus
-            />
-            <button
-              className="lp-btn lp-btn-primary"
-              onClick={verifyOTP}
-              disabled={otp.length < 6 || loading === "verify"}
-            >
-              {loading === "verify" ? "Verifying…" : "Verify & Sign In"}
-            </button>
-            <button className="lp-resend" onClick={() => { clearError(); setStep("phone"); }}>
-              Didn't get a code? Resend
-            </button>
-            {error && <p className="lp-error">{error}</p>}
-          </>
-        )}
-      </div>
+      {step === "otp" && (
+        <>
+          <button className="lp-back" onClick={() => { clearError(); setStep("phone"); }} aria-label="Back">
+            <BackChevron />
+          </button>
+          <h1 className="lp-heading">Enter the code</h1>
+          <p className="lp-sub-tight">Sent to {phone}</p>
+          <input
+            className="lp-input lp-otp"
+            type="number"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value.slice(0, 6))}
+            placeholder="000000"
+            autoFocus
+          />
+          {error && <div className="lp-error">{error}</div>}
+          <div className="lp-spacer" />
+          <button
+            className="btn btn-primary"
+            onClick={verifyOTP}
+            disabled={otp.length < 6 || loading === "verify"}
+          >
+            {loading === "verify" ? "Verifying…" : "Verify"}
+          </button>
+          <button className="quiet-link lp-resend" onClick={() => { clearError(); setStep("phone"); }}>
+            Didn't get a code? Resend
+          </button>
+        </>
+      )}
     </div>
+  );
+}
+
+function BackChevron() {
+  return (
+    <svg width="10" height="17" viewBox="0 0 10 17">
+      <path d="M9 1L1 8.5 9 16" stroke="var(--text)" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
@@ -214,15 +227,6 @@ function AppleIcon() {
   return (
     <svg width="16" height="19" viewBox="0 0 17 20" fill="currentColor">
       <path d="M13.769 10.561c-.02-2.193 1.794-3.254 1.876-3.307-1.023-1.496-2.614-1.7-3.178-1.722-1.347-.137-2.638.797-3.322.797-.685 0-1.73-.779-2.847-.757-1.455.021-2.804.847-3.553 2.147C1.17 10.24 2.2 14.394 3.77 16.64c.782 1.103 1.703 2.337 2.912 2.292 1.175-.047 1.617-.749 3.037-.749 1.42 0 1.822.749 3.063.725 1.262-.02 2.058-1.117 2.832-2.225.896-1.272 1.264-2.506 1.283-2.571-.028-.011-2.456-.939-2.477-3.551h-.651zM11.53 3.77C12.16 3.004 12.59 1.952 12.47.88c-.904.038-2 .603-2.648 1.368-.583.673-1.093 1.75-.956 2.782.996.078 2.02-.497 2.663-1.26z"/>
-    </svg>
-  );
-}
-
-function PhoneIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="5" y="2" width="14" height="20" rx="2"/>
-      <circle cx="12" cy="17" r="1" fill="currentColor"/>
     </svg>
   );
 }
