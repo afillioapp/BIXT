@@ -114,6 +114,11 @@ export default function Camera({ user }) {
 
   async function handleConfirm() {
     if (!form || !compressedBase64 || !rootFolderId) return;
+    const parsedDate = form.date ? new Date(`${form.date}T00:00:00`) : null;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(form.date || "") || !parsedDate || isNaN(parsedDate.getTime())) {
+      setStatus({ type: "error", text: "Please enter the date as YYYY-MM-DD (e.g. 2026-07-04)" });
+      return;
+    }
     setSaving(true);
     setStatus({ type: "info", text: "Saving to Google Drive..." });
     const doSave = (token) =>
@@ -243,6 +248,7 @@ export default function Camera({ user }) {
 
             <label>Date</label>
             <input
+              type="date"
               value={form.date}
               onChange={(e) => updateField("date", e.target.value)}
               placeholder="YYYY-MM-DD"
