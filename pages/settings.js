@@ -4,6 +4,7 @@ import { auth } from "../lib/firebase";
 import { useDrive } from "../lib/useDrive";
 import { listSharedEmails, removeSharedEmail, shareWithEmail, saveProfile } from "../lib/google";
 import DriveFallback from "../components/DriveFallback";
+import { biometricAvailable, isLockEnabled, enableLock, disableLock } from "../lib/biometric";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -15,9 +16,51 @@ export default function Settings({ user }) {
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState(null);
 
+  const [bioSupported, setBioSupported] = useState(false);
+  const [bioEnabled, setBioEnabled] = useState(false);
+  const [bioSaving, setBioSaving] = useState(false);
+  const [bioStatus, setBioStatus] = useState(null);
+
   useEffect(() => {
     if (profile) setAccountantEmail(profile.accountantEmail || "");
   }, [profile]);
+
+  // Only show the lock toggle on devices that actually have a platform
+  // authenticator (Face ID / fingerprint / Windows Hello) available.
+  useEffect(() => {
+    let cancelled = false;
+    biometricAvailable().then((supported) => {
+      if (!cancelled) setBioSupported(supported);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (user?.uid) setBioEnabled(isLockEnabled(user.uid));
+  }, [user]);
+
+  async function handleToggleLock() {
+    if (!user?.uid || bioSaving) return;
+    setBioStatus(null);
+    if (bioEnabled) {
+      disableLock(user.uid);
+      setBioEnabled(false);
+      setBioStatus({ type: "success", text: "Lock turned off" });
+      return;
+    }
+    setBioSaving(true);
+    try {
+      await enableLock(user);
+      setBioEnabled(true);
+      setBioStatus({ type: "success", text: "Lock turned on" });
+    } catch {
+      setBioStatus({ type: "error", text: "Couldn't turn on Face ID / fingerprint on this device." });
+    } finally {
+      setBioSaving(false);
+    }
+  }
 
   // First tap just validates and shows a plain-language confirmation before
   // any sharing changes happen; the actual work runs from handleConfirmShare.
@@ -165,6 +208,19 @@ export default function Settings({ user }) {
 
         {status && <div className={`status status-${status.type}`}>{status.text}</div>}
       </div>
+
+      {bioSupported && (
+        <div className="card">
+          <label>Security</label>
+          <div className="settings-value settings-value-editable" onClick={handleToggleLock}>
+            Require Face ID / fingerprint to open BX
+            <span className="settings-edit-hint">
+              {bioSaving ? "Working…" : bioEnabled ? "On — tap to turn off" : "Off — tap to turn on"}
+            </span>
+          </div>
+          {bioStatus && <div className={`status status-${bioStatus.type}`}>{bioStatus.text}</div>}
+        </div>
+      )}
 
       <div className="card">
         <button
