@@ -62,15 +62,22 @@ function overRateLimit(uid) {
 // wildly larger than that is not a legitimate request from our app.
 const MAX_IMAGE_BASE64_CHARS = 7 * 1024 * 1024; // ~5MB of image data
 
+// The official v1 category list (owner-approved 2026-07-08). These names are
+// written into users' expense sheets — treat them as a stable schema: add new
+// ones if needed, but don't rename existing ones (old rows keep old strings;
+// lib/insights.js carries legacy aliases for pre-v1 names).
 const CATEGORIES = [
-  "Meals & Entertainment",
+  "Dining & Meals",
+  "Coffee & Drinks",
   "Travel",
-  "Office Supplies",
-  "Software & Subscriptions",
-  "Marketing & Advertising",
+  "Ground Transport",
+  "Fuel",
+  "Accommodation",
+  "Office & Supplies",
+  "Software & Tech",
+  "Marketing",
   "Professional Services",
-  "Equipment",
-  "Fuel & Vehicle",
+  "Meetings & Events",
   "Other",
 ];
 
