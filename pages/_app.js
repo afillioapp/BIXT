@@ -4,6 +4,7 @@ import Head from "next/head";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import BottomNav from "../components/BottomNav";
+import SplashLoader from "../components/SplashLoader";
 import "../styles/globals.css";
 
 const PUBLIC_ROUTES = ["/login"];
@@ -36,8 +37,8 @@ export default function App({ Component, pageProps }) {
     return () => clearTimeout(timer);
   }, [user, router.pathname]);
 
-  // Show nothing while checking auth to avoid flash
-  if (user === undefined) return null;
+  // Show the BX splash while checking auth, instead of a blank screen
+  if (user === undefined) return <SplashLoader />;
 
   const showNav = !!user && !NO_NAV_ROUTES.includes(router.pathname);
 
