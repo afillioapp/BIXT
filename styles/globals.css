@@ -726,6 +726,18 @@ input:focus, select:focus {
   line-height: 1.2;
 }
 
+/* Large centered tagline on the main sign-in screen, replacing the old
+   two-step "Welcome" splash. */
+.lp-tagline {
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: -0.3px;
+  line-height: 1.35;
+  margin: 12px 0 32px;
+  color: var(--text);
+}
+
 .lp-sub {
   font-size: 14px;
   color: var(--muted);
