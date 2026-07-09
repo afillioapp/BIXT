@@ -4,50 +4,94 @@ _Last updated: 2026-07-09_
 
 ## Status
 
-Sprint 1 (18-finding audit remediation, items 1-6 + several live-test fixes)
-is **complete, merged on `main`, deployed, and verified live** by the product
-owner on 2026-07-07 (sign-in, Drive connect, receipt save to Sheets all
-confirmed working).
+Sprint 1 and Sprint 2 are merged on `main`, deployed, and verified live.
 
-Sprint 2 (audit items #7, #9, #10, #8, #11) is **implemented on branch
-`sprint-2`, pushed to origin, awaiting orchestrator review + live phone
-test**. One commit per fix:
+The **UI redesign** (dashboard home + full-app restyle) is **implemented on
+branch `ui-redesign`, pushed to origin, all 8 plan steps committed
+individually, awaiting orchestrator review + owner live phone test**.
+Plan: `/Users/alireza/.claude/plans/i-have-added-a-declarative-avalanche.md`.
 
-- **#7** date validation — `type="date"` input, YYYY-MM-DD check in
-  `handleConfirm`, Invalid-Date backstop in `saveExpenseToDrive`
-  (pages/index.js, lib/google.js)
-- **#9** formula-injection guard + amount normalization —
-  `sanitizeSheetText` / `cleanAmount` applied to place/total/hst
-  (lib/google.js)
-- **#10** accountant email validation + inline confirm-before-share step
-  on both onboarding and settings (pages/setup.js, pages/settings.js)
-- **#8** rename-proof root-folder lookup via hidden `appProperties`
-  marker `bxRoot=true`, with self-healing legacy-name fallback that
-  stamps the marker onto pre-existing folders (lib/google.js)
-- **#11** oldest-first (`orderBy=createdTime`) lookups + race-created
-  duplicate collapse on the folder/sheet create paths (lib/google.js)
+Commits (oldest first):
 
-Deviations from spec (minor, documented for review):
+1. `ce68021` — Category column (F) plumbing: `EXPENSE_SHEET_HEADER` extends
+   to `Date|Place|Total|HST|Receipt Link|Category`; `ensureHeaderRow` gets
+   an in-place "extend" path for old 5-column sheets; `listExpenseRows`
+   reads `A2:F` (`category: r[5] || "Other"`); `saveExpenseToDrive` accepts
+   and appends `category`; capture review form gets a category `<select>`
+   defaulting to `category_suggestion`.
+2. `3499d7e` — Camera flow moved verbatim from `pages/index.js` to new
+   `pages/capture.js`. `BottomNav` becomes 4 slots (Home, History, raised
+   camera circle -> `/capture` with no label, Settings). `pages/index.js`
+   left as a temporary placeholder Home.
+3. `345d241` — Real dashboard shell: new `lib/insights.js`
+   (`weeklyTotals`, `categoryTotals`, `latestReceipts`, `categoryIcon`);
+   `pages/index.js` gets the greeting header (time-based + first name +
+   avatar initials), reuses history.js's two-month row fetch, and lists
+   the 4 latest receipts with a friendly empty state. DriveFallback
+   gating + no-profile setup-redirect guard preserved.
+4. `8b5968b` — `components/InsightCards.js`: 2 swipeable cards
+   (CSS scroll-snap + dot indicators) — weekly SVG bar chart (today
+   highlighted, gridlines, red/green % vs last week) and by-category SVG
+   donut (green-family/gray palette, legend with name + %). `dataviz`
+   skill's validator was run against the category palette (see deviation
+   note below).
+5. `e04a9d7` — Login restyle: dropped the "Sign In/Sign Up" splash step
+   (was copy-only), single screen with centered tagline, provider buttons
+   anchored bottom. Zero auth-logic changes.
+6. `a34c395` — Onboarding restyle: "Step 1 of 2" / "Step 2 of 2" indicator
+   + big titles over the existing Sprint-2 form/confirm views. No logic
+   changes (email regex gate, confirm-before-share, folder-reuse safety
+   net, success overlay all intact).
+7. `b6109ab` — History restyle: rows now use the same
+   icon-square/place+date/amount treatment as the dashboard, grouped
+   under per-day date headers. Two-month read + DriveFallback unchanged.
+   Removed the now-dead `.history-row` family of CSS classes.
 
-- #11: in `findOrCreateSheet`, the duplicate check runs **before** the
-  header row is written to the new sheet; when an older sheet wins the
-  race, `ensureHeaderRow` is run on it before returning, so the adopted
-  sheet is guaranteed a header.
-- #8: the legacy-fallback PATCH that stamps the marker is wrapped in a
-  try/catch — a failed migration must not break the sign-in path.
-- Builds verified via `npm run build` ("Compiled successfully"); the
-  app cannot run locally (env keys live in Vercel only), so live phone
-  testing remains for the product owner.
+All 7 commits built with `npm run build` -> "✓ Compiled successfully"
+(the subsequent Firebase `auth/invalid-api-key` / "Failed to collect page
+data" error is expected locally — no `.env.local` exists, keys live only
+in Vercel).
+
+## Deviations from spec (documented for review)
+
+- `pages/capture.js`'s default export was renamed `Capture` (was `Camera`)
+  for clarity given the new filename — purely cosmetic, no behavior change.
+  Everything else in the camera flow moved verbatim.
+- The category donut's green-family/gray palette fails the dataviz skill's
+  general-categorical `validate_palette.js` checks (lightness band, chroma
+  floor) — expected, since it's an intentionally monochrome palette per
+  the owner's explicit "green-family/gray" spec, not a rainbow categorical
+  set. Mitigation applied per the skill's own fallback rule: every segment
+  carries a direct legend label (name + %) and an SVG tooltip, so identity
+  never depends on color alone.
+- Card 3 for the insight-cards swiper was intentionally not invented —
+  plan says it's TBD by the owner.
+
+## What's still TBD (out of scope for this branch)
+
+- Insight card 3 (owner to specify).
+- A receipt-detail view (tapping a receipt row currently just opens the
+  Drive file link, same as before the redesign).
 
 ## Next
 
-- Orchestrator review of the five `sprint-2` commits.
-- Live phone test (capture -> save, onboarding confirm step, settings
-  accountant change, rename-the-root-folder survival).
-- Merge `sprint-2` to `main` only after the live test passes.
+1. Orchestrator (Fable) review of the full `ui-redesign` diff against
+   `main` — correctness focus: column-F backward compatibility, week/
+   percent math in `lib/insights.js`, empty states, no auth-logic drift.
+2. Owner live-checks on the Vercel preview for `ui-redesign`: dashboard
+   renders with real data; swipe between the 2 insight cards; camera
+   circle -> `/capture` -> save a receipt with a category; sheet gains
+   the Category header + value; old rows still render (as "Other");
+   History groups correctly by date; new login screen; onboarding
+   reviewed in code only (owner already onboarded, can't retest live).
+3. Merge to `main` only after both pass (`main` auto-deploys instantly).
 
 ## Warnings
 
 - Pushes to `main` deploy **instantly** to production (bixt.vercel.app).
+  All redesign work is on `ui-redesign` — `main` was never touched.
 - `chrome-extension/` is parked and calls `/api/extract` without auth
-  (will 401) — known, Phase 2 concern. Do not touch it.
+  (will 401) — known, Phase 2 concern. Not touched by this branch.
+- `lib/useDrive.js`, `pages/api/extract.js`, `lib/image.js`, `pages/_app.js`,
+  `pages/settings.js`, `chrome-extension/`, and `UI UX/` were not modified
+  by this branch (verified via `git diff --stat main...ui-redesign`).
