@@ -36,8 +36,9 @@ async function signInPreferringPopup(provider) {
 
 export default function Login() {
   const router = useRouter();
-  const [step, setStep] = useState("splash"); // 'splash' | 'options' | 'phone' | 'otp'
-  const [mode, setMode] = useState("signin"); // 'signin' | 'signup' — copy only, both use the same providers
+  // Splash's "Sign In / Sign Up" split was copy-only — both revealed the
+  // same three providers, so it's dropped in favor of showing them directly.
+  const [step, setStep] = useState("main"); // 'main' | 'phone' | 'otp'
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
   const [confirmResult, setConfirmResult] = useState(null);
@@ -58,12 +59,6 @@ export default function Login() {
   }, []);
 
   function clearError() { setError(""); }
-
-  function chooseMode(m) {
-    clearError();
-    setMode(m);
-    setStep("options");
-  }
 
   async function signInGoogle() {
     clearError(); setLoading("google");
@@ -119,37 +114,9 @@ export default function Login() {
           <span className="lp-app-name">BX</span>
         </div>
 
-        {step === "splash" && (
+        {step === "main" && (
           <>
-            <h1 className="lp-heading">Welcome</h1>
-            <p className="lp-sub">Snap a receipt. AI reads it. Saved to Drive.</p>
-
-            <button className="lp-btn lp-btn-primary" onClick={() => chooseMode("signin")}>
-              Sign In
-            </button>
-            <button className="lp-btn lp-btn-phone" onClick={() => chooseMode("signup")}>
-              Sign Up
-            </button>
-
-            <p className="lp-terms">
-              By continuing you agree to BX's <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a>.
-            </p>
-
-            {/* A failed redirect sign-in lands back on this splash step — the
-                error must be visible here or it silently disappears. */}
-            {error && <p className="lp-error">{error}</p>}
-          </>
-        )}
-
-        {step === "options" && (
-          <>
-            <button className="lp-back" onClick={() => { clearError(); setStep("splash"); }}>← Back</button>
-            <h1 className="lp-heading">{mode === "signup" ? "Create your account" : "Welcome back"}</h1>
-            <p className="lp-sub">
-              {mode === "signup"
-                ? "Sign up to start tracking expenses."
-                : "Sign in to continue."}
-            </p>
+            <h1 className="lp-tagline">Snap a receipt. AI reads it. Saved to Drive.</h1>
 
             <button className="lp-btn lp-btn-google" onClick={signInGoogle} disabled={!!loading}>
               {loading === "google" ? "Signing in…" : <><GoogleIcon /> Continue with Google</>}
@@ -165,13 +132,19 @@ export default function Login() {
               <PhoneIcon /> Continue with Phone
             </button>
 
+            <p className="lp-terms">
+              By continuing you agree to BX's <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a>.
+            </p>
+
+            {/* A failed redirect sign-in lands back on this main step — the
+                error must be visible here or it silently disappears. */}
             {error && <p className="lp-error">{error}</p>}
           </>
         )}
 
         {step === "phone" && (
           <>
-            <button className="lp-back" onClick={() => { clearError(); setStep("options"); }}>← Back</button>
+            <button className="lp-back" onClick={() => { clearError(); setStep("main"); }}>← Back</button>
             <h1 className="lp-heading">Your phone number</h1>
             <p className="lp-sub">We'll send a one-time code to verify it's you.</p>
             <label className="lp-label">Phone number</label>
