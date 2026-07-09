@@ -1,13 +1,24 @@
+/* ── BXT design system ──
+   Monochrome palette approved 2026-07 (design_handoff_bxt_app). Values are
+   mapped onto the pre-existing CSS var names so every page restyles from
+   this one block; --surface2, --ink-soft and --on-dark are new slots the
+   old (dark-theme) palette had no equivalent for. */
 :root {
-  --bg: #080b09;
-  --surface: #0f1410;
-  --card: #1a2420;
-  --accent: #22c55e;
-  --accent-dark: #16a34a;
-  --text: #ffffff;
-  --muted: #6b7d72;
-  --border: #2a3830;
-  --error: #ff4d4d;
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface2: #f2f2f2;
+  --card: #ffffff;
+  --accent: #000000;
+  --accent-dark: #000000;
+  --on-dark: #ffffff;
+  --text: #111111;
+  --ink-soft: #5c5c5c;
+  --muted: #9a9a9a;
+  --border: #e2e2e2;
+  --error: #3a3a3a;
+
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: var(--font-source-serif), Georgia, "Iowan Old Style", serif;
 }
 
 * {
@@ -16,9 +27,17 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
+}
+
+/* next/font's --font-inter / --font-source-serif variables are attached via
+   a className on this wrapper (see pages/_app.js), not on <body> — the
+   sans-serif default has to be declared here (or below) so var(--font-sans)
+   actually has something to resolve against. */
+.app-shell {
+  font-family: var(--font-sans);
+  min-height: 100vh;
 }
 
 .container {
@@ -29,8 +48,9 @@ body {
 }
 
 h1 {
-  font-size: 20px;
-  font-weight: 700;
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 600;
   margin-bottom: 4px;
 }
 
@@ -43,8 +63,8 @@ h1 {
 .card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 20px;
+  border-radius: 20px;
+  padding: 18px;
   margin-bottom: 16px;
 }
 
@@ -54,8 +74,9 @@ h1 {
   justify-content: center;
   gap: 8px;
   width: 100%;
-  padding: 14px 16px;
-  border-radius: 10px;
+  height: 52px;
+  padding: 0 20px;
+  border-radius: 999px;
   border: none;
   font-size: 15px;
   font-weight: 600;
@@ -70,18 +91,18 @@ h1 {
 
 .btn-primary {
   background: var(--accent);
-  color: var(--bg);
+  color: var(--on-dark);
 }
 
 .btn-secondary {
-  background: var(--surface);
+  background: var(--card);
   color: var(--text);
   border: 1px solid var(--border);
 }
 
 .btn-success {
   background: var(--accent);
-  color: var(--bg);
+  color: var(--on-dark);
 }
 
 .btn:active {
@@ -101,17 +122,19 @@ label {
 
 input, select {
   width: 100%;
-  padding: 12px;
-  border-radius: 8px;
+  height: 50px;
+  padding: 0 14px;
+  border-radius: 13px;
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--card);
   color: var(--text);
   font-size: 15px;
+  font-family: var(--font-sans);
 }
 
 input:focus, select:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--text);
 }
 
 .receipt-preview {
