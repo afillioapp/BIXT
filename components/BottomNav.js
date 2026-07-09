@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
 
-// Camera sits in the middle as the raised primary action; the two secondary
-// tabs flank it.
+// Camera sits in the middle as the raised primary action, per the menu-bar
+// mockup — no label on it. Home, History and Settings flank it.
 const TABS = [
+  { href: "/", icon: "🏠", label: "Home" },
   { href: "/history", icon: "🗂", label: "History" },
-  { href: "/", icon: "📷", label: "Home", primary: true },
+  { href: "/capture", icon: "📷", primary: true },
   { href: "/settings", icon: "⚙️", label: "Settings" },
 ];
 
@@ -22,12 +23,11 @@ export default function BottomNav() {
               key={tab.href}
               href={tab.href}
               className={`bottom-nav-tab bottom-nav-primary ${active ? "active" : ""}`}
-              aria-label={tab.label}
+              aria-label="Capture receipt"
             >
               <span className="bottom-nav-primary-circle">
                 <span className="bottom-nav-primary-icon">{tab.icon}</span>
               </span>
-              <span className="bottom-nav-label">{tab.label}</span>
             </Link>
           );
         }
