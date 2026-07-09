@@ -32,7 +32,8 @@ export default function Camera({ user }) {
   const [imagePreview, setImagePreview] = useState(null);
   const [compressedBase64, setCompressedBase64] = useState(null);
   const [compressedMime, setCompressedMime] = useState(null);
-  const [form, setForm] = useState(null); // { place, total, hst, date }
+  const [form, setForm] = useState(null); // { place, total, hst, date, category }
+  const [categoryOptions, setCategoryOptions] = useState([]);
   const [status, setStatus] = useState(null);
   const [compressing, setCompressing] = useState(false);
   const [extracting, setExtracting] = useState(false);
@@ -85,11 +86,13 @@ export default function Camera({ user }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Extraction failed");
+      setCategoryOptions(data.categories || []);
       setForm({
         place: data.result.place || "",
         total: data.result.total || "",
         hst: data.result.hst || "",
         date: data.result.date || "",
+        category: data.result.category_suggestion || "Other",
       });
       setStatus({ type: "success", text: "Receipt read. Review and confirm." });
     } catch (err) {
@@ -108,6 +111,7 @@ export default function Camera({ user }) {
     setCompressedBase64(null);
     setCompressedMime(null);
     setForm(null);
+    setCategoryOptions([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (importInputRef.current) importInputRef.current.value = "";
   }
@@ -131,6 +135,7 @@ export default function Camera({ user }) {
         total: form.total,
         hst: form.hst,
         date: form.date,
+        category: form.category,
       });
     try {
       try {
@@ -254,6 +259,16 @@ export default function Camera({ user }) {
               placeholder="YYYY-MM-DD"
               onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
             />
+
+            <label>Category</label>
+            <select
+              value={form.category}
+              onChange={(e) => updateField("category", e.target.value)}
+            >
+              {(categoryOptions.length ? categoryOptions : [form.category]).map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
 
             <div className="confirm-row">
               <button
