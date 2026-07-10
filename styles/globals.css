@@ -28,6 +28,25 @@
   --font-serif: var(--font-dm-sans), -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
 }
 
+/* Dark mode override (owner: simple toggle, default light — see
+   lib/theme.js / pages/settings.js "Appearance"). Stamped on <html> as
+   data-theme="dark" so every existing var()-based rule restyles for free.
+   --highlight stays the same blue in both themes. */
+[data-theme="dark"] {
+  --bg: #141414;
+  --surface: #1a1a1a;
+  --surface2: #242424;
+  --card: #1d1d1d;
+  --accent: #f5f5f5;
+  --accent-dark: #ffffff;
+  --on-dark: #161616;
+  --text: #f2f2f2;
+  --ink-soft: #b8b8b8;
+  --muted: #8a8a8a;
+  --border: #2e2e2e;
+  --error: #ef6b6b;
+}
+
 * {
   box-sizing: border-box;
 }

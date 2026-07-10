@@ -47,7 +47,7 @@ function WeeklyBarChart({ days }) {
         const h = niceMax > 0 ? (day.amount / niceMax) * CHART_HEIGHT : 0;
         const y = CHART_BOTTOM - h;
         // Today gets the blue highlight per the color-palette reference.
-        const fill = day.isToday ? "var(--highlight)" : "#DADADA";
+        const fill = day.isToday ? "var(--highlight)" : "var(--border)";
         return (
           <g key={day.label + i}>
             {day.isToday && day.amount > 0 && (

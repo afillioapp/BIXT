@@ -5,6 +5,7 @@ import { useDrive } from "../lib/useDrive";
 import { listSharedEmails, removeSharedEmail, shareWithEmail, saveProfile } from "../lib/google";
 import DriveFallback from "../components/DriveFallback";
 import { biometricAvailable, isLockEnabled, enableLock, disableLock } from "../lib/biometric";
+import { getTheme, setTheme } from "../lib/theme";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -20,6 +21,17 @@ export default function Settings({ user }) {
   const [bioEnabled, setBioEnabled] = useState(false);
   const [bioSaving, setBioSaving] = useState(false);
   const [bioStatus, setBioStatus] = useState(null);
+
+  const [theme, setThemeState] = useState("light");
+
+  useEffect(() => {
+    setThemeState(getTheme());
+  }, []);
+
+  function handleSetTheme(next) {
+    setTheme(next);
+    setThemeState(next);
+  }
 
   useEffect(() => {
     if (profile) setAccountantEmail(profile.accountantEmail || "");
@@ -228,6 +240,25 @@ export default function Settings({ user }) {
             <div className={`status status-${status.type}`} style={{ marginBottom: 0 }}>{status.text}</div>
           </div>
         )}
+      </div>
+
+      <div className="settings-card settings-card-padded">
+        <div className="settings-section-label">Appearance</div>
+        <div className="settings-toggle-row">
+          <div>
+            <div className="settings-toggle-title">Dark mode</div>
+            <div className="settings-toggle-status">{theme === "dark" ? "On" : "Off"}</div>
+          </div>
+          <button
+            className={`pill-toggle ${theme === "dark" ? "on" : ""}`}
+            onClick={() => handleSetTheme(theme === "dark" ? "light" : "dark")}
+            role="switch"
+            aria-checked={theme === "dark"}
+            aria-label="Dark mode"
+          >
+            <span className="pill-toggle-knob" />
+          </button>
+        </div>
       </div>
 
       {bioSupported && (
