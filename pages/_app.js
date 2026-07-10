@@ -66,7 +66,7 @@ export default function App({ Component, pageProps }) {
   return (
     <>
       <Head>
-        <title>BXT</title>
+        <title>BX</title>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </Head>
       <div className={`app-shell ${dmSans.variable}`}>

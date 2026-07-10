@@ -9,6 +9,7 @@ import {
   RecaptchaVerifier,
 } from "firebase/auth";
 import { auth } from "../lib/firebase";
+import Logo from "../components/Logo";
 
 // Try the popup flow first everywhere — it's the only flow that works
 // reliably now that Safari/Chrome block third-party storage — and fall back
@@ -105,8 +106,10 @@ export default function Login() {
             <div className="lp-shape" />
           </div>
 
-          {/* Brand — text wordmark only, no logo image (design handoff). */}
-          <div className="lp-wordmark">BXT</div>
+          {/* Brand mark, top-left. */}
+          <div className="lp-wordmark">
+            <Logo size={22} />
+          </div>
 
           <div className="lp-hero">
             <h1 className="lp-tagline">Every receipt,<br />filed by itself.</h1>
@@ -127,7 +130,7 @@ export default function Login() {
           </div>
 
           <p className="lp-terms">
-            By using BXT you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>
+            By using BX you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>
           </p>
         </>
       )}

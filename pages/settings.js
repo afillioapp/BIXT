@@ -266,7 +266,7 @@ export default function Settings({ user }) {
           <div className="settings-section-label">Security</div>
           <div className="settings-toggle-row">
             <div>
-              <div className="settings-toggle-title">Require Face ID to open BXT</div>
+              <div className="settings-toggle-title">Require Face ID to open BX</div>
               <div className="settings-toggle-status">
                 {bioSaving ? "Working…" : bioEnabled ? "On" : "Off"}
               </div>
@@ -277,7 +277,7 @@ export default function Settings({ user }) {
               disabled={bioSaving}
               role="switch"
               aria-checked={bioEnabled}
-              aria-label="Require Face ID to open BXT"
+              aria-label="Require Face ID to open BX"
             >
               <span className="pill-toggle-knob" />
             </button>

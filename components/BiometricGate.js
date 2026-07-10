@@ -2,6 +2,7 @@ import { useState } from "react";
 import { signOut } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { isLockEnabled, verifyLock } from "../lib/biometric";
+import Logo from "./Logo";
 
 // Gates the whole app behind a local Face ID / fingerprint prompt when the
 // signed-in user has turned the lock on in Settings. This only runs client
@@ -47,14 +48,16 @@ export default function BiometricGate({ user, children }) {
 
   return (
     <div className="lock-screen">
-      <div className="lock-wordmark">BXT</div>
+      <div className="lock-wordmark">
+        <Logo size={24} />
+      </div>
       <div className="lock-glyph" aria-hidden="true">
         <svg width="24" height="24" viewBox="0 0 24 24">
           <rect x="4" y="10" width="16" height="11" rx="2" fill="none" stroke="var(--text)" strokeWidth="1.6" />
           <path d="M7 10V7a5 5 0 0 1 10 0v3" fill="none" stroke="var(--text)" strokeWidth="1.6" />
         </svg>
       </div>
-      <h1 className="lock-title">BXT is locked</h1>
+      <h1 className="lock-title">BX is locked</h1>
       {error && (
         <div className="status status-error lock-error">Couldn't verify — try again.</div>
       )}

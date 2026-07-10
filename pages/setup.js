@@ -97,7 +97,7 @@ export default function Setup({ user }) {
             BX - {companyName} / {now.getFullYear()} / {now.toLocaleString("en-US", { month: "long" })}
           </div>
           <button className="btn btn-primary onboard-success-btn" onClick={() => router.replace("/")}>
-            Go to BXT
+            Go to BX
           </button>
         </div>
       </div>
