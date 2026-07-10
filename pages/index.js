@@ -18,13 +18,15 @@ function greetingForHour(date = new Date()) {
   return "Good evening,";
 }
 
-// "Jane Doe" -> "JD"; a single name -> first two letters; nothing -> "?".
-function initialsFor(name, fallback) {
-  const source = (name || fallback || "").trim();
-  if (!source) return "?";
-  const parts = source.split(/\s+/).filter(Boolean);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+// Line-icon gear — the header's entry point to Settings now that it's no
+// longer a bottom-nav tab (see components/BottomNav.js).
+function GearIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 19 19">
+      <circle cx="9.5" cy="9.5" r="2.6" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M9.5 1.5v2.4M9.5 15.1v2.4M17.5 9.5h-2.4M4.4 9.5H2M15.1 3.9l-1.7 1.7M5.6 13.4l-1.7 1.7M15.1 15.1l-1.7-1.7M5.6 5.6L3.9 3.9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
 }
 
 export default function Home({ user }) {
@@ -86,6 +88,9 @@ export default function Home({ user }) {
           <div>
             <h1>BX</h1>
           </div>
+          <button className="header-gear" aria-label="Settings" onClick={() => router.push("/settings")}>
+            <GearIcon />
+          </button>
         </div>
         <DriveFallback
           needsConnect={needsConnect}
@@ -113,9 +118,9 @@ export default function Home({ user }) {
           <h1 className="dash-name">{firstName}</h1>
           <div className="dash-company">{profile.companyName}</div>
         </div>
-        <div className="dash-avatar" aria-hidden="true">
-          {initialsFor(user?.displayName, profile.companyName)}
-        </div>
+        <button className="header-gear" aria-label="Settings" onClick={() => router.push("/settings")}>
+          <GearIcon />
+        </button>
       </div>
 
       {rows && rows.length === 0 ? (
