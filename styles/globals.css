@@ -4,12 +4,16 @@
    this one block; --surface2, --ink-soft and --on-dark are new slots the
    old (dark-theme) palette had no equivalent for. */
 :root {
+  /* Palette per the "color palette" reference (UI UX folder, 2026-07-10):
+     charcoal instead of pure black for dark fills, one blue highlight for
+     interactive accents (toggles, active nav, today's bar). */
   --bg: #ffffff;
   --surface: #ffffff;
-  --surface2: #f2f2f2;
+  --surface2: #efefef;
   --card: #ffffff;
-  --accent: #000000;
-  --accent-dark: #000000;
+  --accent: #232323;
+  --accent-dark: #161616;
+  --highlight: #2196f3;
   --on-dark: #ffffff;
   --text: #111111;
   --ink-soft: #5c5c5c;
@@ -404,7 +408,7 @@ input:focus, select:focus {
 }
 
 .insight-dot.active {
-  background: var(--text);
+  background: var(--highlight);
 }
 
 .donut-wrap {
@@ -572,18 +576,22 @@ input:focus, select:focus {
    Floating dark pill (owner override on the handoff's raised-circle tab
    bar): fixed, centered, hovering above the bottom edge. Four equal items;
    the active one expands into a lighter inner chip with icon + label. */
+/* Dark rounded bar per the "color palette" reference: four evenly spaced
+   white icons; the active one sits in a white rounded-square chip with the
+   icon in the blue highlight. Icons only, no labels. */
 .bottom-nav {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
-  bottom: calc(18px + env(safe-area-inset-bottom));
+  bottom: calc(16px + env(safe-area-inset-bottom));
   display: flex;
   align-items: center;
-  gap: 4px;
-  width: auto;
-  background: #111111;
-  border-radius: 999px;
-  padding: 6px;
+  justify-content: space-around;
+  width: calc(100% - 32px);
+  max-width: 448px;
+  background: var(--accent);
+  border-radius: 24px;
+  padding: 8px;
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
   z-index: 40;
 }
@@ -592,25 +600,16 @@ input:focus, select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  height: 44px;
-  min-width: 44px;
-  padding: 0 12px;
-  border-radius: 999px;
+  height: 48px;
+  width: 48px;
+  border-radius: 16px;
   color: var(--on-dark);
   text-decoration: none;
 }
 
 .bottom-nav-item.active {
-  background: rgba(255, 255, 255, 0.16);
-  padding: 0 16px;
-}
-
-.bottom-nav-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--on-dark);
-  line-height: 1;
+  background: var(--card);
+  color: var(--highlight);
 }
 
 /* ── Capture ── */
@@ -967,7 +966,7 @@ input:focus, select:focus {
 }
 
 .pill-toggle.on {
-  background: var(--accent);
+  background: var(--highlight);
 }
 
 .pill-toggle:disabled {

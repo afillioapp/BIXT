@@ -46,11 +46,12 @@ function WeeklyBarChart({ days }) {
         const x = startX + i * step;
         const h = niceMax > 0 ? (day.amount / niceMax) * CHART_HEIGHT : 0;
         const y = CHART_BOTTOM - h;
-        const fill = day.isToday ? "var(--text)" : "#DADADA";
+        // Today gets the blue highlight per the color-palette reference.
+        const fill = day.isToday ? "var(--highlight)" : "#DADADA";
         return (
           <g key={day.label + i}>
             {day.isToday && day.amount > 0 && (
-              <text x={x + barWidth / 2} y={y - 8} fontSize="10" fontWeight="700" fill="var(--text)" textAnchor="middle">
+              <text x={x + barWidth / 2} y={y - 8} fontSize="10" fontWeight="700" fill="var(--highlight)" textAnchor="middle">
                 {formatCurrency(day.amount)}
               </text>
             )}

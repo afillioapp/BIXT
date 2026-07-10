@@ -67,7 +67,6 @@ export default function BottomNav() {
             aria-current={active ? "page" : undefined}
           >
             <Icon />
-            {active && <span className="bottom-nav-label">{tab.label}</span>}
           </Link>
         );
       })}
