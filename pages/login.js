@@ -5,7 +5,6 @@ import {
   signInWithRedirect,
   getRedirectResult,
   GoogleAuthProvider,
-  OAuthProvider,
   signInWithPhoneNumber,
   RecaptchaVerifier,
 } from "firebase/auth";
@@ -70,16 +69,6 @@ export default function Login() {
     } finally { setLoading(null); }
   }
 
-  async function signInApple() {
-    clearError(); setLoading("apple");
-    try {
-      const provider = new OAuthProvider("apple.com");
-      await signInPreferringPopup(provider);
-    } catch (err) {
-      if (err.code !== "auth/popup-closed-by-user") setError(err.message);
-    } finally { setLoading(null); }
-  }
-
   async function sendOTP() {
     clearError(); setLoading("phone");
     try {
@@ -124,12 +113,8 @@ export default function Login() {
           {error && <div className="lp-error">{error}</div>}
 
           <div className="lp-buttons">
-            <button className="btn btn-secondary" onClick={signInGoogle} disabled={!!loading}>
+            <button className="btn btn-primary lp-btn-google" onClick={signInGoogle} disabled={!!loading}>
               {loading === "google" ? "Signing in…" : <><GoogleIcon /> Continue with Google</>}
-            </button>
-
-            <button className="btn btn-primary" onClick={signInApple} disabled={!!loading}>
-              {loading === "apple" ? "Signing in…" : <><AppleIcon /> Continue with Apple</>}
             </button>
 
             <button className="btn btn-secondary" onClick={() => { clearError(); setStep("phone"); }} disabled={!!loading}>
@@ -223,10 +208,3 @@ function GoogleIcon() {
   );
 }
 
-function AppleIcon() {
-  return (
-    <svg width="16" height="19" viewBox="0 0 17 20" fill="currentColor">
-      <path d="M13.769 10.561c-.02-2.193 1.794-3.254 1.876-3.307-1.023-1.496-2.614-1.7-3.178-1.722-1.347-.137-2.638.797-3.322.797-.685 0-1.73-.779-2.847-.757-1.455.021-2.804.847-3.553 2.147C1.17 10.24 2.2 14.394 3.77 16.64c.782 1.103 1.703 2.337 2.912 2.292 1.175-.047 1.617-.749 3.037-.749 1.42 0 1.822.749 3.063.725 1.262-.02 2.058-1.117 2.832-2.225.896-1.272 1.264-2.506 1.283-2.571-.028-.011-2.456-.939-2.477-3.551h-.651zM11.53 3.77C12.16 3.004 12.59 1.952 12.47.88c-.904.038-2 .603-2.648 1.368-.583.673-1.093 1.75-.956 2.782.996.078 2.02-.497 2.663-1.26z"/>
-    </svg>
-  );
-}
