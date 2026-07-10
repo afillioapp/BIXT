@@ -3,3 +3,9 @@ node_modules
 .env.local
 .vercel
 .DS_Store
+
+# Design references & local assets (not part of the app)
+inter/
+design_handoff_bxt_app/
+UI UX/
+*.zip
