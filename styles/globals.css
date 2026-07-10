@@ -509,18 +509,18 @@ input:focus, select:focus {
   border-bottom: 1px solid var(--border);
 }
 
-/* Category icon: flat-color square + 2-letter initials (see
-   lib/insights.js categoryColor/categoryTextColor) — bg/color are set
-   inline per-row since they're data-driven. */
+/* Category icon: neutral surface square with the category's emoji (see
+   lib/insights.js categoryIcon) — same background for every category, no
+   per-category tint. */
 .receipt-icon {
   width: 40px;
   height: 40px;
   border-radius: 11px;
+  background: var(--surface2);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 18px;
   flex-shrink: 0;
 }
 

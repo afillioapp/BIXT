@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useDrive } from "../lib/useDrive";
 import { findMonthExpenseSheetId, listExpenseRows } from "../lib/google";
-import { categoryIcon, categoryColor, categoryTextColor } from "../lib/insights";
+import { categoryIcon } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
 
 function prevMonthDate(d) {
@@ -137,11 +137,7 @@ export default function History({ user }) {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    <span
-                      className="receipt-icon"
-                      aria-hidden="true"
-                      style={{ background: categoryColor(r.category), color: categoryTextColor(r.category) }}
-                    >
+                    <span className="receipt-icon" aria-hidden="true">
                       {categoryIcon(r.category)}
                     </span>
                     <div className="receipt-row-main">

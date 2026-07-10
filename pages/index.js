@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useDrive } from "../lib/useDrive";
 import { findMonthExpenseSheetId, listExpenseRows } from "../lib/google";
-import { latestReceipts, categoryIcon, categoryColor, categoryTextColor, weeklyTotals, categoryTotals, formatCurrency } from "../lib/insights";
+import { latestReceipts, categoryIcon, weeklyTotals, categoryTotals, formatCurrency } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
 import InsightCards from "../components/InsightCards";
 
@@ -178,11 +178,7 @@ export default function Home({ user }) {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <span
-                    className="receipt-icon"
-                    aria-hidden="true"
-                    style={{ background: categoryColor(r.category), color: categoryTextColor(r.category) }}
-                  >
+                  <span className="receipt-icon" aria-hidden="true">
                     {categoryIcon(r.category)}
                   </span>
                   <div className="receipt-row-main">
