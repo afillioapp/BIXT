@@ -100,7 +100,9 @@ export default function Home({ user }) {
   const firstName = (user?.displayName || "").trim().split(/\s+/)[0] || profile.companyName;
   const latest = rows ? latestReceipts(rows, 4) : [];
   const now = new Date();
-  const monthTag = now.toLocaleString("en-US", { month: "long", year: "numeric" });
+  // Bold title line inside the "By category" insight panel — just the month
+  // name, per the design handoff's monthLabel (e.g. "July").
+  const monthTag = now.toLocaleString("en-US", { month: "long" });
   const monthData = rows ? categoryTotals(rows, now) : null;
 
   return (
@@ -108,7 +110,7 @@ export default function Home({ user }) {
       <div className="app-header">
         <div>
           <div className="dash-greeting">{greetingForHour()}</div>
-          <h1>{firstName}</h1>
+          <h1 className="dash-name">{firstName}</h1>
           <div className="dash-company">{profile.companyName}</div>
         </div>
         <div className="dash-avatar" aria-hidden="true">
@@ -116,69 +118,78 @@ export default function Home({ user }) {
         </div>
       </div>
 
-      {monthData && (
-        <div className="dash-total">
-          <span className="dash-total-label">Total expenses · {now.toLocaleString("en-US", { month: "long" })}</span>
-          <span className="dash-total-amount">{formatCurrency(monthData.total, { decimals: 2 })}</span>
+      {rows && rows.length === 0 ? (
+        <div className="dash-empty">
+          <h1 className="dash-empty-title">No receipts yet</h1>
+          <p className="dash-empty-sub">Tap the camera button below to snap your first one.</p>
+          <svg width="22" height="40" viewBox="0 0 22 40" className="dash-empty-arrow" aria-hidden="true">
+            <path
+              d="M11 0v30M11 30l-7-7M11 30l7-7"
+              stroke="var(--muted)"
+              strokeWidth="1.6"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </div>
-      )}
+      ) : (
+        <>
+          {monthData && (
+            <div className="dash-total">
+              <span className="dash-total-label">Total expenses · {now.toLocaleString("en-US", { month: "long" })}</span>
+              <span className="dash-total-amount">{formatCurrency(monthData.total, { decimals: 2 })}</span>
+            </div>
+          )}
 
-      {error && <div className="status status-error">{error}</div>}
+          {error && <div className="status status-error">{error}</div>}
 
-      {rows !== null && (
-        <InsightCards
-          weekly={weeklyTotals(rows, now)}
-          categoryData={monthData}
-          monthTag={monthTag}
-        />
-      )}
+          {rows !== null && (
+            <InsightCards
+              weekly={weeklyTotals(rows, now)}
+              categoryData={monthData}
+              monthTag={monthTag}
+            />
+          )}
 
-      <div className="section-header">
-        <span className="section-title">Latest receipts</span>
-        <Link href="/history" className="link">
-          See all
-        </Link>
-      </div>
+          <div className="section-header">
+            <span className="section-title">Latest receipts</span>
+            <Link href="/history" className="link">
+              See all
+            </Link>
+          </div>
 
-      {rows === null && !error && (
-        <div className="card">
-          <div style={{ fontSize: 14 }}>Loading receipts…</div>
-        </div>
-      )}
+          {rows === null && !error && (
+            <div className="status status-info">Loading receipts…</div>
+          )}
 
-      {rows && rows.length === 0 && (
-        <div className="card empty-state">
-          <div className="empty-state-icon">📸</div>
-          <div className="empty-state-title">Snap your first receipt</div>
-          <div className="empty-state-sub">Tap the camera button below to get started.</div>
-        </div>
-      )}
-
-      {rows && rows.length > 0 && (
-        <div className="card receipt-list">
-          {latest.map((r, i) => (
-            <a
-              key={i}
-              className="receipt-row"
-              href={r.receiptLink || undefined}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <span
-                className="receipt-icon"
-                aria-hidden="true"
-                style={{ background: categoryColor(r.category), color: categoryTextColor(r.category) }}
-              >
-                {categoryIcon(r.category)}
-              </span>
-              <div className="receipt-row-main">
-                <span className="receipt-place">{r.place || "Untitled"}</span>
-                <span className="receipt-date">{r.date}</span>
-              </div>
-              <span className="receipt-amount">{r.total}</span>
-            </a>
-          ))}
-        </div>
+          {rows && rows.length > 0 && (
+            <div className="receipt-list">
+              {latest.map((r, i) => (
+                <a
+                  key={i}
+                  className="receipt-row"
+                  href={r.receiptLink || undefined}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <span
+                    className="receipt-icon"
+                    aria-hidden="true"
+                    style={{ background: categoryColor(r.category), color: categoryTextColor(r.category) }}
+                  >
+                    {categoryIcon(r.category)}
+                  </span>
+                  <div className="receipt-row-main">
+                    <span className="receipt-place">{r.place || "Untitled"}</span>
+                    <span className="receipt-date">{r.date}</span>
+                  </div>
+                  <span className="receipt-amount">{r.total}</span>
+                </a>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

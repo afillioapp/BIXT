@@ -46,11 +46,11 @@ function WeeklyBarChart({ days }) {
         const x = startX + i * step;
         const h = niceMax > 0 ? (day.amount / niceMax) * CHART_HEIGHT : 0;
         const y = CHART_BOTTOM - h;
-        const fill = day.isToday ? "var(--accent)" : "#2a3830";
+        const fill = day.isToday ? "var(--text)" : "#DADADA";
         return (
           <g key={day.label + i}>
             {day.isToday && day.amount > 0 && (
-              <text x={x + barWidth / 2} y={y - 8} fontSize="10" fontWeight="700" fill="var(--accent)" textAnchor="middle">
+              <text x={x + barWidth / 2} y={y - 8} fontSize="10" fontWeight="700" fill="var(--text)" textAnchor="middle">
                 {formatCurrency(day.amount)}
               </text>
             )}
@@ -67,7 +67,14 @@ function WeeklyBarChart({ days }) {
                 {day.label}: {formatCurrency(day.amount)}
               </title>
             </rect>
-            <text x={x + barWidth / 2} y={CHART_BOTTOM + 16} fontSize="10" fill="var(--muted)" textAnchor="middle">
+            <text
+              x={x + barWidth / 2}
+              y={CHART_BOTTOM + 16}
+              fontSize="10"
+              fontWeight={day.isToday ? "700" : "400"}
+              fill={day.isToday ? "var(--text)" : "var(--muted)"}
+              textAnchor="middle"
+            >
               {day.label}
             </text>
           </g>
@@ -96,9 +103,9 @@ function WeeklyCard({ weekly }) {
 
   return (
     <div className="insight-card">
-      <span className="insight-card-tag">This week</span>
+      <span className="insight-card-tag">Weekly expenses</span>
       <div className="insight-card-header">
-        <span className="insight-card-title">Weekly expenses</span>
+        <span className="insight-card-title">This week</span>
         <span className={`insight-card-change ${changeClass}`}>{changeLabel}</span>
       </div>
       <WeeklyBarChart days={days} />
@@ -159,9 +166,9 @@ function CategoryCard({ categoryData, monthTag }) {
 
   return (
     <div className="insight-card">
-      <span className="insight-card-tag">{monthTag}</span>
+      <span className="insight-card-tag">By category</span>
       <div className="insight-card-header">
-        <span className="insight-card-title">By category</span>
+        <span className="insight-card-title">{monthTag}</span>
       </div>
 
       {categories.length === 0 ? (
@@ -170,7 +177,7 @@ function CategoryCard({ categoryData, monthTag }) {
         </div>
       ) : (
         <div className="donut-wrap">
-          <CategoryDonut categories={categories} total={total} />
+          {/* Legend on the left, donut on the right, per the design handoff. */}
           <div className="donut-legend">
             {categories.slice(0, 5).map((c) => (
               <div className="donut-legend-row" key={c.category}>
@@ -184,19 +191,30 @@ function CategoryCard({ categoryData, monthTag }) {
               </div>
             ))}
           </div>
+          <CategoryDonut categories={categories} total={total} />
         </div>
       )}
     </div>
   );
 }
 
+// Third carousel panel — no data behind it yet, just holds the slot per the
+// design handoff ("Coming soon" / "More insights on the way.").
+function ComingSoonCard() {
+  return (
+    <div className="insight-card insight-card-soon">
+      <span className="insight-card-tag">Coming soon</span>
+      <div className="insight-card-soon-text">More insights on the way.</div>
+    </div>
+  );
+}
+
 // Horizontally swipeable, one card per view (CSS scroll-snap), with dot
-// indicators driven by scroll position. Card 3 is TBD by the owner — only
-// the two specced cards render for now.
+// indicators driven by scroll position.
 export default function InsightCards({ weekly, categoryData, monthTag }) {
   const scrollRef = useRef(null);
   const [active, setActive] = useState(0);
-  const cardCount = 2;
+  const cardCount = 3;
 
   function handleScroll() {
     const el = scrollRef.current;
@@ -210,6 +228,7 @@ export default function InsightCards({ weekly, categoryData, monthTag }) {
       <div className="insight-cards-scroll" ref={scrollRef} onScroll={handleScroll}>
         <WeeklyCard weekly={weekly} />
         <CategoryCard categoryData={categoryData} monthTag={monthTag} />
+        <ComingSoonCard />
       </div>
       <div className="insight-dots">
         {Array.from({ length: cardCount }).map((_, i) => (
