@@ -1131,17 +1131,16 @@ input:focus, select:focus {
   z-index: 100;
 }
 
-.splash-loader-wordmark {
-  font-family: var(--font-serif);
-  font-size: 32px;
-  letter-spacing: 0.5px;
-  color: var(--text);
-  animation: splash-pulse 1.6s ease-in-out infinite;
+/* The splash logo's underline extends out to the left and right on a loop —
+   scaleX from the center, so it grows evenly both ways. */
+.logo-line-anim {
+  animation: logo-line-extend 1.3s ease-in-out infinite;
+  transform-origin: center;
 }
 
-@keyframes splash-pulse {
-  0%, 100% { opacity: 0.45; }
-  50% { opacity: 1; }
+@keyframes logo-line-extend {
+  0%, 100% { transform: scaleX(0.18); }
+  50% { transform: scaleX(1); }
 }
 
 /* ── Biometric lock screen (same visual family as the splash loader) ── */

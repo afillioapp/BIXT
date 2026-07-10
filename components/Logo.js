@@ -1,11 +1,11 @@
-// Wordmark logo: "BX" in the app's own DM Sans, with a short rounded blue
-// underline bar beneath it (per round-3 item 11/12 — replaces the plain
-// text wordmark used on the splash screen, login screen, and lock screen).
+// Wordmark logo: "BX" in the app's own DM Sans, with a rounded blue
+// underline bar spanning the full width of the letters (owner spec
+// 2026-07-10: line aligned with the letters' length, slightly bold).
 // Pure inline styles (no CSS class) so it renders identically wherever it's
-// dropped in, regardless of the wrapping element's own font-size/color rules.
-export default function Logo({ size = 32 }) {
-  const underlineWidth = Math.round(size * 0.62);
-  const underlineHeight = Math.max(3, Math.round(size * 0.11));
+// dropped in; `animated` adds the splash-loader animation where the line
+// extends out to the left and right (keyframes in styles/globals.css).
+export default function Logo({ size = 32, animated = false }) {
+  const underlineHeight = Math.max(4, Math.round(size * 0.15));
 
   return (
     <span
@@ -29,9 +29,10 @@ export default function Logo({ size = 32 }) {
       </span>
       <span
         aria-hidden="true"
+        className={animated ? "logo-line-anim" : undefined}
         style={{
           display: "block",
-          width: underlineWidth,
+          alignSelf: "stretch",
           height: underlineHeight,
           borderRadius: 999,
           background: "var(--highlight)",
