@@ -17,8 +17,11 @@
   --border: #e2e2e2;
   --error: #3a3a3a;
 
-  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-  --font-serif: var(--font-source-serif), Georgia, "Iowan Old Style", serif;
+  /* Owner decision 2026-07-10: DM Sans everywhere (Circular-style look).
+     The --font-serif slot is kept so headline rules don't need touching —
+     it now resolves to the same rounded sans. */
+  --font-sans: var(--font-dm-sans), -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: var(--font-dm-sans), -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
 }
 
 * {
