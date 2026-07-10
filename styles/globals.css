@@ -639,12 +639,13 @@ input:focus, select:focus {
   bottom: calc(16px + env(safe-area-inset-bottom));
   display: flex;
   align-items: center;
-  justify-content: space-around;
-  width: calc(100% - 32px);
-  max-width: 448px;
+  /* Compact: the bar hugs its three items instead of stretching across the
+     screen, keeping the icons close together (owner request 2026-07-10). */
+  width: auto;
+  gap: 26px;
   background: var(--accent);
   border-radius: 24px;
-  padding: 8px;
+  padding: 8px 24px;
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
   z-index: 40;
 }
