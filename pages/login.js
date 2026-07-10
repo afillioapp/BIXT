@@ -97,15 +97,19 @@ export default function Login() {
     <div className="lp-bg">
       {step === "main" && (
         <>
+          {/* Soft floating shapes behind everything, per the login mockup. */}
+          <div className="lp-shapes" aria-hidden="true">
+            <div className="lp-shape" />
+            <div className="lp-shape" />
+            <div className="lp-shape" />
+            <div className="lp-shape" />
+          </div>
+
           {/* Brand — text wordmark only, no logo image (design handoff). */}
           <div className="lp-wordmark">BXT</div>
 
           <div className="lp-hero">
             <h1 className="lp-tagline">Every receipt,<br />filed by itself.</h1>
-            <p className="lp-sub">
-              Snap a photo. BXT reads it, saves it to your Google Drive, and shares it with your
-              accountant automatically.
-            </p>
           </div>
 
           {/* A failed redirect sign-in lands back on this main step — the
@@ -113,17 +117,17 @@ export default function Login() {
           {error && <div className="lp-error">{error}</div>}
 
           <div className="lp-buttons">
-            <button className="btn btn-primary lp-btn-google" onClick={signInGoogle} disabled={!!loading}>
+            <button className="btn btn-primary" onClick={signInGoogle} disabled={!!loading}>
               {loading === "google" ? "Signing in…" : <><GoogleIcon /> Continue with Google</>}
             </button>
 
-            <button className="btn btn-secondary" onClick={() => { clearError(); setStep("phone"); }} disabled={!!loading}>
+            <button className="btn lp-btn-phone" onClick={() => { clearError(); setStep("phone"); }} disabled={!!loading}>
               Continue with Phone
             </button>
           </div>
 
           <p className="lp-terms">
-            By continuing you agree to BXT's <a href="#">Terms</a> &amp; <a href="#">Privacy Policy</a>
+            By using BXT you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>
           </p>
         </>
       )}

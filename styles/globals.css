@@ -191,12 +191,12 @@ input:focus, select:focus {
   font-size: 13px;
 }
 
-/* Google is the sole primary sign-in action now (Apple removed 2026-07-09);
-   per Google brand rules the button stays white with the colored G. */
-.lp-btn-google {
-  background: var(--card);
+/* Phone sign-in: quiet light-gray pill under the dark Google pill, per the
+   login mockup's tertiary "Continue with Email" treatment. */
+.lp-btn-phone {
+  background: var(--surface2);
   color: var(--text);
-  border: 1px solid var(--border);
+  border: none;
 }
 
 /* ── App header with user avatar ── */
@@ -1092,7 +1092,37 @@ input:focus, select:focus {
   padding: 70px 28px calc(28px + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: var(--bg);
+  position: relative;
+  overflow: hidden;
 }
+
+/* Everything on the sign-in screen stacks above the decorative shapes. */
+.lp-bg > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Soft rotated rounded squares scattered behind the sign-in screen, per the
+   login mockup. Purely decorative. */
+.lp-shapes {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.lp-shape {
+  position: absolute;
+  width: 130px;
+  height: 130px;
+  border-radius: 30px;
+  background: var(--surface2);
+}
+
+.lp-shape:nth-child(1) { top: 18%; right: -40px; transform: rotate(18deg); }
+.lp-shape:nth-child(2) { top: 34%; left: -55px; transform: rotate(-14deg); }
+.lp-shape:nth-child(3) { top: 52%; right: 8%; transform: rotate(9deg); width: 105px; height: 105px; }
+.lp-shape:nth-child(4) { top: 8%; left: 22%; transform: rotate(24deg); width: 90px; height: 90px; }
 
 /* Small top-left wordmark on the sign-in screen. */
 .lp-wordmark {
@@ -1101,31 +1131,24 @@ input:focus, select:focus {
   color: var(--text);
 }
 
-/* Vertically centered hero block (headline + description) between the
-   wordmark and the buttons. */
+/* Hero: just the big centered tagline, sitting low — right above the
+   buttons — per the login mockup. */
 .lp-hero {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 10px;
-  margin-top: -40px;
+  justify-content: flex-end;
+  align-items: center;
+  text-align: center;
+  padding-bottom: 34px;
 }
 
 .lp-tagline {
   font-family: var(--font-serif);
-  font-size: 30px;
+  font-size: 32px;
   font-weight: 600;
-  line-height: 1.28;
+  line-height: 1.25;
   color: var(--text);
-  margin: 0;
-}
-
-.lp-sub {
-  font-size: 14px;
-  color: var(--ink-soft);
-  line-height: 1.5;
-  max-width: 280px;
   margin: 0;
 }
 
