@@ -268,12 +268,15 @@ input:focus, select:focus {
   margin-top: 2px;
 }
 
-/* Month-total strip: light gray rounded card between the header and the
-   insight carousel. */
+/* Month-total card: dark rounded card between the header and the insight
+   carousel, per "UI UX/Top of page.jpg" ("Total Balance"). Uses --accent/
+   --on-dark rather than fixed colors, so dark mode ([data-theme="dark"]
+   flips --accent light and --on-dark dark) inverts it into a light card —
+   that's the intended look, not a bug. */
 .dash-total {
   display: flex;
   flex-direction: column;
-  background: var(--surface2);
+  background: var(--accent);
   border-radius: 18px;
   padding: 16px 18px;
   margin-bottom: 18px;
@@ -281,7 +284,8 @@ input:focus, select:focus {
 
 .dash-total-label {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--on-dark);
+  opacity: 0.7;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -290,7 +294,7 @@ input:focus, select:focus {
   font-family: var(--font-serif);
   font-size: 32px;
   font-weight: 600;
-  color: var(--text);
+  color: var(--on-dark);
   margin-top: 4px;
 }
 
@@ -592,6 +596,33 @@ input:focus, select:focus {
 .empty-state-sub {
   font-size: 13px;
   color: var(--muted);
+}
+
+/* Feedback card: always the last thing on the dashboard, populated or
+   empty. */
+.feedback-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.feedback-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.feedback-card-sub {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+
+.feedback-card-btn {
+  width: auto;
+  padding: 0 20px;
+  height: 42px;
 }
 
 /* ── Bottom navigation ──

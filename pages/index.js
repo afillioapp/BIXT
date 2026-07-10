@@ -196,6 +196,17 @@ export default function Home({ user }) {
           )}
         </>
       )}
+
+      <div className="card feedback-card">
+        <span className="feedback-card-title">Help us make BX better</span>
+        <span className="feedback-card-sub">Tell us what's confusing, broken, or missing.</span>
+        <a
+          href="mailto:alireza.mthr@gmail.com?subject=BX%20feedback"
+          className="btn btn-secondary feedback-card-btn"
+        >
+          Send feedback
+        </a>
+      </div>
     </div>
   );
 }

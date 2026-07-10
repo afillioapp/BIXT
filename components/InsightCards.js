@@ -85,8 +85,27 @@ function WeeklyBarChart({ days }) {
   );
 }
 
+// "Jul 6 – 12" for a week inside one month; "Jun 29 – Jul 5" when it spans
+// two (or, at year end, two years — the year only appears if it differs
+// from the end date's year, kept off the common case to save space).
+function formatWeekRange(start, end) {
+  if (!start || !end) return "This week";
+  const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
+  const startFmt = start.toLocaleString("en-US", { month: "short", day: "numeric" });
+  if (sameMonth) {
+    return `${startFmt} – ${end.getDate()}`;
+  }
+  const sameYear = start.getFullYear() === end.getFullYear();
+  const endFmt = end.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: sameYear ? undefined : "numeric",
+  });
+  return `${startFmt} – ${endFmt}`;
+}
+
 function WeeklyCard({ weekly }) {
-  const { days, percentChange } = weekly;
+  const { days, percentChange, weekStart, weekEnd } = weekly;
   let changeLabel = "—";
   let changeClass = "flat";
   if (percentChange !== null) {
@@ -106,7 +125,7 @@ function WeeklyCard({ weekly }) {
     <div className="insight-card">
       <span className="insight-card-tag">Weekly expenses</span>
       <div className="insight-card-header">
-        <span className="insight-card-title">This week</span>
+        <span className="insight-card-title">{formatWeekRange(weekStart, weekEnd)}</span>
         <span className={`insight-card-change ${changeClass}`}>{changeLabel}</span>
       </div>
       <WeeklyBarChart days={days} />
