@@ -1,4 +1,4 @@
-/* ── BXT design system ──
+/* ── BX design system ──
    Monochrome palette approved 2026-07 (design_handoff_bxt_app). Values are
    mapped onto the pre-existing CSS var names so every page restyles from
    this one block; --surface2, --ink-soft and --on-dark are new slots the
@@ -26,6 +26,25 @@
      it now resolves to the same rounded sans. */
   --font-sans: var(--font-dm-sans), -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
   --font-serif: var(--font-dm-sans), -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Dark mode override (owner: simple toggle, default light — see
+   lib/theme.js / pages/settings.js "Appearance"). Stamped on <html> as
+   data-theme="dark" so every existing var()-based rule restyles for free.
+   --highlight stays the same blue in both themes. */
+[data-theme="dark"] {
+  --bg: #141414;
+  --surface: #1a1a1a;
+  --surface2: #242424;
+  --card: #1d1d1d;
+  --accent: #f5f5f5;
+  --accent-dark: #ffffff;
+  --on-dark: #161616;
+  --text: #f2f2f2;
+  --ink-soft: #b8b8b8;
+  --muted: #8a8a8a;
+  --border: #2e2e2e;
+  --error: #ef6b6b;
 }
 
 * {
@@ -203,12 +222,29 @@ input:focus, select:focus {
   border: none;
 }
 
-/* ── App header with user avatar ── */
+/* ── App header ── */
 .app-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 8px;
+}
+
+/* Settings entry point on Home/History (replaces the old avatar-in-header —
+   Settings no longer lives in the bottom nav, see components/BottomNav.js). */
+.header-gear {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
 }
 
 /* ── Dashboard home ── */
@@ -226,32 +262,21 @@ input:focus, select:focus {
   margin-bottom: 0;
 }
 
-.dash-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: var(--on-dark);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
 .dash-company {
   font-size: 13px;
   color: var(--muted);
   margin-top: 2px;
 }
 
-/* Month-total strip: light gray rounded card between the header and the
-   insight carousel. */
+/* Month-total card: dark rounded card between the header and the insight
+   carousel, per "UI UX/Top of page.jpg" ("Total Balance"). Uses --accent/
+   --on-dark rather than fixed colors, so dark mode ([data-theme="dark"]
+   flips --accent light and --on-dark dark) inverts it into a light card —
+   that's the intended look, not a bug. */
 .dash-total {
   display: flex;
   flex-direction: column;
-  background: var(--surface2);
+  background: var(--accent);
   border-radius: 18px;
   padding: 16px 18px;
   margin-bottom: 18px;
@@ -259,7 +284,8 @@ input:focus, select:focus {
 
 .dash-total-label {
   font-size: 12px;
-  color: var(--muted);
+  color: var(--on-dark);
+  opacity: 0.7;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -268,7 +294,7 @@ input:focus, select:focus {
   font-family: var(--font-serif);
   font-size: 32px;
   font-weight: 600;
-  color: var(--text);
+  color: var(--on-dark);
   margin-top: 4px;
 }
 
@@ -411,19 +437,21 @@ input:focus, select:focus {
   background: var(--highlight);
 }
 
+/* Donut centered above, legend in a compact 2-column wrap below (not
+   side-by-side) — per round-3 item 10. */
 .donut-wrap {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   margin-top: 10px;
 }
 
 .donut-legend {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 14px;
 }
 
 .donut-legend-row {
@@ -483,18 +511,18 @@ input:focus, select:focus {
   border-bottom: 1px solid var(--border);
 }
 
-/* Category icon: flat-color square + 2-letter initials (see
-   lib/insights.js categoryColor/categoryTextColor) — bg/color are set
-   inline per-row since they're data-driven. */
+/* Category icon: neutral surface square with the category's emoji (see
+   lib/insights.js categoryIcon) — same background for every category, no
+   per-category tint. */
 .receipt-icon {
   width: 40px;
   height: 40px;
   border-radius: 11px;
+  background: var(--surface2);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 18px;
   flex-shrink: 0;
 }
 
@@ -572,13 +600,38 @@ input:focus, select:focus {
   color: var(--muted);
 }
 
+/* Feedback card: always the last thing on the dashboard, populated or
+   empty. */
+.feedback-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.feedback-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.feedback-card-sub {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+
+.feedback-card-btn {
+  width: auto;
+  padding: 0 20px;
+  height: 42px;
+}
+
 /* ── Bottom navigation ──
-   Floating dark pill (owner override on the handoff's raised-circle tab
-   bar): fixed, centered, hovering above the bottom edge. Four equal items;
-   the active one expands into a lighter inner chip with icon + label. */
-/* Dark rounded bar per the "color palette" reference: four evenly spaced
-   white icons; the active one sits in a white rounded-square chip with the
-   icon in the blue highlight. Icons only, no labels. */
+   Floating dark pill: fixed, centered, hovering above the bottom edge.
+   Three slots — Home, a raised center camera button, History (Settings
+   moved to a header gear icon, see .header-gear) — per "UI UX/Menu bar.jpg".
+   space-around with exactly 3 children centers the middle slot for free. */
 .bottom-nav {
   position: fixed;
   left: 50%;
@@ -610,6 +663,69 @@ input:focus, select:focus {
 .bottom-nav-item.active {
   background: var(--card);
   color: var(--highlight);
+}
+
+/* Raised center camera button + its "take photo / import" popover. */
+.bottom-nav-center-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bottom-nav-camera {
+  width: 60px;
+  height: 60px;
+  border-radius: 999px;
+  margin-top: -30px;
+  border: 4px solid var(--bg);
+  background: linear-gradient(135deg, #2196f3, #64b5f6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 18px rgba(33, 150, 243, 0.45);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.bottom-nav-camera:active {
+  opacity: 0.9;
+}
+
+.capture-popover {
+  position: absolute;
+  bottom: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: max-content;
+  z-index: 45;
+}
+
+.capture-popover-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  cursor: pointer;
+}
+
+.capture-popover-photo {
+  background: linear-gradient(135deg, #2196f3, #64b5f6);
+  color: #fff;
+}
+
+.capture-popover-import {
+  background: var(--accent);
+  color: var(--on-dark);
 }
 
 /* ── Capture ── */

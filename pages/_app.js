@@ -7,6 +7,7 @@ import { auth } from "../lib/firebase";
 import BottomNav from "../components/BottomNav";
 import SplashLoader from "../components/SplashLoader";
 import BiometricGate from "../components/BiometricGate";
+import { getTheme, setTheme } from "../lib/theme";
 import "../styles/globals.css";
 
 // One typeface for everything (owner decision 2026-07-10): DM Sans — the
@@ -26,6 +27,13 @@ const NO_NAV_ROUTES = ["/login", "/setup"];
 export default function App({ Component, pageProps }) {
   const router = useRouter();
   const [user, setUser] = useState(undefined); // undefined = loading
+
+  // Apply whatever theme was last chosen in Settings. Runs after hydration
+  // (client-only, localStorage-backed), so a brief light flash before this
+  // fires is expected and acceptable.
+  useEffect(() => {
+    setTheme(getTheme());
+  }, []);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -58,7 +66,7 @@ export default function App({ Component, pageProps }) {
   return (
     <>
       <Head>
-        <title>BXT</title>
+        <title>BX</title>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </Head>
       <div className={`app-shell ${dmSans.variable}`}>

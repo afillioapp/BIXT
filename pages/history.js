@@ -1,11 +1,23 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import { useDrive } from "../lib/useDrive";
 import { findMonthExpenseSheetId, listExpenseRows } from "../lib/google";
-import { categoryIcon, categoryColor, categoryTextColor } from "../lib/insights";
+import { categoryIcon } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
 
 function prevMonthDate(d) {
   return new Date(d.getFullYear(), d.getMonth() - 1, 1);
+}
+
+// Line-icon gear — the header's entry point to Settings now that it's no
+// longer a bottom-nav tab (see components/BottomNav.js).
+function GearIcon() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 19 19">
+      <circle cx="9.5" cy="9.5" r="2.6" fill="none" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M9.5 1.5v2.4M9.5 15.1v2.4M17.5 9.5h-2.4M4.4 9.5H2M15.1 3.9l-1.7 1.7M5.6 13.4l-1.7 1.7M15.1 15.1l-1.7-1.7M5.6 5.6L3.9 3.9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
 }
 
 // Rows arrive already sorted most-recent-first; bucket consecutive rows that
@@ -36,6 +48,7 @@ function formatDateHeader(dateStr) {
 }
 
 export default function History({ user }) {
+  const router = useRouter();
   const { accessToken, rootFolderId, profile, profileLoading, needsConnect, loadError, requestAccess, retryConnection } = useDrive(user);
   const [rows, setRows] = useState(null);
   const [error, setError] = useState("");
@@ -69,7 +82,12 @@ export default function History({ user }) {
   if (profileLoading || !profile) {
     return (
       <div className="container">
-        <div className="app-header"><div><h1>History</h1></div></div>
+        <div className="app-header">
+          <div><h1>History</h1></div>
+          <button className="header-gear" aria-label="Settings" onClick={() => router.push("/settings")}>
+            <GearIcon />
+          </button>
+        </div>
         <DriveFallback
           needsConnect={needsConnect}
           loadError={loadError}
@@ -87,6 +105,9 @@ export default function History({ user }) {
           <h1>History</h1>
           <div className="subtitle">Last two months</div>
         </div>
+        <button className="header-gear" aria-label="Settings" onClick={() => router.push("/settings")}>
+          <GearIcon />
+        </button>
       </div>
 
       {error && <div className="status status-error">{error}</div>}
@@ -116,11 +137,7 @@ export default function History({ user }) {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    <span
-                      className="receipt-icon"
-                      aria-hidden="true"
-                      style={{ background: categoryColor(r.category), color: categoryTextColor(r.category) }}
-                    >
+                    <span className="receipt-icon" aria-hidden="true">
                       {categoryIcon(r.category)}
                     </span>
                     <div className="receipt-row-main">

@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useDrive } from "../lib/useDrive";
 import { compressImage } from "../lib/image";
 import { saveExpenseToDrive } from "../lib/google";
+import { takePendingCapture } from "../lib/pendingCapture";
 import DriveFallback from "../components/DriveFallback";
 
 // "04 july 2026 Dollarama.jpg" — falls back to "Untitled" if the merchant name wasn't read.
@@ -51,8 +52,17 @@ export default function Capture({ user }) {
     }
   }, [profileLoading, profile, accessToken, loadError, needsConnect]);
 
-  async function handleFileChange(e) {
-    const file = e.target.files[0];
+  // Pick up a photo/import handed off from the bottom-nav camera popover
+  // (components/BottomNav.js), which pushes here right after stashing the
+  // File — runs the exact same pipeline as picking a file with this page's
+  // own Take/Import buttons below.
+  useEffect(() => {
+    const file = takePendingCapture();
+    if (file) processFile(file);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function processFile(file) {
     if (!file) return;
     setForm(null);
     setStatus(null);
@@ -68,6 +78,12 @@ export default function Capture({ user }) {
     } finally {
       setCompressing(false);
     }
+  }
+
+  function handleFileChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    processFile(file);
   }
 
   async function extractReceipt(base64, mediaType) {

@@ -20,7 +20,7 @@ export default function DriveFallback({ needsConnect, loadError, onConnect, onRe
         </div>
         <div className="drive-fallback-title">Connect your Google Drive</div>
         <div className="drive-fallback-copy">
-          BXT saves every receipt straight into a folder in your own Drive — you always own the
+          BX saves every receipt straight into a folder in your own Drive — you always own the
           files.
         </div>
         <button className="btn btn-primary" onClick={onConnect}>Connect Google Drive</button>
