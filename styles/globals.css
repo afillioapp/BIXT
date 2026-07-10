@@ -437,19 +437,21 @@ input:focus, select:focus {
   background: var(--highlight);
 }
 
+/* Donut centered above, legend in a compact 2-column wrap below (not
+   side-by-side) — per round-3 item 10. */
 .donut-wrap {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   margin-top: 10px;
 }
 
 .donut-legend {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 14px;
 }
 
 .donut-legend-row {

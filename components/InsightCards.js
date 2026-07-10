@@ -1,5 +1,29 @@
 import { useRef, useState } from "react";
-import { formatCurrency, categoryColor } from "../lib/insights";
+import { formatCurrency } from "../lib/insights";
+
+// Interpolates between two "#rrggbb" hex colors at t (0..1).
+function hexLerp(hexA, hexB, t) {
+  const a = parseInt(hexA.slice(1), 16);
+  const b = parseInt(hexB.slice(1), 16);
+  const ar = (a >> 16) & 255, ag = (a >> 8) & 255, ab = a & 255;
+  const br = (b >> 16) & 255, bg = (b >> 8) & 255, bb = b & 255;
+  const r = Math.round(ar + (br - ar) * t);
+  const g = Math.round(ag + (bg - ag) * t);
+  const bl = Math.round(ab + (bb - ab) * t);
+  return `#${[r, g, bl].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
+// Donut segment colors: a gradient ramp from the blue highlight (largest
+// category) to charcoal (smallest/"Other"), walked in the size order
+// categoryTotals() already returns — so every render's ramp adapts to
+// however many categories are actually present this month.
+const DONUT_RAMP_START = "#2196f3";
+const DONUT_RAMP_END = "#232323";
+
+function donutColorForIndex(i, count) {
+  const t = count > 1 ? i / (count - 1) : 0;
+  return hexLerp(DONUT_RAMP_START, DONUT_RAMP_END, t);
+}
 
 // Rounds up to a "nice" axis max (1/2/5/10 * 10^n) so gridlines land on
 // round numbers instead of the raw week/month total.
@@ -142,9 +166,9 @@ function CategoryDonut({ categories, total }) {
   const circumference = 2 * Math.PI * radius;
 
   let offsetAccum = 0;
-  const arcs = categories.map((c) => {
+  const arcs = categories.map((c, i) => {
     const length = (c.percent / 100) * circumference;
-    const arc = { ...c, length, offset: offsetAccum };
+    const arc = { ...c, length, offset: offsetAccum, color: donutColorForIndex(i, categories.length) };
     offsetAccum += length;
     return arc;
   });
@@ -159,7 +183,7 @@ function CategoryDonut({ categories, total }) {
           cy={cy}
           r={radius}
           fill="none"
-          stroke={categoryColor(arc.category)}
+          stroke={arc.color}
           strokeWidth={strokeWidth}
           strokeDasharray={`${Math.max(arc.length - 2, 0)} ${circumference - arc.length + 2}`}
           strokeDashoffset={-arc.offset}
@@ -197,13 +221,15 @@ function CategoryCard({ categoryData, monthTag }) {
         </div>
       ) : (
         <div className="donut-wrap">
-          {/* Legend on the left, donut on the right, per the design handoff. */}
+          {/* Donut centered above, legend in a compact 2-col wrap below —
+              no icons/emoji, just a color dot + name + %. */}
+          <CategoryDonut categories={categories} total={total} />
           <div className="donut-legend">
-            {categories.slice(0, 5).map((c) => (
+            {categories.map((c, i) => (
               <div className="donut-legend-row" key={c.category}>
                 <span
                   className="donut-legend-swatch"
-                  style={{ background: categoryColor(c.category) }}
+                  style={{ background: donutColorForIndex(i, categories.length) }}
                   aria-hidden="true"
                 />
                 <span className="donut-legend-name">{c.category}</span>
@@ -211,7 +237,6 @@ function CategoryCard({ categoryData, monthTag }) {
               </div>
             ))}
           </div>
-          <CategoryDonut categories={categories} total={total} />
         </div>
       )}
     </div>
