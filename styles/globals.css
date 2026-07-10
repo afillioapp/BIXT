@@ -462,18 +462,16 @@ input:focus, select:focus {
   padding: 4px 0;
 }
 
+/* Rows sit directly on the page (no card wrapper), divided by 1px lines,
+   per the handoff's receipt-row spec. */
 .receipt-row {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 11px 16px;
+  padding: 11px 0;
   text-decoration: none;
   color: inherit;
   border-bottom: 1px solid var(--border);
-}
-
-.receipt-row:last-child {
-  border-bottom: none;
 }
 
 /* Category icon: flat-color square + 2-letter initials (see
@@ -806,42 +804,212 @@ input:focus, select:focus {
 .history-groups {
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
 .history-group {
-  margin-bottom: 12px;
+  margin-bottom: 18px;
 }
 
 .history-group-header {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 0 4px 8px;
+  color: var(--text);
+  margin: 0 0 6px;
+}
+
+.history-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  padding: 80px 20px 60px;
+}
+
+.history-empty-title {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.history-empty-sub {
+  font-size: 14px;
+  color: var(--ink-soft);
+  max-width: 230px;
 }
 
 /* ── Settings ── */
-.settings-value {
-  font-size: 15px;
-  color: var(--text);
-  padding: 4px 0 2px;
+.settings-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  overflow: hidden;
+  margin-bottom: 18px;
 }
 
-.settings-value-editable {
+.settings-card-padded {
+  padding: 14px 16px;
+}
+
+.settings-row {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-row:last-child {
+  border-bottom: none;
+}
+
+.settings-row-tappable {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: none;
   cursor: pointer;
+  font-family: inherit;
+}
+
+.settings-row-tappable:last-child {
+  border-bottom: none;
+}
+
+.settings-row-split {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   gap: 8px;
+}
+
+.settings-row-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.settings-row-value {
+  font-size: 15px;
+  color: var(--text);
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.settings-mismatch {
+  font-size: 12px;
+  color: var(--error);
+  margin-top: 6px;
 }
 
 .settings-edit-hint {
   font-size: 12px;
-  color: var(--accent);
-  font-weight: 600;
+  color: var(--ink-soft);
+  text-decoration: underline;
   flex-shrink: 0;
+}
+
+.settings-confirm-text {
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.settings-edit-input {
+  height: 44px;
+  border-radius: 10px;
+  padding: 0 12px;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.settings-row-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.settings-btn-small {
+  flex: 1;
+  height: 40px;
+  font-size: 13px;
+}
+
+.settings-section-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.settings-toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-toggle-title {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.settings-toggle-status {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* Pill toggle switch: black when on, gray with left knob when off. */
+.pill-toggle {
+  width: 48px;
+  height: 28px;
+  border-radius: 999px;
+  border: none;
+  background: var(--border);
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.pill-toggle.on {
+  background: var(--accent);
+}
+
+.pill-toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pill-toggle-knob {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #fff;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  transition: left 0.15s;
+}
+
+.pill-toggle.on .pill-toggle-knob {
+  left: 23px;
+}
+
+.settings-signout {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+  padding: 15px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--error);
+  cursor: pointer;
 }
 
 /* ── Splash loader (shown while auth state is still resolving) ── */
@@ -883,22 +1051,35 @@ input:focus, select:focus {
   text-align: center;
 }
 
-.lock-logo {
-  width: 110px;
-  height: auto;
-  margin-bottom: 8px;
+.lock-wordmark {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  color: var(--text);
 }
 
+.lock-glyph {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--surface2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+/* Bold sans, deliberately not the serif h1 default. */
 .lock-title {
-  font-size: 20px;
-  font-weight: 700;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 600;
   margin: 0;
 }
 
-.lock-btn,
-.lock-btn-secondary {
+.lock-btn {
   width: 100%;
   max-width: 320px;
+  margin-top: 10px;
 }
 
 .lock-error {

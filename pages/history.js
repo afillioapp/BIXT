@@ -30,6 +30,8 @@ function formatDateHeader(dateStr) {
   if (!dateStr) return "Unknown date";
   const d = new Date(`${dateStr}T00:00:00`);
   if (isNaN(d.getTime())) return dateStr;
+  // Today's group is labeled "Today" instead of its date, per the handoff.
+  if (d.toDateString() === new Date().toDateString()) return "Today";
   return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 }
 
@@ -90,11 +92,14 @@ export default function History({ user }) {
       {error && <div className="status status-error">{error}</div>}
 
       {rows === null && !error && (
-        <div className="card"><div style={{ fontSize: 14 }}>Loading receipts…</div></div>
+        <div className="status status-info">Loading receipts…</div>
       )}
 
       {rows && rows.length === 0 && (
-        <div className="card"><div style={{ fontSize: 14 }}>No receipts saved yet.</div></div>
+        <div className="history-empty">
+          <div className="history-empty-title">Nothing here yet</div>
+          <div className="history-empty-sub">Receipts you save will show up here, grouped by day.</div>
+        </div>
       )}
 
       {rows && rows.length > 0 && (
@@ -102,7 +107,7 @@ export default function History({ user }) {
           {groupByDate(rows).map((group) => (
             <div key={group.date} className="history-group">
               <div className="history-group-header">{formatDateHeader(group.date)}</div>
-              <div className="card receipt-list">
+              <div className="receipt-list">
                 {group.rows.map((r, i) => (
                   <a
                     key={i}
