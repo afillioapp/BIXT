@@ -43,7 +43,9 @@ body {
 .container {
   max-width: 480px;
   margin: 0 auto;
-  padding: 24px 16px 96px;
+  /* Bottom padding clears the floating pill nav (18px offset + 56px pill)
+     plus breathing room. */
+  padding: 24px 20px calc(104px + env(safe-area-inset-bottom));
   min-height: 100vh;
 }
 
@@ -563,71 +565,58 @@ input:focus, select:focus {
   color: var(--muted);
 }
 
-/* ── Bottom navigation ── */
+/* ── Bottom navigation ──
+   Floating dark pill (owner override on the handoff's raised-circle tab
+   bar): fixed, centered, hovering above the bottom edge. Four equal items;
+   the active one expands into a lighter inner chip with icon + label. */
 .bottom-nav {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  max-width: 480px;
-  margin: 0 auto;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(18px + env(safe-area-inset-bottom));
   display: flex;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+  align-items: center;
+  gap: 4px;
+  width: auto;
+  background: #111111;
+  border-radius: 999px;
+  padding: 6px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
   z-index: 40;
 }
 
-.bottom-nav-tab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 6px 0;
-  color: var(--muted);
-  text-decoration: none;
-  font-size: 11px;
-  border-radius: 10px;
-}
-
-.bottom-nav-tab.active {
-  color: var(--accent);
-}
-
-.bottom-nav-icon {
-  font-size: 20px;
-  line-height: 1;
-}
-
-/* Raised center camera action */
-.bottom-nav-primary-circle {
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-  background: var(--accent);
+.bottom-nav-item {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: -30px;
-  border: 3px solid var(--bg);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  gap: 7px;
+  height: 44px;
+  min-width: 44px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--on-dark);
+  text-decoration: none;
 }
 
-.bottom-nav-primary-icon {
-  font-size: 24px;
+.bottom-nav-item.active {
+  background: rgba(255, 255, 255, 0.16);
+  padding: 0 16px;
+}
+
+.bottom-nav-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--on-dark);
   line-height: 1;
 }
 
-.bottom-nav-primary.active .bottom-nav-primary-circle {
-  filter: brightness(1.1);
-}
-
 /* ── Capture ── */
+/* .capture-screen sits on the same element as .container, whose bottom
+   padding already clears the floating nav (box-sizing: border-box). */
 .capture-screen {
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 96px);
+  min-height: 100vh;
 }
 
 .capture-title {
