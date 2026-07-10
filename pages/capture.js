@@ -161,7 +161,7 @@ export default function Capture({ user }) {
       <div className="container">
         <div className="app-header">
           <div>
-            <h1>BX</h1>
+            <h1>New receipt</h1>
           </div>
         </div>
         <DriveFallback
@@ -174,16 +174,13 @@ export default function Capture({ user }) {
     );
   }
 
+  // Reading (client-side compression + the OCR call) and saving both render
+  // as the same "busy" pattern — a spinner + status line under the photo.
+  const busy = compressing || extracting;
+
   return (
-    <div className="container">
-      <div className="app-header">
-        <div>
-          {/* Greet the person; phone sign-ins have no display name, so fall
-              back to the company. Company name always shows as the subheader. */}
-          <h1>Hi, {(user?.displayName || "").trim().split(/\s+/)[0] || profile.companyName}</h1>
-          <div className="subtitle">{profile.companyName}</div>
-        </div>
-      </div>
+    <div className="container capture-screen">
+      <h1 className="capture-title">New receipt</h1>
 
       <input
         ref={fileInputRef}
@@ -203,93 +200,105 @@ export default function Capture({ user }) {
         id="receiptImport"
       />
 
-      {/* Capture actions live at the bottom of the screen, in thumb reach —
-          not at the top under the header. */}
-      {!imagePreview && (
-        <div className="capture-actions">
-          <label htmlFor="receiptInput" className="btn btn-primary" style={{ cursor: "pointer" }}>
-            {compressing ? "Processing…" : "Take Receipt Photo"}
-          </label>
-          <label htmlFor="receiptImport" className="btn btn-secondary" style={{ cursor: "pointer" }}>
-            Import from Phone
-          </label>
-        </div>
+      {!imagePreview && !form && (
+        <>
+          <div className="capture-placeholder-wrap">
+            <div className="capture-placeholder" aria-hidden="true">
+              <svg width="44" height="38" viewBox="0 0 44 38">
+                <path
+                  d="M15 4l3-3h8l3 3h8a4 4 0 0 1 4 4v22a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4z"
+                  fill="none"
+                  stroke="var(--muted)"
+                  strokeWidth="1.6"
+                  strokeLinejoin="round"
+                />
+                <circle cx="22" cy="20" r="8" fill="none" stroke="var(--muted)" strokeWidth="1.6" />
+              </svg>
+            </div>
+          </div>
+          <div className="capture-initial-actions">
+            <label htmlFor="receiptInput" className="btn btn-primary">
+              {compressing ? "Processing…" : "Take Receipt Photo"}
+            </label>
+            <label htmlFor="receiptImport" className="btn btn-secondary">
+              Import from Phone
+            </label>
+          </div>
+        </>
       )}
 
-      {(imagePreview || status || form) && (
-      <div className="card">
-        {imagePreview && (
+      {imagePreview && (
+        <div className="capture-body">
           <img src={imagePreview} className="receipt-preview" alt="receipt" />
-        )}
 
-        {status && (
-          <div className={`status status-${status.type}`}>{status.text}</div>
-        )}
-
-        {form && (
-          <>
-            <label>Place</label>
-            <input
-              value={form.place}
-              onChange={(e) => updateField("place", e.target.value)}
-            />
-
-            <div className="row">
-              <div>
-                <label>Total</label>
-                <input
-                  value={form.total}
-                  onChange={(e) => updateField("total", e.target.value)}
-                />
-              </div>
-              <div>
-                <label>HST / Tax</label>
-                <input
-                  value={form.hst}
-                  onChange={(e) => updateField("hst", e.target.value)}
-                />
-              </div>
+          {!form && status && (
+            <div className="capture-busy-row">
+              {busy && <span className="capture-spinner" aria-hidden="true" />}
+              <span className={`status status-${status.type}`}>{status.text}</span>
             </div>
+          )}
 
-            <label>Date</label>
-            <input
-              type="date"
-              value={form.date}
-              onChange={(e) => updateField("date", e.target.value)}
-              placeholder="YYYY-MM-DD"
-              onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
-            />
+          {form && (
+            <>
+              {status && <div className={`status status-${status.type}`}>{status.text}</div>}
 
-            <label>Category</label>
-            <select
-              value={form.category}
-              onChange={(e) => updateField("category", e.target.value)}
-            >
-              {(categoryOptions.length ? categoryOptions : [form.category]).map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
+              <div className="capture-fields">
+                <input
+                  value={form.place}
+                  onChange={(e) => updateField("place", e.target.value)}
+                  placeholder="Place"
+                />
 
-            <div className="confirm-row">
-              <button
-                className="btn btn-secondary retake-btn"
-                onClick={resetForNext}
-                disabled={saving}
-              >
-                Retake
-              </button>
-              <button
-                className="tick-btn"
-                onClick={handleConfirm}
-                disabled={saving}
-                title="Confirm and save"
-              >
-                {saving ? "…" : "✓"}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
+                <div className="row">
+                  <input
+                    value={form.total}
+                    onChange={(e) => updateField("total", e.target.value)}
+                    placeholder="Total"
+                  />
+                  <input
+                    value={form.hst}
+                    onChange={(e) => updateField("hst", e.target.value)}
+                    placeholder="HST / Tax"
+                  />
+                </div>
+
+                <input
+                  type="date"
+                  value={form.date}
+                  onChange={(e) => updateField("date", e.target.value)}
+                  placeholder="YYYY-MM-DD"
+                  onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
+                />
+
+                <select
+                  value={form.category}
+                  onChange={(e) => updateField("category", e.target.value)}
+                >
+                  {(categoryOptions.length ? categoryOptions : [form.category]).map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="capture-form-actions">
+                <button
+                  className="btn btn-secondary"
+                  onClick={resetForNext}
+                  disabled={saving}
+                >
+                  Retake
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleConfirm}
+                  disabled={saving}
+                >
+                  {saving ? "Saving…" : "✓ Save"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       )}
     </div>
   );

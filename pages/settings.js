@@ -131,100 +131,135 @@ export default function Settings({ user }) {
     );
   }
 
+  const driveMismatch =
+    driveEmail && user?.email && driveEmail.toLowerCase() !== user.email.toLowerCase();
+
   return (
     <div className="container">
       <div className="app-header">
         <div><h1>Settings</h1></div>
       </div>
 
-      <div className="card">
-        <label>Company</label>
-        <div className="settings-value">{profile.companyName}</div>
+      <div className="settings-card">
+        <div className="settings-row">
+          <div className="settings-row-label">Company</div>
+          <div className="settings-row-value">{profile.companyName}</div>
+        </div>
 
-        <label>Signed in as</label>
-        <div className="settings-value">{user?.email || user?.phoneNumber || "—"}</div>
+        <div className="settings-row">
+          <div className="settings-row-label">Signed in as</div>
+          <div className="settings-row-value">{user?.email || user?.phoneNumber || "—"}</div>
+        </div>
 
-        <label>Receipts saved to Google Drive of</label>
-        <div className="settings-value">{driveEmail || "—"}</div>
-        {driveEmail && user?.email && driveEmail.toLowerCase() !== user.email.toLowerCase() && (
-          <div className="status status-info" style={{ marginTop: 6 }}>
-            Note: your receipts are stored in {driveEmail}'s Google Drive, which is a different
-            account than the one you signed in with.
-          </div>
-        )}
+        <div className="settings-row">
+          <div className="settings-row-label">Receipts saved to Google Drive of</div>
+          <div className="settings-row-value">{driveEmail || "—"}</div>
+          {driveMismatch && (
+            <div className="settings-mismatch">
+              ⚠ This doesn't match your sign-in email. Receipts may not sync as expected.
+            </div>
+          )}
+        </div>
 
-        <label>Accountant's Gmail</label>
         {editing && confirming ? (
-          <>
-            <p>We'll give read-only access to {accountantEmail.trim()}. Correct?</p>
-            <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
+          <div className="settings-row">
+            <div className="settings-confirm-text">
+              Give read-only access to {accountantEmail.trim()} instead?
+            </div>
+            <div className="settings-row-actions">
               <button
-                className="btn btn-primary"
-                onClick={handleConfirmShare}
-                disabled={saving}
-              >
-                {saving ? "Saving…" : "Yes, share"}
-              </button>
-              <button
-                className="btn btn-secondary"
+                className="btn btn-secondary settings-btn-small"
                 onClick={() => setConfirming(false)}
                 disabled={saving}
               >
-                Edit
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary settings-btn-small"
+                onClick={handleConfirmShare}
+                disabled={saving}
+              >
+                {saving ? "Saving…" : "Yes, update"}
               </button>
             </div>
-          </>
+          </div>
         ) : editing ? (
-          <>
+          <div className="settings-row">
+            <div className="settings-row-label" style={{ marginBottom: 8 }}>Accountant's email</div>
             <input
+              className="settings-edit-input"
               type="email"
               value={accountantEmail}
               onChange={(e) => setAccountantEmail(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSaveAccountant()}
               autoFocus
             />
-            <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
+            <div className="settings-row-actions">
               <button
-                className="btn btn-primary"
-                onClick={handleSaveAccountant}
-                disabled={saving || !accountantEmail.trim()}
-              >
-                Save
-              </button>
-              <button
-                className="btn btn-secondary"
+                className="btn btn-secondary settings-btn-small"
                 onClick={() => { setEditing(false); setConfirming(false); setAccountantEmail(profile.accountantEmail || ""); }}
                 disabled={saving}
               >
                 Cancel
               </button>
+              <button
+                className="btn btn-primary settings-btn-small"
+                onClick={handleSaveAccountant}
+                disabled={saving || !accountantEmail.trim()}
+              >
+                Save
+              </button>
             </div>
-          </>
-        ) : (
-          <div className="settings-value settings-value-editable" onClick={() => setEditing(true)}>
-            {profile.accountantEmail} <span className="settings-edit-hint">Change</span>
           </div>
+        ) : (
+          <button className="settings-row settings-row-tappable" onClick={() => setEditing(true)}>
+            <div className="settings-row-split">
+              <div>
+                <div className="settings-row-label">Accountant's email</div>
+                <div className="settings-row-value">{profile.accountantEmail}</div>
+              </div>
+              <span className="settings-edit-hint">Edit</span>
+            </div>
+          </button>
         )}
 
-        {status && <div className={`status status-${status.type}`}>{status.text}</div>}
+        {status && (
+          <div className="settings-row">
+            <div className={`status status-${status.type}`} style={{ marginBottom: 0 }}>{status.text}</div>
+          </div>
+        )}
       </div>
 
       {bioSupported && (
-        <div className="card">
-          <label>Security</label>
-          <div className="settings-value settings-value-editable" onClick={handleToggleLock}>
-            Require Face ID / fingerprint to open BX
-            <span className="settings-edit-hint">
-              {bioSaving ? "Working…" : bioEnabled ? "On — tap to turn off" : "Off — tap to turn on"}
-            </span>
+        <div className="settings-card settings-card-padded">
+          <div className="settings-section-label">Security</div>
+          <div className="settings-toggle-row">
+            <div>
+              <div className="settings-toggle-title">Require Face ID to open BXT</div>
+              <div className="settings-toggle-status">
+                {bioSaving ? "Working…" : bioEnabled ? "On" : "Off"}
+              </div>
+            </div>
+            <button
+              className={`pill-toggle ${bioEnabled ? "on" : ""}`}
+              onClick={handleToggleLock}
+              disabled={bioSaving}
+              role="switch"
+              aria-checked={bioEnabled}
+              aria-label="Require Face ID to open BXT"
+            >
+              <span className="pill-toggle-knob" />
+            </button>
           </div>
-          {bioStatus && <div className={`status status-${bioStatus.type}`}>{bioStatus.text}</div>}
+          {bioStatus && (
+            <div className={`status status-${bioStatus.type}`} style={{ margin: "10px 0 0" }}>{bioStatus.text}</div>
+          )}
         </div>
       )}
 
-      <div className="card">
+      <div className="settings-card">
         <button
-          className="btn btn-secondary"
+          className="settings-signout"
           onClick={async () => {
             // Let go of the Drive grant first, so the next person signing in
             // on this device can't silently inherit this user's Drive.

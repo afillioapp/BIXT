@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import { useDrive } from "../lib/useDrive";
 import {
@@ -8,12 +8,13 @@ import {
   saveProfile,
   ensureMonthFolders,
 } from "../lib/google";
+import DriveFallback from "../components/DriveFallback";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function Setup({ user }) {
   const router = useRouter();
-  const { accessToken, profile, profileLoading, needsConnect, requestAccess } = useDrive(user);
+  const { accessToken, profile, profileLoading, needsConnect, loadError, requestAccess, retryConnection } = useDrive(user);
 
   const [companyName, setCompanyName] = useState("");
   const [accountantEmail, setAccountantEmail] = useState("");
@@ -21,14 +22,18 @@ export default function Setup({ user }) {
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
   const [confirming, setConfirming] = useState(false);
+  const emailInputRef = useRef(null);
 
   // Already set up? Don't let them redo it by mistake.
   useEffect(() => {
     if (!profileLoading && profile) router.replace("/");
   }, [profileLoading, profile]);
 
-  // First tap just validates and shows a plain-language confirmation before
-  // any sharing happens; the actual work runs from handleConfirmShare.
+  // Owner override: onboarding is a single screen — tapping "Get Started"
+  // swaps just the button area in place to a compact inline confirmation
+  // (the confirm-before-share safeguard, audit #10) rather than navigating
+  // to a second step. The actual sharing work still only runs from
+  // handleConfirmShare, after the user has explicitly said "Yes, share".
   function handleGetStarted() {
     if (!companyName.trim() || !accountantEmail.trim() || !accessToken) return;
     if (!EMAIL_RE.test(accountantEmail.trim())) {
@@ -37,6 +42,12 @@ export default function Setup({ user }) {
     }
     setError("");
     setConfirming(true);
+  }
+
+  function handleEditFromConfirm() {
+    setConfirming(false);
+    setError("");
+    emailInputRef.current?.focus();
   }
 
   async function handleConfirmShare() {
@@ -55,74 +66,81 @@ export default function Setup({ user }) {
       });
       await ensureMonthFolders(accessToken, rootId, new Date());
       setDone(true);
-      setTimeout(() => router.replace("/"), 1400);
     } catch (err) {
       setError(err.message);
+      setConfirming(false);
     } finally {
       setCreating(false);
     }
   }
 
   if (done) {
+    const now = new Date();
     return (
-      <div className="container">
-        <div className="onboarding-overlay" style={{ position: "static", minHeight: "100vh" }}>
-          <div className="onboarding-modal">
-            <div className="success-check">✓</div>
-            <p style={{ fontSize: 18, fontWeight: 600, color: "var(--text)" }}>You're all set</p>
-            <p className="onboarding-path">
-              BX - {companyName} / {new Date().getFullYear()} / {new Date().toLocaleString("en-US", { month: "long" })}
-            </p>
+      <div className="onboard-screen">
+        <div className="onboard-success">
+          <div className="onboard-success-icon" aria-hidden="true">
+            <svg width="26" height="20" viewBox="0 0 26 20">
+              <path
+                d="M2 10l7 7L24 2"
+                stroke="var(--on-dark)"
+                strokeWidth="2.4"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </div>
+          <h1 className="onboard-success-title">You're all set</h1>
+          <div className="onboard-success-copy">Receipts will be saved to:</div>
+          <div className="onboard-path-chip">
+            BX - {companyName} / {now.getFullYear()} / {now.toLocaleString("en-US", { month: "long" })}
+          </div>
+          <button className="btn btn-primary onboard-success-btn" onClick={() => router.replace("/")}>
+            Go to BXT
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container">
-      <div className="onboarding-header">
-        <div className="onboarding-step">{confirming ? "Step 2 of 2" : "Step 1 of 2"}</div>
-        <h1 className="onboarding-title">
-          {confirming ? "Confirm accountant access" : "Set up your workspace"}
-        </h1>
-      </div>
+    <div className="onboard-screen">
+      <h1 className="onboard-title">Tell us about your business.</h1>
 
-      {!accessToken && (
-        <div className="card">
-          <div style={{ marginBottom: 10, fontSize: 14 }}>
-            Connect your Google Drive to get started
+      {!accessToken ? (
+        <DriveFallback
+          needsConnect={needsConnect}
+          loadError={loadError}
+          onConnect={requestAccess}
+          onRetry={retryConnection}
+        />
+      ) : (
+        <>
+          <div className="onboard-fields">
+            <input
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder="Company name"
+              autoFocus
+              disabled={confirming}
+            />
+            <input
+              ref={emailInputRef}
+              type="email"
+              value={accountantEmail}
+              onChange={(e) => setAccountantEmail(e.target.value)}
+              placeholder="Accountant's email"
+              onKeyDown={(e) => e.key === "Enter" && !confirming && handleGetStarted()}
+              disabled={confirming}
+            />
           </div>
-          <button className="btn btn-primary" onClick={requestAccess} disabled={profileLoading && !needsConnect}>
-            {needsConnect || !profileLoading ? "Connect Google Drive" : "Loading..."}
-          </button>
-        </div>
-      )}
-
-      {accessToken && !confirming && (
-        <div className="card">
-          <label>Company Name <span className="required">*</span></label>
-          <input
-            className="onboarding-input"
-            value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
-            placeholder="Acme Inc."
-            autoFocus
-          />
-
-          <label>Accountant's Gmail <span className="required">*</span></label>
-          <input
-            className="onboarding-input"
-            type="email"
-            value={accountantEmail}
-            onChange={(e) => setAccountantEmail(e.target.value)}
-            placeholder="accountant@firm.com"
-            onKeyDown={(e) => e.key === "Enter" && handleGetStarted()}
-          />
 
           {error && <div className="status status-error">{error}</div>}
 
-          <div style={{ marginTop: 16 }}>
+          <div className="onboard-spacer" />
+
+          {!confirming ? (
             <button
               className="btn btn-primary"
               onClick={handleGetStarted}
@@ -130,41 +148,20 @@ export default function Setup({ user }) {
             >
               Get Started
             </button>
-          </div>
-        </div>
-      )}
-
-      {accessToken && confirming && (
-        <div className="card">
-          <p>We'll give read-only access to {accountantEmail.trim()}. Correct?</p>
-
-          {error && <div className="status status-error">{error}</div>}
-
-          <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
-            <button className="btn btn-primary" onClick={handleConfirmShare} disabled={creating}>
-              {creating ? "Setting up..." : "Yes, share"}
-            </button>
-            <button
-              className="btn btn-secondary"
-              onClick={() => setConfirming(false)}
-              disabled={creating}
-            >
-              Edit
-            </button>
-          </div>
-        </div>
-      )}
-
-      {creating && (
-        <div className="onboarding-overlay">
-          <div className="onboarding-modal">
-            <div className="spinner" />
-            <p>Creating your folder on Google Drive…</p>
-            <p className="onboarding-path">
-              BX - {companyName || "…"} / {new Date().getFullYear()} / {new Date().toLocaleString("en-US", { month: "long" })}
-            </p>
-          </div>
-        </div>
+          ) : (
+            <div className="onboard-confirm">
+              <div className="onboard-confirm-text">
+                Give read-only access to <strong>{accountantEmail.trim()}</strong>?
+              </div>
+              <button className="btn btn-primary" onClick={handleConfirmShare} disabled={creating}>
+                {creating ? "Setting up…" : "Yes, share"}
+              </button>
+              <button className="quiet-link onboard-confirm-edit" onClick={handleEditFromConfirm} disabled={creating}>
+                edit
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

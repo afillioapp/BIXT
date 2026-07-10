@@ -47,15 +47,21 @@ export default function BiometricGate({ user, children }) {
 
   return (
     <div className="lock-screen">
-      <img src="/bx-logo.svg" alt="BX" className="lock-logo" />
-      <h1 className="lock-title">BX is locked</h1>
+      <div className="lock-wordmark">BXT</div>
+      <div className="lock-glyph" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24">
+          <rect x="4" y="10" width="16" height="11" rx="2" fill="none" stroke="var(--text)" strokeWidth="1.6" />
+          <path d="M7 10V7a5 5 0 0 1 10 0v3" fill="none" stroke="var(--text)" strokeWidth="1.6" />
+        </svg>
+      </div>
+      <h1 className="lock-title">BXT is locked</h1>
       {error && (
         <div className="status status-error lock-error">Couldn't verify — try again.</div>
       )}
       <button className="btn btn-primary lock-btn" onClick={handleUnlock} disabled={verifying}>
-        {verifying ? "Checking…" : "Unlock with Face ID / fingerprint"}
+        {verifying ? "Checking…" : "Unlock with Face ID"}
       </button>
-      <button className="btn btn-secondary lock-btn-secondary" onClick={handleSignOut}>
+      <button className="quiet-link" onClick={handleSignOut}>
         Sign out
       </button>
     </div>
