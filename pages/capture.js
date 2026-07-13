@@ -262,7 +262,7 @@ export default function Capture({ user }) {
                 <input
                   value={form.place}
                   onChange={(e) => updateField("place", e.target.value)}
-                  placeholder="Place"
+                  placeholder="Vendor"
                 />
 
                 <div className="row">
