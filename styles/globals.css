@@ -696,7 +696,9 @@ input:focus, select:focus {
 
 .capture-popover {
   position: absolute;
-  bottom: calc(100% + 14px);
+  /* The camera circle overhangs the bar by 30px (margin-top: -30px), so
+     clearing it needs that plus a visible gap — measured from the bar top. */
+  bottom: calc(100% + 46px);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
