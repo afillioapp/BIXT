@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { signOut } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import { isLockEnabled, verifyLock } from "../lib/biometric";
@@ -18,8 +18,34 @@ export default function BiometricGate({ user, children }) {
   const [unlocked, setUnlocked] = useState(alreadyUnlocked);
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState(false);
+  const autoTriedRef = useRef(false);
 
-  if (!user || !isLockEnabled(user.uid) || unlocked) {
+  const locked = !!user && isLockEnabled(user.uid) && !unlocked;
+
+  // Pop the Face ID prompt automatically the moment the lock screen appears
+  // (owner request). Some browsers refuse WebAuthn without a tap and reject
+  // instantly — the auto attempt fails silently there and the Unlock button
+  // remains as the fallback, with no error shown for the automatic try.
+  useEffect(() => {
+    if (!locked || autoTriedRef.current) return;
+    autoTriedRef.current = true;
+    (async () => {
+      setVerifying(true);
+      try {
+        const ok = await verifyLock(user.uid);
+        if (ok) {
+          window.sessionStorage.setItem(unlockedFlag, "1");
+          setUnlocked(true);
+        }
+      } catch {
+        // Silent — the button below is the fallback.
+      } finally {
+        setVerifying(false);
+      }
+    })();
+  }, [locked, user, unlockedFlag]);
+
+  if (!locked) {
     return children;
   }
 
