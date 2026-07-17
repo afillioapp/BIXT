@@ -3,9 +3,8 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { useDrive } from "../lib/useDrive";
 import { findMonthExpenseSheetId, listExpenseRows } from "../lib/google";
-import { latestReceipts, categoryIcon, weeklyTotals, categoryTotals, formatCurrency } from "../lib/insights";
+import { latestReceipts, categoryIcon, categoryTotals, formatCurrency } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
-import InsightCards from "../components/InsightCards";
 
 function prevMonthDate(d) {
   return new Date(d.getFullYear(), d.getMonth() - 1, 1);
@@ -16,17 +15,6 @@ function greetingForHour(date = new Date()) {
   if (h < 12) return "Good morning,";
   if (h < 18) return "Good afternoon,";
   return "Good evening,";
-}
-
-// Line-icon gear — the header's entry point to Settings now that it's no
-// longer a bottom-nav tab (see components/BottomNav.js).
-function GearIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </svg>
-  );
 }
 
 export default function Home({ user }) {
@@ -88,9 +76,6 @@ export default function Home({ user }) {
           <div>
             <h1>BX</h1>
           </div>
-          <button className="header-gear" aria-label="Settings" onClick={() => router.push("/settings")}>
-            <GearIcon />
-          </button>
         </div>
         <DriveFallback
           needsConnect={needsConnect}
@@ -105,9 +90,6 @@ export default function Home({ user }) {
   const firstName = (user?.displayName || "").trim().split(/\s+/)[0] || profile.companyName;
   const latest = rows ? latestReceipts(rows, 4) : [];
   const now = new Date();
-  // Bold title line inside the "By category" insight panel — just the month
-  // name, per the design handoff's monthLabel (e.g. "July").
-  const monthTag = now.toLocaleString("en-US", { month: "long" });
   const monthData = rows ? categoryTotals(rows, now) : null;
 
   return (
@@ -118,9 +100,6 @@ export default function Home({ user }) {
           <h1 className="dash-name">{firstName}</h1>
           <div className="dash-company">{profile.companyName}</div>
         </div>
-        <button className="header-gear" aria-label="Settings" onClick={() => router.push("/settings")}>
-          <GearIcon />
-        </button>
       </div>
 
       {rows && rows.length === 0 ? (
@@ -148,14 +127,6 @@ export default function Home({ user }) {
           )}
 
           {error && <div className="status status-error">{error}</div>}
-
-          {rows !== null && (
-            <InsightCards
-              weekly={weeklyTotals(rows, now)}
-              categoryData={monthData}
-              monthTag={monthTag}
-            />
-          )}
 
           <div className="section-header">
             <span className="section-title">Latest receipts</span>

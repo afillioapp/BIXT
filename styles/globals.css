@@ -77,9 +77,9 @@ body {
 .container {
   max-width: 480px;
   margin: 0 auto;
-  /* Bottom padding clears the floating pill nav (18px offset + 56px pill)
-     plus breathing room. */
-  padding: 24px 20px calc(104px + env(safe-area-inset-bottom));
+  /* Bottom padding clears the fixed 80px translucent nav bar plus breathing
+     room (see .bottom-nav below). */
+  padding: 24px 20px calc(112px + env(safe-area-inset-bottom));
   min-height: 100vh;
 }
 
@@ -636,77 +636,89 @@ input:focus, select:focus {
 }
 
 /* ── Bottom navigation ──
-   Floating dark pill: fixed, centered, hovering above the bottom edge.
-   Three slots — Home, a raised center camera button, History (Settings
-   moved to a header gear icon, see .header-gear) — per "UI UX/Menu bar.jpg".
-   space-around with exactly 3 children centers the middle slot for free. */
+   Fixed full-width translucent bar per lovable-design/BottomNav.tsx: a
+   backdrop-blurred var(--surface) sheet with a hairline top border, its
+   content centered to the same 480px column as .container, 5 columns —
+   Home, Stats, a raised navy "+" (unchanged capture-popover logic), History,
+   Settings (folded back in, replacing the old per-page header gear icon). */
 .bottom-nav {
   position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: calc(16px + env(safe-area-inset-bottom));
-  display: flex;
-  align-items: center;
-  /* Compact: the bar hugs its three items instead of stretching across the
-     screen, keeping the icons close together (owner request 2026-07-10). */
-  width: auto;
-  gap: 26px;
-  background: var(--accent);
-  border-radius: 24px;
-  padding: 8px 24px;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 40;
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--border);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
-.bottom-nav-item {
+.bottom-nav-grid {
+  max-width: 480px;
+  margin: 0 auto;
+  height: 80px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+  padding: 0 12px;
+}
+
+.bottom-nav-tab {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 48px;
-  width: 48px;
-  border-radius: 16px;
-  color: var(--on-dark);
+  gap: 4px;
+  color: var(--muted);
   text-decoration: none;
 }
 
-.bottom-nav-item.active {
-  background: var(--card);
+.bottom-nav-tab.active {
   color: var(--highlight);
 }
 
-/* Raised center camera button + its "take photo / import" popover. */
+.bottom-nav-tab-label {
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* Raised center "+" button + its "take photo / import" popover. */
 .bottom-nav-center-wrap {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
 }
 
-.bottom-nav-camera {
-  width: 60px;
-  height: 60px;
-  border-radius: 999px;
-  margin-top: -30px;
-  border: 4px solid var(--bg);
-  background: linear-gradient(135deg, #2196f3, #64b5f6);
-  color: #fff;
+.bottom-nav-fab {
+  width: 56px;
+  height: 56px;
+  margin-top: -28px;
+  border-radius: 18px;
+  border: none;
+  background: var(--accent);
+  color: var(--on-dark);
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 18px rgba(33, 150, 243, 0.45);
+  /* Soft navy shadow — same brand-navy hue as --accent, at low opacity. */
+  box-shadow: 0 10px 24px oklch(0.22 0.04 264 / 0.35);
   cursor: pointer;
   flex-shrink: 0;
+  transition: transform 0.1s;
 }
 
-.bottom-nav-camera:active {
-  opacity: 0.9;
+.bottom-nav-fab:active {
+  transform: scale(0.95);
 }
 
 .capture-popover {
   position: absolute;
-  /* The camera circle overhangs the bar by 30px (margin-top: -30px), so
-     clearing it needs that plus a visible gap — measured from the bar top. */
-  bottom: calc(100% + 46px);
+  /* The fab overhangs the wrap's top by 28px (margin-top: -28px) — clear
+     that plus a visible gap, measured from the wrap's own (collapsed)
+     bottom edge. */
+  bottom: calc(100% + 34px);
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -729,9 +741,10 @@ input:focus, select:focus {
   cursor: pointer;
 }
 
+/* Primary action = teal, secondary = navy (owner spec). */
 .capture-popover-photo {
-  background: linear-gradient(135deg, #2196f3, #64b5f6);
-  color: #fff;
+  background: var(--highlight);
+  color: var(--on-dark);
 }
 
 .capture-popover-import {
