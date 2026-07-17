@@ -8,14 +8,19 @@ import {
   signInWithPhoneNumber,
   RecaptchaVerifier,
 } from "firebase/auth";
+import { ChevronLeft } from "lucide-react";
 import { auth } from "../lib/firebase";
 import Logo from "../components/Logo";
 
-// Try the popup flow first everywhere — it's the only flow that works
-// reliably now that Safari/Chrome block third-party storage — and fall back
-// to the full-page redirect only when the browser refuses the popup outright.
-// (The redirect flow additionally relies on next.config.js proxying
-// /__/auth/* so the sign-in helper is same-site.)
+// Ported 1:1 from lovable-design/src/routes/signup.tsx's dark hero (this is
+// intentionally OUR main sign-in screen, not their /login — see RESUME.md /
+// the brief for why the two Lovable routes are swapped): teal-gradient BX
+// tile, tagline + sub copy, one big teal pill. Apple is dropped entirely
+// (owner decision); "Continue with Google" replaces "Create account" and
+// wires the app's real signInPreferringPopup flow. The phone/OTP steps
+// below aren't in the source design (BX has no such route there) — they're
+// restyled in the same dark/teal language so the whole flow reads as one
+// screen family.
 const POPUP_FALLBACK_CODES = [
   "auth/popup-blocked",
   "auth/cancelled-popup-request",
@@ -36,8 +41,6 @@ async function signInPreferringPopup(provider) {
 
 export default function Login() {
   const router = useRouter();
-  // Splash's "Sign In / Sign Up" split was copy-only — both revealed the
-  // same three providers, so it's dropped in favor of showing them directly.
   const [step, setStep] = useState("main"); // 'main' | 'phone' | 'otp'
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
@@ -53,25 +56,31 @@ export default function Login() {
   }, []);
 
   // Surfaces any error from a redirect-based sign-in that just completed
-  // (e.g. returning from Google/Apple on mobile).
+  // (e.g. returning from Google on mobile).
   useEffect(() => {
     getRedirectResult(auth).catch((err) => setError(err.message));
   }, []);
 
-  function clearError() { setError(""); }
+  function clearError() {
+    setError("");
+  }
 
   async function signInGoogle() {
-    clearError(); setLoading("google");
+    clearError();
+    setLoading("google");
     try {
       const provider = new GoogleAuthProvider();
       await signInPreferringPopup(provider);
     } catch (err) {
       if (err.code !== "auth/popup-closed-by-user") setError(err.message);
-    } finally { setLoading(null); }
+    } finally {
+      setLoading(null);
+    }
   }
 
   async function sendOTP() {
-    clearError(); setLoading("phone");
+    clearError();
+    setLoading("phone");
     try {
       if (!window.recaptchaVerifier) {
         window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
@@ -81,81 +90,107 @@ export default function Login() {
       setStep("otp");
     } catch (err) {
       setError(err.message);
-      if (window.recaptchaVerifier) { window.recaptchaVerifier.clear(); window.recaptchaVerifier = null; }
-    } finally { setLoading(null); }
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+        window.recaptchaVerifier = null;
+      }
+    } finally {
+      setLoading(null);
+    }
   }
 
   async function verifyOTP() {
-    clearError(); setLoading("verify");
+    clearError();
+    setLoading("verify");
     try {
       await confirmResult.confirm(otp);
     } catch {
       setError("Invalid code. Check and try again.");
-    } finally { setLoading(null); }
+    } finally {
+      setLoading(null);
+    }
   }
 
   return (
-    <div className="lp-bg">
+    <div className="min-h-dvh bg-brand-navy text-white flex flex-col px-8 pt-20 pb-10">
       {step === "main" && (
         <>
-          {/* Soft floating shapes behind everything, per the login mockup. */}
-          <div className="lp-shapes" aria-hidden="true">
-            <div className="lp-shape" />
-            <div className="lp-shape" />
-            <div className="lp-shape" />
-            <div className="lp-shape" />
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="rounded-[36px] bg-gradient-to-br from-brand-teal/60 via-brand-teal/30 to-brand-navy p-10 shadow-2xl ring-1 ring-white/10">
+              <Logo size={64} onDark />
+            </div>
+            <h1 className="mt-12 text-3xl font-semibold text-center leading-tight max-w-xs">
+              Track every expense, anywhere.
+            </h1>
+            <p className="mt-3 text-sm text-white/60 text-center max-w-xs">
+              The business expense tracker built for teams on the move.
+            </p>
           </div>
 
-          {/* Brand mark, top-left. */}
-          <div className="lp-wordmark">
-            <Logo size={22} />
-          </div>
+          {error && (
+            <div className="mb-4 rounded-xl bg-white/5 text-red-300 text-sm px-4 py-3 text-center">{error}</div>
+          )}
 
-          <div className="lp-hero">
-            <h1 className="lp-tagline">Every receipt,<br />filed by itself.</h1>
-          </div>
-
-          {/* A failed redirect sign-in lands back on this main step — the
-              error must be visible here or it silently disappears. */}
-          {error && <div className="lp-error">{error}</div>}
-
-          <div className="lp-buttons">
-            <button className="btn btn-primary" onClick={signInGoogle} disabled={!!loading}>
-              {loading === "google" ? "Signing in…" : <><GoogleIcon /> Continue with Google</>}
+          <div className="space-y-5">
+            <button
+              type="button"
+              onClick={signInGoogle}
+              disabled={!!loading}
+              className="w-full rounded-full bg-brand-teal py-4 font-semibold text-brand-navy hover:opacity-90 transition disabled:opacity-60"
+            >
+              {loading === "google" ? "Signing in…" : "Continue with Google"}
             </button>
 
-            <button className="btn lp-btn-phone" onClick={() => { clearError(); setStep("phone"); }} disabled={!!loading}>
+            <button
+              type="button"
+              onClick={() => {
+                clearError();
+                setStep("phone");
+              }}
+              disabled={!!loading}
+              className="w-full text-sm text-white/70 underline underline-offset-4"
+            >
               Continue with Phone
             </button>
-          </div>
 
-          <p className="lp-terms">
-            By using BX you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>
-          </p>
+            <p className="text-center text-xs text-white/40 leading-relaxed">
+              By using BX you agree to our <a href="#" className="underline">Terms</a> and{" "}
+              <a href="#" className="underline">Privacy Policy</a>
+            </p>
+          </div>
         </>
       )}
 
       {step === "phone" && (
         <>
-          <button className="lp-back" onClick={() => { clearError(); setStep("main"); }} aria-label="Back">
-            <BackChevron />
+          <button
+            type="button"
+            onClick={() => {
+              clearError();
+              setStep("main");
+            }}
+            aria-label="Back"
+            className="self-start mb-8 text-white/70"
+          >
+            <ChevronLeft className="size-6" />
           </button>
-          <h1 className="lp-heading">What's your number?</h1>
-          <p className="lp-sub-tight">We'll text you a 6-digit code.</p>
+          <h1 className="text-2xl font-semibold mb-2">What's your number?</h1>
+          <p className="text-sm text-white/50 mb-7">We'll text you a 6-digit code.</p>
           <input
-            className="lp-input"
+            className="w-full h-14 rounded-2xl bg-white/5 ring-1 ring-white/10 px-4 text-base text-white placeholder:text-white/40 mb-4 focus:outline-none focus:ring-brand-teal/60"
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="(555) 123-4567"
             autoFocus
           />
-          {error && <div className="lp-error">{error}</div>}
-          <div className="lp-spacer" />
+          {error && <div className="rounded-xl bg-white/5 text-red-300 text-sm px-4 py-3 mb-4">{error}</div>}
+          <div className="flex-1" />
           <button
-            className="btn btn-primary"
+            type="button"
             onClick={sendOTP}
             disabled={phone.length < 7 || loading === "phone"}
+            className="w-full rounded-full bg-brand-teal py-4 font-semibold text-brand-navy hover:opacity-90 transition disabled:opacity-60"
           >
             {loading === "phone" ? "Sending…" : "Send code"}
           </button>
@@ -165,29 +200,45 @@ export default function Login() {
 
       {step === "otp" && (
         <>
-          <button className="lp-back" onClick={() => { clearError(); setStep("phone"); }} aria-label="Back">
-            <BackChevron />
+          <button
+            type="button"
+            onClick={() => {
+              clearError();
+              setStep("phone");
+            }}
+            aria-label="Back"
+            className="self-start mb-8 text-white/70"
+          >
+            <ChevronLeft className="size-6" />
           </button>
-          <h1 className="lp-heading">Enter the code</h1>
-          <p className="lp-sub-tight">Sent to {phone}</p>
+          <h1 className="text-2xl font-semibold mb-2">Enter the code</h1>
+          <p className="text-sm text-white/50 mb-7">Sent to {phone}</p>
           <input
-            className="lp-input lp-otp"
+            className="w-full h-14 rounded-2xl bg-white/5 ring-1 ring-white/10 px-4 text-center text-2xl tracking-[0.3em] text-white placeholder:text-white/40 mb-4 focus:outline-none focus:ring-brand-teal/60"
             type="number"
             value={otp}
             onChange={(e) => setOtp(e.target.value.slice(0, 6))}
             placeholder="000000"
             autoFocus
           />
-          {error && <div className="lp-error">{error}</div>}
-          <div className="lp-spacer" />
+          {error && <div className="rounded-xl bg-white/5 text-red-300 text-sm px-4 py-3 mb-4">{error}</div>}
+          <div className="flex-1" />
           <button
-            className="btn btn-primary"
+            type="button"
             onClick={verifyOTP}
             disabled={otp.length < 6 || loading === "verify"}
+            className="w-full rounded-full bg-brand-teal py-4 font-semibold text-brand-navy hover:opacity-90 transition disabled:opacity-60"
           >
             {loading === "verify" ? "Verifying…" : "Verify"}
           </button>
-          <button className="quiet-link lp-resend" onClick={() => { clearError(); setStep("phone"); }}>
+          <button
+            type="button"
+            onClick={() => {
+              clearError();
+              setStep("phone");
+            }}
+            className="mt-4 text-sm text-white/60 underline underline-offset-4 mx-auto"
+          >
             Didn't get a code? Resend
           </button>
         </>
@@ -195,23 +246,3 @@ export default function Login() {
     </div>
   );
 }
-
-function BackChevron() {
-  return (
-    <svg width="10" height="17" viewBox="0 0 10 17">
-      <path d="M9 1L1 8.5 9 16" stroke="var(--text)" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function GoogleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-      <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.658 14.013 17.64 11.705 17.64 9.2z" fill="#4285F4"/>
-      <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
-      <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-      <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
-    </svg>
-  );
-}
-
