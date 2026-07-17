@@ -170,7 +170,7 @@ input, select {
 
 input:focus, select:focus {
   outline: none;
-  border-color: var(--text);
+  border-color: var(--highlight);
 }
 
 .receipt-preview {
@@ -217,9 +217,10 @@ input:focus, select:focus {
 }
 
 .link {
-  color: var(--ink-soft);
-  text-decoration: underline;
+  color: var(--highlight);
+  text-decoration: none;
   font-size: 13px;
+  font-weight: 600;
 }
 
 /* Phone sign-in: quiet light-gray pill under the dark Google pill, per the
@@ -238,21 +239,35 @@ input:focus, select:focus {
   margin-bottom: 8px;
 }
 
-/* Settings entry point on Home/History (replaces the old avatar-in-header —
-   Settings no longer lives in the bottom nav, see components/BottomNav.js). */
-.header-gear {
+/* Home header avatar — Google profile photo, or an initials circle for
+   phone sign-in users with no photoURL. A convenience shortcut to Settings
+   (which also lives in the bottom nav, see components/BottomNav.js). */
+.dash-avatar-link {
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.dash-avatar,
+.dash-avatar-img {
   width: 40px;
   height: 40px;
   border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.dash-avatar {
+  background: var(--accent);
+  color: var(--on-dark);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: none;
-  border: none;
-  color: var(--muted);
-  cursor: pointer;
-  flex-shrink: 0;
-  padding: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dash-avatar-img {
+  display: block;
+  object-fit: cover;
 }
 
 /* ── Dashboard home ── */
@@ -1240,8 +1255,8 @@ input:focus, select:focus {
   z-index: 1;
 }
 
-/* Soft rotated rounded squares scattered behind the sign-in screen, per the
-   login mockup. Purely decorative. */
+/* Soft rotated rounded squares scattered behind the sign-in screen, tinted
+   with the teal-soft brand tint per the design system. Purely decorative. */
 .lp-shapes {
   position: absolute;
   inset: 0;
@@ -1254,7 +1269,7 @@ input:focus, select:focus {
   width: 130px;
   height: 130px;
   border-radius: 30px;
-  background: var(--surface2);
+  background: var(--highlight-soft);
 }
 
 .lp-shape:nth-child(1) { top: 18%; right: -40px; transform: rotate(18deg); }
@@ -1317,7 +1332,7 @@ input:focus, select:focus {
   margin-bottom: 16px;
   font-family: var(--font-sans);
 }
-.lp-input:focus { outline: none; border-color: var(--text); }
+.lp-input:focus { outline: none; border-color: var(--highlight); }
 
 .lp-otp {
   text-align: center;

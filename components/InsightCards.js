@@ -13,12 +13,15 @@ function hexLerp(hexA, hexB, t) {
   return `#${[r, g, bl].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
 }
 
-// Donut segment colors: a gradient ramp from the blue highlight (largest
-// category) to charcoal (smallest/"Other"), walked in the size order
-// categoryTotals() already returns — so every render's ramp adapts to
-// however many categories are actually present this month.
-const DONUT_RAMP_START = "#2196f3";
-const DONUT_RAMP_END = "#232323";
+// Donut segment colors: a gradient ramp from teal (largest category) to
+// navy (smallest/"Other"), walked in the size order categoryTotals()
+// already returns — so every render's ramp adapts to however many
+// categories are actually present this month. Hex equivalents of the
+// oklch brand-teal/brand-navy tokens (see styles/globals.css --highlight/
+// --accent), matching the hex lovable-design's own stats.tsx pairs with
+// its bg-brand-teal/bg-brand-navy classes.
+const DONUT_RAMP_START = "#0fb5a7";
+const DONUT_RAMP_END = "#1e2a44";
 
 function donutColorForIndex(i, count) {
   const t = count > 1 ? i / (count - 1) : 0;
@@ -70,7 +73,7 @@ function WeeklyBarChart({ days }) {
         const x = startX + i * step;
         const h = niceMax > 0 ? (day.amount / niceMax) * CHART_HEIGHT : 0;
         const y = CHART_BOTTOM - h;
-        // Today gets the blue highlight per the color-palette reference.
+        // Today gets the teal highlight per the navy/teal design system.
         const fill = day.isToday ? "var(--highlight)" : "var(--border)";
         return (
           <g key={day.label + i}>
@@ -97,7 +100,7 @@ function WeeklyBarChart({ days }) {
               y={CHART_BOTTOM + 16}
               fontSize="10"
               fontWeight={day.isToday ? "700" : "400"}
-              fill={day.isToday ? "var(--text)" : "var(--muted)"}
+              fill={day.isToday ? "var(--highlight)" : "var(--muted)"}
               textAnchor="middle"
             >
               {day.label}

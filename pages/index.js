@@ -17,6 +17,16 @@ function greetingForHour(date = new Date()) {
   return "Good evening,";
 }
 
+// "Jane Doe" -> "JD"; a single name -> first two letters; nothing -> "?".
+// Fallback avatar for phone sign-in users, who have no Google photoURL.
+function initialsFor(name, fallback) {
+  const source = (name || fallback || "").trim();
+  if (!source) return "?";
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export default function Home({ user }) {
   const router = useRouter();
   const {
@@ -100,6 +110,22 @@ export default function Home({ user }) {
           <h1 className="dash-name">{firstName}</h1>
           <div className="dash-company">{profile.companyName}</div>
         </div>
+        <Link href="/settings" aria-label="Settings" className="dash-avatar-link">
+          {user?.photoURL ? (
+            <img
+              src={user.photoURL}
+              alt=""
+              referrerPolicy="no-referrer"
+              width={40}
+              height={40}
+              className="dash-avatar-img"
+            />
+          ) : (
+            <span className="dash-avatar" aria-hidden="true">
+              {initialsFor(user?.displayName, profile.companyName)}
+            </span>
+          )}
+        </Link>
       </div>
 
       {rows && rows.length === 0 ? (
