@@ -1,50 +1,58 @@
 /* ── BX design system ──
-   Monochrome palette approved 2026-07 (design_handoff_bxt_app). Values are
-   mapped onto the pre-existing CSS var names so every page restyles from
-   this one block; --surface2, --ink-soft and --on-dark are new slots the
-   old (dark-theme) palette had no equivalent for. */
+   Navy/teal palette (owner-approved Lovable design handoff, 2026-07-17,
+   see lovable-design/src/styles.css). Values are translated (oklch) onto
+   the pre-existing CSS var names so every page restyles from this one
+   block; --surface2, --ink-soft, --on-dark and --highlight-soft are slots
+   the source design's raw token list had no exact 1:1 name for. --accent
+   and --highlight now carry actual BRAND colors (navy / teal) rather than
+   a monochrome ink value, so — like the source design's own --brand-navy/
+   --brand-teal, which are never overridden in its .dark block — they stay
+   IDENTICAL between light and dark mode below; only the neutral surface/
+   text/border slots flip. */
 :root {
-  /* Palette per the "color palette" reference (UI UX folder, 2026-07-10):
-     charcoal instead of pure black for dark fills, one blue highlight for
-     interactive accents (toggles, active nav, today's bar). */
-  --bg: #ffffff;
-  --surface: #ffffff;
-  --surface2: #efefef;
-  --card: #ffffff;
-  --accent: #232323;
-  --accent-dark: #161616;
-  --highlight: #2196f3;
+  --bg: oklch(0.97 0.005 260);
+  --surface: oklch(0.99 0.002 260);
+  --surface2: oklch(0.96 0.005 260);
+  --card: oklch(1 0 0);
+  --accent: oklch(0.22 0.04 264); /* brand navy */
+  --accent-dark: oklch(0.16 0.035 264);
+  --highlight: oklch(0.62 0.11 190); /* brand teal */
+  --highlight-soft: oklch(0.62 0.11 190 / 0.12);
   --on-dark: #ffffff;
-  --text: #111111;
-  --ink-soft: #5c5c5c;
-  --muted: #9a9a9a;
-  --border: #e2e2e2;
-  --error: #3a3a3a;
+  --text: oklch(0.2 0.02 260);
+  --ink-soft: oklch(0.5 0.015 260);
+  --muted: oklch(0.68 0.012 260);
+  --border: oklch(0.929 0.013 255.508);
+  --error: oklch(0.577 0.245 27.325);
+  /* Wordmark ink (components/Logo.js): navy on the light theme's near-white
+     background, but that would lose contrast against the dark theme's
+     near-black --bg since --accent is now a theme-invariant brand color —
+     so this slot (unlike --accent) DOES flip, to --on-dark, below. */
+  --logo-ink: var(--accent);
 
-  /* Owner decision 2026-07-10: DM Sans everywhere (Circular-style look).
-     The --font-serif slot is kept so headline rules don't need touching —
-     it now resolves to the same rounded sans. */
-  --font-sans: var(--font-dm-sans), -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-  --font-serif: var(--font-dm-sans), -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  /* Owner decision 2026-07-17: Inter everywhere, replacing DM Sans. The
+     --font-serif slot is kept so headline rules don't need touching — it
+     still resolves to the same sans. */
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: var(--font-inter), -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
 }
 
 /* Dark mode override (owner: simple toggle, default light — see
    lib/theme.js / pages/settings.js "Appearance"). Stamped on <html> as
    data-theme="dark" so every existing var()-based rule restyles for free.
-   --highlight stays the same blue in both themes. */
+   --accent/--highlight/--highlight-soft/--on-dark are brand constants and
+   deliberately absent here — they render identically in both themes. */
 [data-theme="dark"] {
-  --bg: #141414;
-  --surface: #1a1a1a;
-  --surface2: #242424;
-  --card: #1d1d1d;
-  --accent: #f5f5f5;
-  --accent-dark: #ffffff;
-  --on-dark: #161616;
-  --text: #f2f2f2;
-  --ink-soft: #b8b8b8;
-  --muted: #8a8a8a;
-  --border: #2e2e2e;
-  --error: #ef6b6b;
+  --bg: oklch(0.129 0.042 264.695);
+  --surface: oklch(0.18 0.042 264.695);
+  --surface2: oklch(0.279 0.041 260.031);
+  --card: oklch(0.208 0.042 265.755);
+  --text: oklch(0.984 0.003 247.858);
+  --ink-soft: oklch(0.704 0.04 256.788);
+  --muted: oklch(0.48 0.02 260);
+  --border: oklch(1 0 0 / 10%);
+  --error: oklch(0.704 0.191 22.216);
+  --logo-ink: var(--on-dark);
 }
 
 * {

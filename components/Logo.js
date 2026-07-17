@@ -1,10 +1,11 @@
-// Wordmark logo: "BX" in the app's own DM Sans, with a rounded blue
-// underline bar spanning the full width of the letters (owner spec
-// 2026-07-10: line aligned with the letters' length, slightly bold).
-// Pure inline styles (no CSS class) so it renders identically wherever it's
-// dropped in; `animated` adds the splash-loader animation where the line
-// extends out to the left and right (keyframes in styles/globals.css).
-export default function Logo({ size = 32, animated = false }) {
+// Wordmark logo: bold "BX" in navy (or white when `onDark` is set, for
+// placement on a navy/dark surface) with a rounded teal underline bar
+// spanning the full width of the letters (per lovable-design's BXLogo.tsx —
+// navy-on-light / white-on-dark variants, teal underline). Pure inline
+// styles (no CSS class) so it renders identically wherever it's dropped in;
+// `animated` adds the splash-loader animation where the line extends out to
+// the left and right (keyframes in styles/globals.css).
+export default function Logo({ size = 32, animated = false, onDark = false }) {
   const underlineHeight = Math.max(4, Math.round(size * 0.15));
 
   return (
@@ -21,7 +22,7 @@ export default function Logo({ size = 32, animated = false }) {
           fontFamily: "var(--font-sans)",
           fontWeight: 700,
           fontSize: size,
-          color: "var(--text)",
+          color: onDark ? "var(--on-dark)" : "var(--logo-ink)",
           letterSpacing: "0.01em",
         }}
       >
