@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
-import { DM_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import BottomNav from "../components/BottomNav";
@@ -10,14 +10,14 @@ import BiometricGate from "../components/BiometricGate";
 import { getTheme, setTheme } from "../lib/theme";
 import "../styles/globals.css";
 
-// One typeface for everything (owner decision 2026-07-10): DM Sans — the
-// free near-twin of Circular, replacing both Inter (body) and Source Serif 4
-// (headlines). styles/globals.css points --font-sans AND --font-serif at
-// this variable, so every existing rule restyles without edits.
-const dmSans = DM_Sans({
+// One typeface for everything (owner decision 2026-07-17, Lovable navy/teal
+// handoff): Inter, replacing DM Sans. styles/globals.css points --font-sans
+// AND --font-serif at this variable, so every existing rule restyles
+// without edits.
+const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-dm-sans",
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -69,7 +69,7 @@ export default function App({ Component, pageProps }) {
         <title>BX</title>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </Head>
-      <div className={`app-shell ${dmSans.variable}`}>
+      <div className={`app-shell ${inter.variable}`}>
         <BiometricGate user={user}>
           <Component {...pageProps} user={user} />
           {showNav && <BottomNav />}
