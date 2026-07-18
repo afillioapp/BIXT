@@ -183,10 +183,13 @@ export default function Home({ user }) {
         className="hidden"
       />
 
-      <div className="mx-auto max-w-md px-5 pt-10">
+      {/* Navy hero: everything above Recent Expenses sits on brand navy with
+          a rounded bottom edge (owner request, reference screenshot). */}
+      <div className="bg-brand-navy rounded-b-3xl pb-7 text-white">
+        <div className="mx-auto max-w-md px-5 pt-10">
         <header className="mb-6 flex items-start justify-between">
           <div>
-            <p className="text-xs text-text-secondary mb-1">{profile.companyName}</p>
+            <p className="text-xs text-white/60 mb-1">{profile.companyName}</p>
             <h1 className="text-2xl font-semibold tracking-tight">
               {greetingForHour()}, {firstName}
             </h1>
@@ -202,14 +205,14 @@ export default function Home({ user }) {
                 className="size-10 rounded-full object-cover"
               />
             ) : (
-              <div className="size-10 rounded-full bg-brand-navy text-white grid place-items-center text-sm font-semibold">
+              <div className="size-10 rounded-full bg-white/15 text-white grid place-items-center text-sm font-semibold">
                 {initialsFor(user?.displayName, profile.companyName)}
               </div>
             )}
           </Link>
         </header>
 
-        <section className="bg-brand-navy text-white rounded-2xl p-5 mb-6 shadow-sm ring-1 ring-black/5">
+        <section className="bg-white/5 text-white rounded-2xl p-5 mb-6 ring-1 ring-white/10">
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-[10px] uppercase tracking-widest text-white/60 mb-1">
@@ -252,24 +255,24 @@ export default function Home({ user }) {
           </div>
         </section>
 
-        <section className="grid grid-cols-4 gap-3 mb-8">
+        <section className="grid grid-cols-4 gap-3">
           <button className="flex flex-col items-center gap-2" onClick={() => scanInputRef.current?.click()}>
             <div className="size-12 rounded-xl grid place-items-center ring-1 bg-white text-text-primary ring-black/5">
               <ScanLine className="size-5" />
             </div>
-            <span className="text-[11px] text-text-secondary">Scan</span>
+            <span className="text-[11px] text-white/70">Scan</span>
           </button>
           <button className="flex flex-col items-center gap-2" onClick={() => importInputRef.current?.click()}>
             <div className="size-12 rounded-xl grid place-items-center ring-1 bg-white text-text-primary ring-black/5">
               <ArrowLeftRight className="size-5" />
             </div>
-            <span className="text-[11px] text-text-secondary">Transfer</span>
+            <span className="text-[11px] text-white/70">Transfer</span>
           </button>
           <button className="flex flex-col items-center gap-2" onClick={() => router.push("/stats")}>
             <div className="size-12 rounded-xl grid place-items-center ring-1 bg-white text-text-primary ring-black/5">
               <FileText className="size-5" />
             </div>
-            <span className="text-[11px] text-text-secondary">Report</span>
+            <span className="text-[11px] text-white/70">Report</span>
           </button>
           <div className="relative flex flex-col items-center gap-2" ref={addWrapRef}>
             {addOpen && (
@@ -299,11 +302,14 @@ export default function Home({ user }) {
               <div className="size-12 rounded-xl grid place-items-center ring-1 bg-brand-teal text-white ring-brand-teal">
                 <Plus className="size-5" />
               </div>
-              <span className="text-[11px] text-text-secondary">Add</span>
+              <span className="text-[11px] text-white/70">Add</span>
             </button>
           </div>
         </section>
+        </div>
+      </div>
 
+      <div className="mx-auto max-w-md px-5 pt-6">
         {error && <div className="text-xs text-destructive mb-4">{error}</div>}
 
         <section className="mb-4">
