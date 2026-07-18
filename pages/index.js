@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { TrendingUp, MoreHorizontal } from "lucide-react";
@@ -70,6 +70,9 @@ export default function Home({ user }) {
 
   const { getMonthRows, ensureMonths } = useMonthRows(accessToken, rootFolderId);
 
+  // Category filter for the Recent Expenses list (null = All).
+  const [filterCat, setFilterCat] = useState(null);
+
   // Only send someone to onboarding when we positively know they have no BX
   // folder — i.e. Drive answered us. A connection problem (loadError) or a
   // missing token (needsConnect) must never re-onboard an existing customer.
@@ -100,7 +103,20 @@ export default function Home({ user }) {
   const rows = currentMonthRows && prevMonthRows ? [...currentMonthRows, ...prevMonthRows] : null;
 
   const firstName = (user?.displayName || "").trim().split(/\s+/)[0] || profile.companyName;
-  const latest = rows ? latestReceipts(rows, 5) : [];
+
+  // Filter pills: the categories present across the loaded rows, biggest
+  // spend first (both months, matching what the list itself can show).
+  const catSpend = new Map();
+  for (const r of rows || []) {
+    const c = r.category || "Other";
+    const n = parseFloat(String(r.total ?? "").replace(/^'/, "").replace(/[$,\s]/g, ""));
+    catSpend.set(c, (catSpend.get(c) || 0) + (Number.isFinite(n) ? n : 0));
+  }
+  const filterCats = [...catSpend.entries()].sort((a, b) => b[1] - a[1]).map(([c]) => c).slice(0, 6);
+
+  const visibleRows =
+    rows && filterCat ? rows.filter((r) => (r.category || "Other") === filterCat) : rows;
+  const latest = visibleRows ? latestReceipts(visibleRows, 5) : [];
   const monthData = rows ? categoryTotals(rows, now) : null;
   const prevMonthTotal = rows ? categoryTotals(rows, prevMonthDate(now)).total : 0;
   const pctChange =
@@ -169,6 +185,28 @@ export default function Home({ user }) {
       </div>
 
       <div className="mx-auto max-w-md px-5 pt-6">
+        {rows && rows.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-4 -mx-5 px-5 scrollbar-none">
+            {["All", ...filterCats].map((c) => {
+              const active = c === "All" ? filterCat === null : filterCat === c;
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setFilterCat(c === "All" ? null : c)}
+                  className={`px-4 py-2 rounded-full text-xs font-medium shrink-0 ${
+                    active
+                      ? "bg-brand-navy text-white"
+                      : "bg-white ring-1 ring-black/5 text-text-secondary"
+                  }`}
+                >
+                  {c}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         <section className="mb-4">
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-sm font-semibold">Recent Expenses</h2>
@@ -188,6 +226,12 @@ export default function Home({ user }) {
                 Tap the + button below to snap your first one.
               </p>
             </div>
+          )}
+
+          {rows && rows.length > 0 && latest.length === 0 && (
+            <p className="text-xs text-text-secondary py-6 text-center">
+              No {filterCat} expenses in the last two months.
+            </p>
           )}
 
           {rows && rows.length > 0 && (
