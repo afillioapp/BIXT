@@ -1,28 +1,13 @@
 /* ── Legacy global styles ──
    Almost everything that used to live here was replaced by the Tailwind 4
    port of the Lovable design system (styles/tailwind.css — imported first
-   in pages/_app.js). Only two things are still referenced:
+   in pages/_app.js). Only one rule is still referenced:
 
-   1. .app-shell — the pages/_app.js wrapper that carries next/font's
-      --font-inter variable class; this rule resolves the app's default
-      font stack from the theme's --font-sans.
-   2. The splash/logo underline animation (components/Logo.js `animated`
-      prop, used by components/SplashLoader.js) — the line extending out to
-      the left and right IS the loading indicator. */
+   .app-shell — the pages/_app.js wrapper that carries next/font's
+   --font-inter variable class; this rule resolves the app's default font
+   stack from the theme's --font-sans. */
 
 .app-shell {
   font-family: var(--font-sans, var(--font-inter), ui-sans-serif, system-ui, sans-serif);
   min-height: 100vh;
-}
-
-/* The splash logo's underline extends out to the left and right on a loop —
-   scaleX from the center, so it grows evenly both ways. */
-.logo-line-anim {
-  animation: logo-line-extend 1.3s ease-in-out infinite;
-  transform-origin: center;
-}
-
-@keyframes logo-line-extend {
-  0%, 100% { transform: scaleX(0.18); }
-  50% { transform: scaleX(1); }
 }

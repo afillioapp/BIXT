@@ -5,7 +5,6 @@ import { Inter } from "next/font/google";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import BottomNav from "../components/BottomNav";
-import SplashLoader from "../components/SplashLoader";
 import BiometricGate from "../components/BiometricGate";
 import { getTheme, setTheme } from "../lib/theme";
 import "../styles/tailwind.css";
@@ -59,8 +58,10 @@ export default function App({ Component, pageProps }) {
     return () => clearTimeout(timer);
   }, [user, router.pathname]);
 
-  // Show the BX splash while checking auth, instead of a blank screen
-  if (user === undefined) return <SplashLoader />;
+  // Auth check in flight: render nothing (owner removed the splash
+  // preloader 2026-07-17). The check resolves in well under a second in
+  // practice; the 5s fail-open timer above still prevents a permanent hang.
+  if (user === undefined) return null;
 
   const showNav = !!user && !NO_NAV_ROUTES.includes(router.pathname);
 
