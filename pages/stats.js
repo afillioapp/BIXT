@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useDrive } from "../lib/useDrive";
 import { findMonthExpenseSheetId, listExpenseRows } from "../lib/google";
+import { useMonthRows } from "../lib/useMonthRows";
 import { weeklyTotals, categoryTotals, formatCurrency } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
 
@@ -236,8 +237,6 @@ export default function Stats({ user }) {
     retryConnection,
   } = useDrive(user);
 
-  const [rows, setRows] = useState(null);
-  const [error, setError] = useState("");
   const [range, setRange] = useState("Week");
 
   // How many periods back from "now" each range is currently showing.
@@ -245,43 +244,14 @@ export default function Stats({ user }) {
   const [monthOffset, setMonthOffset] = useState(0);
   const [yearOffset, setYearOffset] = useState(0);
 
-  // Per-month row cache backing period navigation; cacheVersion bumps to
-  // rerender once background fetches land.
-  const monthCacheRef = useRef(new Map());
-  const [, setCacheVersion] = useState(0);
-  const [periodLoading, setPeriodLoading] = useState(false);
+  // Per-month row cache backing Week/Month period navigation — shared with
+  // Home's carousel via lib/useMonthRows.js so both pages agree on the same
+  // data and never double-fetch a month. Seeds current + previous month
+  // automatically; missing months are requested below as periods need them.
+  const { getMonthRows, ensureMonths } = useMonthRows(accessToken, rootFolderId);
 
   const [yearCache, setYearCache] = useState({}); // { [year]: number[12] }
   const [yearLoading, setYearLoading] = useState(false);
-
-  useEffect(() => {
-    if (!accessToken || !rootFolderId) return;
-    let cancelled = false;
-
-    async function load() {
-      setError("");
-      try {
-        const now = new Date();
-        const months = [now, prevMonthDate(now)];
-        const results = await Promise.all(
-          months.map(async (d) => {
-            const sheetId = await findMonthExpenseSheetId(accessToken, rootFolderId, d);
-            return sheetId ? listExpenseRows(accessToken, sheetId) : [];
-          })
-        );
-        if (cancelled) return;
-        // Seed the period cache so offset 0 renders without a second fetch.
-        months.forEach((d, i) => monthCacheRef.current.set(monthKey(d), results[i]));
-        setRows(results.flat());
-      } catch (err) {
-        if (!cancelled) setError(err.message);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken, rootFolderId]);
 
   // The months the currently shown period needs (its own span plus the
   // previous period, for the vs-last delta).
@@ -301,33 +271,11 @@ export default function Stats({ user }) {
     return [];
   }
 
-  // Fetch any months the current period needs but the cache lacks.
+  // Ask the shared cache for any months the current period needs but
+  // doesn't have yet (a retry happens next time this effect runs, since
+  // ensureMonths only re-requests months still missing from the cache).
   useEffect(() => {
-    if (!accessToken || !rootFolderId) return;
-    const missing = neededMonthDates().filter((d) => !monthCacheRef.current.has(monthKey(d)));
-    if (missing.length === 0) return;
-    let cancelled = false;
-    setPeriodLoading(true);
-    (async () => {
-      await Promise.all(
-        missing.map(async (d) => {
-          try {
-            const sheetId = await findMonthExpenseSheetId(accessToken, rootFolderId, d);
-            const monthRows = sheetId ? await listExpenseRows(accessToken, sheetId) : [];
-            monthCacheRef.current.set(monthKey(d), monthRows);
-          } catch {
-            // Leave it missing — a retry happens next time the effect runs.
-          }
-        })
-      );
-      if (!cancelled) {
-        setPeriodLoading(false);
-        setCacheVersion((v) => v + 1);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    ensureMonths(neededMonthDates());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range, weekOffset, monthOffset, accessToken, rootFolderId]);
 
@@ -382,13 +330,16 @@ export default function Stats({ user }) {
 
   const now = new Date();
   const monthTag = now.toLocaleString("en-US", { month: "long" });
+  const currentMonthRows = getMonthRows(now);
+  const prevMonthRows = getMonthRows(prevMonthDate(now));
+  const rows = currentMonthRows && prevMonthRows ? [...currentMonthRows, ...prevMonthRows] : null;
   const monthData = rows ? categoryTotals(rows, now) : { total: 0, categories: [] };
 
-  // Rows for the shown period, drawn from the per-month cache; null while
-  // any needed month is still fetching.
+  // Rows for the shown period, drawn from the shared per-month cache; null
+  // while any needed month is still fetching.
   const needed = neededMonthDates();
-  const periodReady = needed.every((d) => monthCacheRef.current.has(monthKey(d)));
-  const periodRows = periodReady ? needed.flatMap((d) => monthCacheRef.current.get(monthKey(d))) : null;
+  const periodReady = needed.every((d) => getMonthRows(d));
+  const periodRows = periodReady ? needed.flatMap((d) => getMonthRows(d)) : null;
 
   const loadingCard = (
     <section className="bg-white rounded-2xl p-5 mb-6 ring-1 ring-black/5">
@@ -477,8 +428,7 @@ export default function Stats({ user }) {
 
         <Segmented range={range} setRange={setRange} />
 
-        {error && <div className="text-xs text-destructive mb-4">{error}</div>}
-        {rows === null && !error && <p className="text-xs text-text-secondary mb-4">Loading receipts…</p>}
+        {rows === null && <p className="text-xs text-text-secondary mb-4">Loading receipts…</p>}
 
         {rangeCard}
 

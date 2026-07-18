@@ -1,17 +1,21 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { ScanLine, ArrowLeftRight, FileText, Plus, TrendingUp, TrendingDown, MoreHorizontal, Camera, Image as GalleryIcon } from "lucide-react";
+import { TrendingUp, MoreHorizontal } from "lucide-react";
 import { useDrive } from "../lib/useDrive";
-import { findMonthExpenseSheetId, listExpenseRows } from "../lib/google";
-import { latestReceipts, categoryTotals, weeklyTotals, formatCurrency } from "../lib/insights";
-import { setPendingCapture } from "../lib/pendingCapture";
+import { useMonthRows } from "../lib/useMonthRows";
+import { latestReceipts, categoryTotals, formatCurrency } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
+import HomeCarousel from "../components/HomeCarousel";
 
-// Ported 1:1 from lovable-design/src/routes/index.tsx: navy "Total Balance"
-// hero card, 4-tile quick-action row, "Recent Expenses" list of white rows
-// with a tinted first-letter square. Layout/classes verbatim; every number
-// on the page is real (Drive-backed), not the mock's static figures.
+// Originally ported 1:1 from lovable-design/src/routes/index.tsx (navy
+// "Total Balance" hero + 4-tile quick-action row + "Recent Expenses" list).
+// Round 5 (owner request): the hero's inner "This week"/"Last month" tiles
+// and the quick-action row are gone, replaced by a swipeable 3-panel
+// carousel (components/HomeCarousel.js) inside the hero. Capture is reached
+// through the bottom-nav "+" popover only (components/BottomNav.js) — no
+// separate capture entry point on this page. Every number on the page is
+// real (Drive-backed).
 
 function prevMonthDate(d) {
   return new Date(d.getFullYear(), d.getMonth() - 1, 1);
@@ -70,13 +74,7 @@ export default function Home({ user }) {
     retryConnection,
   } = useDrive(user);
 
-  const [rows, setRows] = useState(null);
-  const [error, setError] = useState("");
-  const [addOpen, setAddOpen] = useState(false);
-
-  const scanInputRef = useRef(null);
-  const importInputRef = useRef(null);
-  const addWrapRef = useRef(null);
+  const { getMonthRows, ensureMonths } = useMonthRows(accessToken, rootFolderId);
 
   // Only send someone to onboarding when we positively know they have no BX
   // folder — i.e. Drive answered us. A connection problem (loadError) or a
@@ -86,57 +84,6 @@ export default function Home({ user }) {
       router.replace("/setup");
     }
   }, [profileLoading, profile, accessToken, loadError, needsConnect]);
-
-  useEffect(() => {
-    if (!accessToken || !rootFolderId) return;
-    let cancelled = false;
-
-    async function load() {
-      setError("");
-      try {
-        const now = new Date();
-        const months = [now, prevMonthDate(now)];
-        const results = await Promise.all(
-          months.map(async (d) => {
-            const sheetId = await findMonthExpenseSheetId(accessToken, rootFolderId, d);
-            return sheetId ? listExpenseRows(accessToken, sheetId) : [];
-          })
-        );
-        if (cancelled) return;
-        setRows(results.flat());
-      } catch (err) {
-        if (!cancelled) setError(err.message);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken, rootFolderId]);
-
-  // Close the "Add" popover on an outside tap, same pattern as
-  // components/BottomNav.js's center-fab popover.
-  useEffect(() => {
-    if (!addOpen) return;
-    function handleOutside(e) {
-      if (addWrapRef.current && !addWrapRef.current.contains(e.target)) setAddOpen(false);
-    }
-    document.addEventListener("mousedown", handleOutside);
-    document.addEventListener("touchstart", handleOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleOutside);
-      document.removeEventListener("touchstart", handleOutside);
-    };
-  }, [addOpen]);
-
-  function handleFileChosen(e) {
-    const file = e.target.files[0];
-    e.target.value = "";
-    if (!file) return;
-    setPendingCapture(file);
-    setAddOpen(false);
-    router.push("/capture");
-  }
 
   if (profileLoading || !profile) {
     return (
@@ -153,12 +100,15 @@ export default function Home({ user }) {
     );
   }
 
+  const now = new Date();
+  const currentMonthRows = getMonthRows(now);
+  const prevMonthRows = getMonthRows(prevMonthDate(now));
+  const rows = currentMonthRows && prevMonthRows ? [...currentMonthRows, ...prevMonthRows] : null;
+
   const firstName = (user?.displayName || "").trim().split(/\s+/)[0] || profile.companyName;
   const latest = rows ? latestReceipts(rows, 5) : [];
-  const now = new Date();
   const monthData = rows ? categoryTotals(rows, now) : null;
   const prevMonthTotal = rows ? categoryTotals(rows, prevMonthDate(now)).total : 0;
-  const weekly = rows ? weeklyTotals(rows, now) : null;
   const pctChange =
     monthData && prevMonthTotal > 0
       ? Math.round(((monthData.total - prevMonthTotal) / prevMonthTotal) * 100)
@@ -167,22 +117,6 @@ export default function Home({ user }) {
 
   return (
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-      <input
-        ref={scanInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={handleFileChosen}
-        className="hidden"
-      />
-      <input
-        ref={importInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileChosen}
-        className="hidden"
-      />
-
       {/* Navy hero: everything above Recent Expenses sits on brand navy with
           a rounded bottom edge (owner request, reference screenshot). */}
       <div className="bg-brand-navy rounded-b-3xl pb-7 text-white">
@@ -235,83 +169,13 @@ export default function Home({ user }) {
               <span className="text-[10px] text-white/60">vs last month</span>
             </div>
           )}
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <div className="rounded-xl bg-white/5 p-3 border border-white/5">
-              <div className="flex items-center gap-1.5 text-[10px] text-white/60">
-                <TrendingUp className="size-3" /> This week
-              </div>
-              <p className="text-sm font-semibold mt-1">
-                {weekly ? formatCurrency(weekly.total, { decimals: 2 }) : "—"}
-              </p>
-            </div>
-            <div className="rounded-xl bg-white/5 p-3 border border-white/5">
-              <div className="flex items-center gap-1.5 text-[10px] text-white/60">
-                <TrendingDown className="size-3" /> Last month
-              </div>
-              <p className="text-sm font-semibold mt-1">
-                {rows ? formatCurrency(prevMonthTotal, { decimals: 2 }) : "—"}
-              </p>
-            </div>
-          </div>
         </section>
 
-        <section className="grid grid-cols-4 gap-3">
-          <button className="flex flex-col items-center gap-2" onClick={() => scanInputRef.current?.click()}>
-            <div className="size-12 rounded-xl grid place-items-center ring-1 bg-white text-text-primary ring-black/5">
-              <ScanLine className="size-5" />
-            </div>
-            <span className="text-[11px] text-white/70">Scan</span>
-          </button>
-          <button className="flex flex-col items-center gap-2" onClick={() => importInputRef.current?.click()}>
-            <div className="size-12 rounded-xl grid place-items-center ring-1 bg-white text-text-primary ring-black/5">
-              <ArrowLeftRight className="size-5" />
-            </div>
-            <span className="text-[11px] text-white/70">Transfer</span>
-          </button>
-          <button className="flex flex-col items-center gap-2" onClick={() => router.push("/stats")}>
-            <div className="size-12 rounded-xl grid place-items-center ring-1 bg-white text-text-primary ring-black/5">
-              <FileText className="size-5" />
-            </div>
-            <span className="text-[11px] text-white/70">Report</span>
-          </button>
-          <div className="relative flex flex-col items-center gap-2" ref={addWrapRef}>
-            {addOpen && (
-              <div className="absolute bottom-[calc(100%+10px)] left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-50">
-                <button
-                  type="button"
-                  onClick={() => scanInputRef.current?.click()}
-                  className="flex items-center gap-2.5 whitespace-nowrap rounded-full bg-brand-teal text-white px-5 py-3 text-sm font-semibold shadow-xl cursor-pointer"
-                >
-                  <Camera className="size-4" /> Take photo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => importInputRef.current?.click()}
-                  className="flex items-center gap-2.5 whitespace-nowrap rounded-full bg-brand-navy text-white px-5 py-3 text-sm font-semibold shadow-xl cursor-pointer"
-                >
-                  <GalleryIcon className="size-4" /> Import from gallery
-                </button>
-              </div>
-            )}
-            <button
-              className="flex flex-col items-center gap-2"
-              onClick={() => setAddOpen((o) => !o)}
-              aria-expanded={addOpen}
-              aria-label="Add expense"
-            >
-              <div className="size-12 rounded-xl grid place-items-center ring-1 bg-brand-teal text-white ring-brand-teal">
-                <Plus className="size-5" />
-              </div>
-              <span className="text-[11px] text-white/70">Add</span>
-            </button>
-          </div>
-        </section>
+        <HomeCarousel getMonthRows={getMonthRows} ensureMonths={ensureMonths} />
         </div>
       </div>
 
       <div className="mx-auto max-w-md px-5 pt-6">
-        {error && <div className="text-xs text-destructive mb-4">{error}</div>}
-
         <section className="mb-4">
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-sm font-semibold">Recent Expenses</h2>
@@ -320,7 +184,7 @@ export default function Home({ user }) {
             </Link>
           </div>
 
-          {rows === null && !error && (
+          {rows === null && (
             <p className="text-xs text-text-secondary">Loading receipts…</p>
           )}
 
@@ -328,7 +192,7 @@ export default function Home({ user }) {
             <div className="flex flex-col items-center text-center gap-2 py-10">
               <p className="text-sm font-semibold">No receipts yet</p>
               <p className="text-xs text-text-secondary max-w-[220px]">
-                Tap the teal Add button above to snap your first one.
+                Tap the + button below to snap your first one.
               </p>
             </div>
           )}
