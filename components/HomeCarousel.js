@@ -98,7 +98,7 @@ function PeriodNav({ label, onPrev, onNext, nextDisabled }) {
 
 function PanelShell({ title, nav, children }) {
   return (
-    <section className="h-[172px] flex flex-col pt-1">
+    <section className="h-[264px] flex flex-col pt-1">
       <div className="flex items-center justify-between gap-2 mb-2">
         <p className="text-sm font-semibold text-text-primary">{title}</p>
         {nav}
