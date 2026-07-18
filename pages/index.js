@@ -133,64 +133,56 @@ export default function Home({ user }) {
 
   return (
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-      {/* Navy hero: everything above Recent Expenses sits on brand navy with
-          a rounded bottom edge (owner request, reference screenshot). */}
-      <div className="bg-brand-navy rounded-b-3xl pb-7 text-white relative z-10 shadow-xl shadow-brand-navy/25">
-        <div className="mx-auto max-w-md px-5 pt-10">
-        <header className="mb-6 flex items-start justify-between">
-          <div>
-            <p className="text-xs text-white/60 mb-1">{profile.companyName}</p>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Hi, {firstName}
-            </h1>
-          </div>
-          <Link href="/settings" aria-label="Settings" className="shrink-0">
-            {user?.photoURL ? (
-              <img
-                src={user.photoURL}
-                alt=""
-                referrerPolicy="no-referrer"
-                width={40}
-                height={40}
-                className="size-10 rounded-full object-cover"
-              />
-            ) : (
-              <div className="size-10 rounded-full bg-white/15 text-white grid place-items-center text-sm font-semibold">
-                {initialsFor(user?.displayName, profile.companyName)}
-              </div>
-            )}
-          </Link>
-        </header>
-
-        <section className="bg-white/5 text-white rounded-2xl p-5 mb-6 ring-1 ring-white/10">
-          <div className="flex justify-between items-start mb-4">
+      {/* Compact navy header, same scale as Settings/Stats (owner request):
+          the month total IS the headline; greeting and company are gone. */}
+      <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-white relative z-10 shadow-xl shadow-brand-navy/25">
+        <div className="mx-auto max-w-md px-5">
+          <header className="flex items-start justify-between">
             <div>
               <p className="text-[10px] uppercase tracking-widest text-white/60 mb-1">
                 {totalLabel}
               </p>
-              <p
-                className="text-3xl font-medium leading-none"
+              <h1
+                className="text-3xl font-semibold tracking-tight leading-none"
                 style={filterAccent ? { color: filterAccent } : undefined}
               >
                 {monthData ? formatCurrency(monthData.total, { decimals: 2 }) : "—"}
-              </p>
+              </h1>
+              {pctChange !== null && (
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-[10px] font-medium bg-brand-teal/20 text-brand-teal px-2 py-0.5 rounded">
+                    {pctChange > 0 ? "+" : ""}
+                    {pctChange}%
+                  </span>
+                  <span className="text-[10px] text-white/60">vs last month</span>
+                </div>
+              )}
             </div>
-          </div>
-          {pctChange !== null && (
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-medium bg-brand-teal/20 text-brand-teal px-2 py-0.5 rounded">
-                {pctChange > 0 ? "+" : ""}
-                {pctChange}%
-              </span>
-              <span className="text-[10px] text-white/60">vs last month</span>
-            </div>
-          )}
-          <HomeCarousel getMonthRows={getMonthRows} ensureMonths={ensureMonths} filterCategory={filterCat} />
-        </section>
+            <Link href="/settings" aria-label="Settings" className="shrink-0">
+              {user?.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt=""
+                  referrerPolicy="no-referrer"
+                  width={40}
+                  height={40}
+                  className="size-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="size-10 rounded-full bg-white/15 text-white grid place-items-center text-sm font-semibold">
+                  {initialsFor(user?.displayName, profile.companyName)}
+                </div>
+              )}
+            </Link>
+          </header>
         </div>
       </div>
 
       <div className="mx-auto max-w-md px-5 pt-6">
+        <section className="bg-white rounded-2xl p-5 ring-1 ring-black/5 mb-6">
+          <HomeCarousel getMonthRows={getMonthRows} ensureMonths={ensureMonths} filterCategory={filterCat} />
+        </section>
+
         {rows && rows.length > 0 && (
           <div className="flex gap-2 overflow-x-auto pb-4 -mx-5 px-5 scrollbar-none">
             {["All", ...filterCats].map((c) => {

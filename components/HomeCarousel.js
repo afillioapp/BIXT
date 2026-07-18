@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { weeklyTotals, categoryTotals, formatCurrency } from "../lib/insights";
 
-// The chart half of Home's single hero card (owner round 6): a Week/Month/
-// Year segmented control up top, then three horizontally swipeable panels —
-// range bar chart, by-category donut, top-categories list. Panels carry no
-// card chrome of their own anymore (pages/index.js wraps everything,
-// including the total row above, in ONE translucent card); each panel's
-// period navigation (‹ date ›) sits compactly in its top-right corner.
+// Home's chart card (owner round 7): lives on a WHITE card below the
+// compact navy header (pages/index.js), light-themed to match Stats.
+// Three horizontally swipeable panels — range bar chart, by-category donut,
+// top-categories list — with the Week/Month/Year segmented control at the
+// bottom; each panel's period navigation (‹ date ›) sits in its top-right
+// corner. When Home's category filter is active, every panel narrows too.
 //
 // Gestures stay deliberately separate: swiping changes which PANEL shows;
 // the ‹ › buttons change that panel's PERIOD; the segmented control changes
@@ -79,16 +79,16 @@ function paletteColor(i) {
 function PeriodNav({ label, onPrev, onNext, nextDisabled }) {
   return (
     <div className="flex items-center gap-1 shrink-0">
-      <button type="button" aria-label="Earlier" onClick={onPrev} className="text-white/50">
+      <button type="button" aria-label="Earlier" onClick={onPrev} className="text-zinc-400">
         <ChevronLeft className="size-4" />
       </button>
-      <p className="text-[11px] text-white/60 whitespace-nowrap">{label}</p>
+      <p className="text-[11px] text-text-secondary whitespace-nowrap">{label}</p>
       <button
         type="button"
         aria-label="Later"
         onClick={onNext}
         disabled={nextDisabled}
-        className="text-white/50 disabled:opacity-30"
+        className="text-zinc-400 disabled:opacity-30"
       >
         <ChevronRight className="size-4" />
       </button>
@@ -100,7 +100,7 @@ function PanelShell({ title, nav, children }) {
   return (
     <section className="h-[184px] flex flex-col pt-4">
       <div className="flex items-center justify-between gap-2 mb-2">
-        <p className="text-sm font-semibold text-white">{title}</p>
+        <p className="text-sm font-semibold text-text-primary">{title}</p>
         {nav}
       </div>
       {children}
@@ -122,21 +122,21 @@ function BarsPanel({ nav, ready, total, values, labels, boldIndex }) {
       nav={nav}
     >
       {!ready ? (
-        <p className="text-xs text-white/50 py-8 text-center flex-1">Loading…</p>
+        <p className="text-xs text-text-secondary py-8 text-center flex-1">Loading…</p>
       ) : (
         <div className="flex-1 flex flex-col">
           <div className="flex-1 flex items-end justify-between gap-1.5">
             {values.map((v, i) => (
               <div
                 key={i}
-                className={`flex-1 rounded-t-md ${i === boldIndex ? "bg-brand-teal" : "bg-white/10"}`}
+                className={`flex-1 rounded-t-md ${i === boldIndex ? "bg-brand-teal" : "bg-zinc-100"}`}
                 style={{ height: `${max > 0 ? Math.max(6, (v / max) * 100) : 6}%` }}
               />
             ))}
           </div>
-          <div className="flex justify-between mt-2 text-[10px] text-white/50 uppercase tracking-tight gap-1.5">
+          <div className="flex justify-between mt-2 text-[10px] text-text-secondary uppercase tracking-tight gap-1.5">
             {labels.map((l, i) => (
-              <span key={i} className={`flex-1 text-center ${i === boldIndex ? "text-white font-semibold" : ""}`}>
+              <span key={i} className={`flex-1 text-center ${i === boldIndex ? "text-text-primary font-semibold" : ""}`}>
                 {l}
               </span>
             ))}
@@ -157,7 +157,7 @@ function DarkDonut({ categories, total }) {
   return (
     <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#F4F4F5" strokeWidth={stroke} />
         {categories.map((cat, i) => {
           const len = (cat.percent / sumPct) * c;
           const el = (
@@ -179,8 +179,8 @@ function DarkDonut({ categories, total }) {
         })}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[9px] text-white/50 uppercase tracking-wider">Total</span>
-        <span className="text-sm font-semibold text-white">{formatCurrency(total, { decimals: 0 })}</span>
+        <span className="text-[9px] text-text-secondary uppercase tracking-wider">Total</span>
+        <span className="text-sm font-semibold text-text-primary">{formatCurrency(total, { decimals: 0 })}</span>
       </div>
     </div>
   );
@@ -190,9 +190,9 @@ function CategoryPanel({ monthData, nav }) {
   return (
     <PanelShell title="By category" nav={nav}>
       {!monthData ? (
-        <p className="text-xs text-white/50 py-8 text-center flex-1">Loading…</p>
+        <p className="text-xs text-text-secondary py-8 text-center flex-1">Loading…</p>
       ) : monthData.categories.length === 0 ? (
-        <p className="text-xs text-white/50 py-8 text-center flex-1">No expenses this month.</p>
+        <p className="text-xs text-text-secondary py-8 text-center flex-1">No expenses this month.</p>
       ) : (
         <div className="flex-1 flex items-center gap-4">
           <DarkDonut categories={monthData.categories} total={monthData.total} />
@@ -200,8 +200,8 @@ function CategoryPanel({ monthData, nav }) {
             {monthData.categories.slice(0, 4).map((c, i) => (
               <li key={c.category} className="flex items-center gap-2">
                 <span className="size-2 rounded-full shrink-0" style={{ background: paletteColor(i) }} />
-                <span className="flex-1 min-w-0 text-[11px] text-white/80 truncate">{c.category}</span>
-                <span className="text-[11px] font-semibold text-white/60 shrink-0">{Math.round(c.percent)}%</span>
+                <span className="flex-1 min-w-0 text-[11px] text-text-primary truncate">{c.category}</span>
+                <span className="text-[11px] font-semibold text-text-secondary shrink-0">{Math.round(c.percent)}%</span>
               </li>
             ))}
           </ul>
@@ -215,18 +215,18 @@ function TopCategoriesPanel({ monthData, nav }) {
   return (
     <PanelShell title="Top categories" nav={nav}>
       {!monthData ? (
-        <p className="text-xs text-white/50 py-8 text-center flex-1">Loading…</p>
+        <p className="text-xs text-text-secondary py-8 text-center flex-1">Loading…</p>
       ) : monthData.categories.length === 0 ? (
-        <p className="text-xs text-white/50 py-8 text-center flex-1">No expenses this month.</p>
+        <p className="text-xs text-text-secondary py-8 text-center flex-1">No expenses this month.</p>
       ) : (
         <div className="flex-1 space-y-3 overflow-y-auto">
           {monthData.categories.slice(0, 4).map((c, i) => (
             <div key={c.category}>
               <div className="flex justify-between mb-1">
-                <span className="text-[11px] font-medium text-white/80">{c.category}</span>
-                <span className="text-[11px] font-semibold text-white/60">{Math.round(c.percent)}%</span>
+                <span className="text-[11px] font-medium text-text-primary">{c.category}</span>
+                <span className="text-[11px] font-semibold text-text-secondary">{Math.round(c.percent)}%</span>
               </div>
-              <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+              <div className="w-full bg-zinc-100 h-1.5 rounded-full overflow-hidden">
                 <div className="h-full" style={{ width: `${c.percent}%`, background: paletteColor(i) }} />
               </div>
             </div>
@@ -389,14 +389,14 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
       </div>
 
       {/* Range tabs live at the bottom of the card (owner request). */}
-      <div className="flex p-1 bg-white/10 rounded-lg mt-3">
+      <div className="flex p-1 bg-zinc-100 rounded-lg mt-3">
         {["Week", "Month", "Year"].map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => changeRange(t)}
             className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              range === t ? "bg-white text-brand-navy" : "text-white/60"
+              range === t ? "bg-white text-brand-navy" : "text-text-secondary"
             }`}
           >
             {t}
@@ -408,7 +408,7 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
         {panels.map((_, i) => (
           <span
             key={i}
-            className={`h-1.5 rounded-full transition-all ${i === active ? "w-4 bg-brand-teal" : "w-1.5 bg-white/20"}`}
+            className={`h-1.5 rounded-full transition-all ${i === active ? "w-4 bg-brand-teal" : "w-1.5 bg-zinc-200"}`}
           />
         ))}
       </div>
