@@ -179,9 +179,9 @@ export default function Home({ user }) {
       </div>
 
       <div className="mx-auto max-w-md px-5 pt-6">
-        <section className="bg-white rounded-2xl p-5 ring-1 ring-black/5 mb-6">
+        <div className="mb-6">
           <HomeCarousel getMonthRows={getMonthRows} ensureMonths={ensureMonths} filterCategory={filterCat} />
-        </section>
+        </div>
 
         {rows && rows.length > 0 && (
           <div className="flex gap-2 overflow-x-auto pb-4 -mx-5 px-5 scrollbar-none">

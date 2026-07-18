@@ -98,7 +98,7 @@ function PeriodNav({ label, onPrev, onNext, nextDisabled }) {
 
 function PanelShell({ title, nav, children }) {
   return (
-    <section className="h-[184px] flex flex-col pt-4">
+    <section className="h-[172px] flex flex-col pt-1">
       <div className="flex items-center justify-between gap-2 mb-2">
         <p className="text-sm font-semibold text-text-primary">{title}</p>
         {nav}
@@ -375,28 +375,15 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
 
   return (
     <div>
-      <div
-        ref={scrollerRef}
-        onScroll={handleScroll}
-        className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none"
-        style={{ scrollbarWidth: "none" }}
-      >
-        {panels.map((panel, i) => (
-          <div key={i} className="w-full shrink-0 snap-start">
-            {panel}
-          </div>
-        ))}
-      </div>
-
-      {/* Range tabs live at the bottom of the card (owner request). */}
-      <div className="flex p-1 bg-zinc-100 rounded-lg mt-3">
+      {/* Range tabs above the card, exactly like the Stats page. */}
+      <div className="flex p-1 bg-zinc-100 rounded-lg mb-4">
         {["Week", "Month", "Year"].map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => changeRange(t)}
             className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              range === t ? "bg-white text-brand-navy" : "text-text-secondary"
+              range === t ? "bg-white text-brand-navy shadow-sm" : "text-text-secondary"
             }`}
           >
             {t}
@@ -404,14 +391,29 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
         ))}
       </div>
 
-      <div className="flex justify-center gap-1.5 mt-2">
-        {panels.map((_, i) => (
-          <span
-            key={i}
-            className={`h-1.5 rounded-full transition-all ${i === active ? "w-4 bg-brand-teal" : "w-1.5 bg-zinc-200"}`}
-          />
-        ))}
-      </div>
+      <section className="bg-white rounded-2xl p-5 ring-1 ring-black/5">
+        <div
+          ref={scrollerRef}
+          onScroll={handleScroll}
+          className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none"
+          style={{ scrollbarWidth: "none" }}
+        >
+          {panels.map((panel, i) => (
+            <div key={i} className="w-full shrink-0 snap-start">
+              {panel}
+            </div>
+          ))}
+        </div>
+
+        <div className="flex justify-center gap-1.5 mt-2">
+          {panels.map((_, i) => (
+            <span
+              key={i}
+              className={`h-1.5 rounded-full transition-all ${i === active ? "w-4 bg-brand-teal" : "w-1.5 bg-zinc-200"}`}
+            />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
