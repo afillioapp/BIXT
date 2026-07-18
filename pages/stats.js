@@ -53,7 +53,7 @@ function formatWeekRange(start, end) {
 // Exact hex palette lovable-design's stats.tsx uses for its 4 mock
 // categories (teal/navy/amber/rose), cycled for however many categories a
 // real month actually has.
-const CATEGORY_PALETTE = ["#0FB5A7", "#1E2A44", "#F59E0B", "#FB7185"];
+const CATEGORY_PALETTE = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
 
 function paletteColor(i) {
   return CATEGORY_PALETTE[i % CATEGORY_PALETTE.length];

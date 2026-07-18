@@ -70,7 +70,7 @@ function monthBars(rows, refMonth) {
 const MONTH_LABELS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
 // Same exact hex palette Stats' donut/progress list uses.
-const CATEGORY_PALETTE = ["#0FB5A7", "#1E2A44", "#F59E0B", "#FB7185"];
+const CATEGORY_PALETTE = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
 function paletteColor(i) {
   return CATEGORY_PALETTE[i % CATEGORY_PALETTE.length];
 }
