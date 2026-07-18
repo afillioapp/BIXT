@@ -98,7 +98,7 @@ function PeriodNav({ label, onPrev, onNext, nextDisabled }) {
 
 function PanelShell({ title, nav, children }) {
   return (
-    <section className="h-[196px] flex flex-col pt-4">
+    <section className="h-[184px] flex flex-col pt-4">
       <div className="flex items-center justify-between gap-2 mb-2">
         <p className="text-sm font-semibold text-white">{title}</p>
         {nav}
@@ -108,17 +108,23 @@ function PanelShell({ title, nav, children }) {
   );
 }
 
-function BarsPanel({ title, nav, ready, total, values, labels, boldIndex }) {
+// No panel title — the Week/Month/Year tabs above already say what this is
+// (owner request); the period total takes the title slot in teal.
+function BarsPanel({ nav, ready, total, values, labels, boldIndex }) {
   const max = ready ? Math.max(...values, 1) : 1;
   return (
-    <PanelShell title={title} nav={nav}>
+    <PanelShell
+      title={
+        <span className="text-base text-brand-teal">
+          {ready ? formatCurrency(total, { decimals: 2 }) : "…"}
+        </span>
+      }
+      nav={nav}
+    >
       {!ready ? (
         <p className="text-xs text-white/50 py-8 text-center flex-1">Loading…</p>
       ) : (
         <div className="flex-1 flex flex-col">
-          <p className="text-base font-semibold text-brand-teal mb-2">
-            {formatCurrency(total, { decimals: 2 })}
-          </p>
           <div className="flex-1 flex items-end justify-between gap-1.5">
             {values.map((v, i) => (
               <div
@@ -271,7 +277,6 @@ export default function HomeCarousel({ getMonthRows, ensureMonths }) {
     const ready = weekNeededMonths.every((d) => getMonthRows(d));
     const weekly = ready ? weeklyTotals(weekNeededMonths.flatMap((d) => getMonthRows(d)), refMonday) : null;
     bars = {
-      title: "Weekly expenses",
       label: weekly ? formatWeekRange(weekly.weekStart, weekly.weekEnd) : formatWeekRange(refMonday, addDays(refMonday, 6)),
       ready,
       total: weekly ? weekly.total : 0,
@@ -286,7 +291,6 @@ export default function HomeCarousel({ getMonthRows, ensureMonths }) {
     const rows = getMonthRows(refBarMonth);
     const m = rows ? monthBars(rows, refBarMonth) : null;
     bars = {
-      title: "Monthly expenses",
       label:
         refBarMonth.getFullYear() === now.getFullYear()
           ? refBarMonth.toLocaleString("en-US", { month: "long" })
@@ -306,7 +310,6 @@ export default function HomeCarousel({ getMonthRows, ensureMonths }) {
       ? yearMonthDates.map((d) => categoryTotals(getMonthRows(d), d).total)
       : [];
     bars = {
-      title: "Yearly expenses",
       label: String(targetYear),
       ready,
       total: values.reduce((s, v) => s + v, 0),
@@ -351,7 +354,6 @@ export default function HomeCarousel({ getMonthRows, ensureMonths }) {
   const panels = [
     <BarsPanel
       key="bars"
-      title={bars.title}
       nav={<PeriodNav label={bars.label} onPrev={bars.onPrev} onNext={bars.onNext} nextDisabled={bars.nextDisabled} />}
       ready={bars.ready}
       total={bars.total}
