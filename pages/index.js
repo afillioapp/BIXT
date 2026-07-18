@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { TrendingUp, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import { useDrive } from "../lib/useDrive";
 import { useMonthRows } from "../lib/useMonthRows";
 import { latestReceipts, categoryTotals, formatCurrency } from "../lib/insights";
@@ -165,9 +165,6 @@ export default function Home({ user }) {
               <p className="text-3xl font-medium leading-none">
                 {monthData ? formatCurrency(monthData.total, { decimals: 2 }) : "—"}
               </p>
-            </div>
-            <div className="size-9 rounded-lg bg-brand-teal/20 border border-brand-teal/30 grid place-items-center text-brand-teal">
-              <TrendingUp className="size-4" />
             </div>
           </div>
           {pctChange !== null && (
