@@ -320,10 +320,9 @@ export default function Settings({ user }) {
             ) : (
               <button className="w-full flex items-center gap-3 text-left" onClick={() => setEditing(true)}>
                 <Mail className="size-4 text-text-secondary shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm">Accountant's email</p>
-                  <p className="text-xs text-text-secondary truncate">{profile.accountantEmail}</p>
-                </div>
+                {/* One-liner (owner request): the current email only appears
+                    after tapping, inside the edit view. */}
+                <p className="flex-1 min-w-0 text-sm">Accountant's email</p>
                 <ChevronRight className="size-4 text-zinc-400 shrink-0" />
               </button>
             )}
@@ -341,10 +340,7 @@ export default function Settings({ user }) {
               ) : (
                 <Sun className="size-4 text-text-secondary shrink-0" />
               )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm">Appearance</p>
-                <p className="text-xs text-text-secondary">{theme === "dark" ? "Dark" : "Light"}</p>
-              </div>
+              <p className="flex-1 min-w-0 text-sm">Appearance</p>
               <Toggle
                 on={theme === "dark"}
                 onClick={() => handleSetTheme(theme === "dark" ? "light" : "dark")}
@@ -357,10 +353,7 @@ export default function Settings({ user }) {
             <div className="p-4">
               <div className="flex items-center gap-3">
                 <ScanFace className="size-4 text-text-secondary shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm">Face ID lock</p>
-                  <p className="text-xs text-text-secondary">{bioSaving ? "Working…" : bioEnabled ? "On" : "Off"}</p>
-                </div>
+                <p className="flex-1 min-w-0 text-sm">Face ID lock</p>
                 <Toggle on={bioEnabled} onClick={handleToggleLock} disabled={bioSaving} label="Require Face ID to open BX" />
               </div>
               {bioStatus && (

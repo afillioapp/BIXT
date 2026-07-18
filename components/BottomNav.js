@@ -91,18 +91,18 @@ export default function BottomNav() {
 
           <div className="flex justify-center relative" ref={wrapRef}>
             {open && (
-              <div className="absolute bottom-[calc(100%+30px)] left-1/2 -translate-x-1/2 flex items-center gap-3 z-50">
+              <div className="absolute bottom-[calc(100%+46px)] left-1/2 -translate-x-1/2 flex items-center gap-3 z-50">
                 <label
                   htmlFor="bx-nav-take-photo"
-                  className="flex items-center gap-2 whitespace-nowrap rounded-full bg-brand-teal text-white px-5 py-3 text-sm font-semibold shadow-xl cursor-pointer active:scale-95 transition-transform"
+                  className="flex items-center gap-2.5 whitespace-nowrap rounded-full bg-brand-teal text-white px-7 py-4 text-base font-semibold shadow-xl cursor-pointer active:scale-95 transition-transform"
                 >
-                  <Camera className="size-4" /> Scan
+                  <Camera className="size-5" /> Scan
                 </label>
                 <label
                   htmlFor="bx-nav-import"
-                  className="flex items-center gap-2 whitespace-nowrap rounded-full bg-brand-navy text-white px-5 py-3 text-sm font-semibold shadow-xl cursor-pointer active:scale-95 transition-transform"
+                  className="flex items-center gap-2.5 whitespace-nowrap rounded-full bg-brand-navy text-white px-7 py-4 text-base font-semibold shadow-xl cursor-pointer active:scale-95 transition-transform"
                 >
-                  <GalleryIcon className="size-4" /> Gallery
+                  <GalleryIcon className="size-5" /> Gallery
                 </label>
               </div>
             )}
