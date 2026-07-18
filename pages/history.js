@@ -1,41 +1,19 @@
-import { useState, useEffect } from "react";
-import { MoreHorizontal } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 import { useDrive } from "../lib/useDrive";
-import { findMonthExpenseSheetId, listExpenseRows } from "../lib/google";
+import { findMonthExpenseSheetId, listExpenseRows, deleteExpenseRow } from "../lib/google";
 import DriveFallback from "../components/DriveFallback";
-import CategoryIcon from "../components/CategoryIcon";
+import ExpenseRow, { rowIdFor } from "../components/ExpenseRow";
+import EditExpenseSheet from "../components/EditExpenseSheet";
 
 // Extends the ported Lovable design language (routes/index.tsx's "Recent
 // Expenses" white rows) to the full history view: navy rounded-bottom
 // header (owner request — "the top part is dark on all pages") with the
-// title + sub, date group headers, and the same expense-row component (now
-// showing the category's icon instead of a tinted first-letter square, see
-// components/CategoryIcon.js). Two-month read and all load/empty/error
-// states unchanged.
+// title + sub, date group headers, and the shared swipeable expense-row
+// component (components/ExpenseRow.js) with Receipt/Edit/Delete actions.
+// Two-month read and all load/empty/error states unchanged.
 
 function prevMonthDate(d) {
   return new Date(d.getFullYear(), d.getMonth() - 1, 1);
-}
-
-// Same stable per-category tint approach as pages/index.js (design's
-// bg-*-50/text-*-600 pairs, hashed per category so a category always
-// renders the same swatch).
-const TINTS = [
-  "bg-brand-teal-soft text-brand-teal",
-  "bg-orange-50 text-orange-600",
-  "bg-indigo-50 text-indigo-600",
-  "bg-zinc-100 text-zinc-700",
-  "bg-amber-50 text-amber-600",
-  "bg-rose-50 text-rose-500",
-  "bg-sky-50 text-sky-600",
-  "bg-emerald-50 text-emerald-600",
-];
-
-function tintForCategory(category) {
-  const key = category || "Other";
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
-  return TINTS[hash % TINTS.length];
 }
 
 // Rows arrive already sorted most-recent-first; bucket consecutive rows that
@@ -70,31 +48,54 @@ export default function History({ user }) {
   const [rows, setRows] = useState(null);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (!accessToken || !rootFolderId) return;
-    let cancelled = false;
+  // Swipe-to-act row state (same pattern as pages/index.js): which row is
+  // swiped open, which row's edit sheet is up, and delete errors.
+  const [openRowId, setOpenRowId] = useState(null);
+  const [editingRow, setEditingRow] = useState(null);
+  const [actionError, setActionError] = useState("");
 
-    async function load() {
-      setError("");
-      try {
-        const now = new Date();
-        const months = [now, prevMonthDate(now)];
-        const results = await Promise.all(
-          months.map(async (d) => {
-            const sheetId = await findMonthExpenseSheetId(accessToken, rootFolderId, d);
-            return sheetId ? listExpenseRows(accessToken, sheetId) : [];
-          })
-        );
-        if (cancelled) return;
-        const combined = results.flat().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-        setRows(combined);
-      } catch (err) {
-        if (!cancelled) setError(err.message);
-      }
+  // Pulled out of the load effect so a mutation (edit/delete) can re-run the
+  // same two-month fetch on demand — rows are never spliced locally, since a
+  // delete/edit shifts every later row's sheet index in that same month
+  // sheet; only a fresh read from Drive is safe.
+  const load = useCallback(async () => {
+    if (!accessToken || !rootFolderId) return;
+    setError("");
+    try {
+      const now = new Date();
+      const months = [now, prevMonthDate(now)];
+      const results = await Promise.all(
+        months.map(async (d) => {
+          const sheetId = await findMonthExpenseSheetId(accessToken, rootFolderId, d);
+          return sheetId ? listExpenseRows(accessToken, sheetId) : [];
+        })
+      );
+      const combined = results.flat().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+      setRows(combined);
+    } catch (err) {
+      setError(err.message);
     }
-    load();
-    return () => { cancelled = true; };
   }, [accessToken, rootFolderId]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function handleDeleteRow(row) {
+    setActionError("");
+    try {
+      await deleteExpenseRow(accessToken, row.sheetId, row.rowIndex);
+      await load();
+    } catch (err) {
+      setActionError(err.message || "Couldn't delete — try again");
+      throw err;
+    }
+  }
+
+  async function handleSavedRow() {
+    setEditingRow(null);
+    await load();
+  }
 
   if (profileLoading || !profile) {
     return (
@@ -141,35 +142,23 @@ export default function History({ user }) {
           </div>
         )}
 
+        {actionError && <p className="text-xs text-destructive mb-4">{actionError}</p>}
+
         {rows && rows.length > 0 && (
           <div className="space-y-6">
             {groupByDate(rows).map((group) => (
               <section key={group.date}>
                 <h2 className="text-sm font-semibold mb-3">{formatDateHeader(group.date)}</h2>
                 <ul className="space-y-2.5">
-                  {group.rows.map((r, i) => (
-                    <li key={i}>
-                      <a
-                        className="flex items-center justify-between p-3 bg-white rounded-xl ring-1 ring-black/5"
-                        href={r.receiptLink || undefined}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className={`size-10 rounded-lg grid place-items-center shrink-0 ${tintForCategory(r.category)}`}>
-                            <CategoryIcon category={r.category} className="size-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">{r.place || "Untitled"}</p>
-                            <p className="text-[11px] text-text-secondary truncate">{r.category || "Other"}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <p className="text-sm font-semibold text-text-primary">-{r.total}</p>
-                          <MoreHorizontal className="size-4 text-zinc-400" />
-                        </div>
-                      </a>
-                    </li>
+                  {group.rows.map((r) => (
+                    <ExpenseRow
+                      key={rowIdFor(r)}
+                      row={r}
+                      openId={openRowId}
+                      onOpenChange={setOpenRowId}
+                      onEdit={setEditingRow}
+                      onDelete={handleDeleteRow}
+                    />
                   ))}
                 </ul>
               </section>
@@ -177,6 +166,13 @@ export default function History({ user }) {
           </div>
         )}
       </div>
+
+      <EditExpenseSheet
+        accessToken={accessToken}
+        row={editingRow}
+        onClose={() => setEditingRow(null)}
+        onSaved={handleSavedRow}
+      />
     </div>
   );
 }

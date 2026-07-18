@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { MoreHorizontal } from "lucide-react";
 import { useDrive } from "../lib/useDrive";
 import { useMonthRows } from "../lib/useMonthRows";
+import { deleteExpenseRow } from "../lib/google";
 import { latestReceipts, categoryTotals, formatCurrency } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
 import HomeCarousel from "../components/HomeCarousel";
-import CategoryIcon, { accentForCategory } from "../components/CategoryIcon";
+import { accentForCategory } from "../components/CategoryIcon";
+import ExpenseRow, { rowIdFor } from "../components/ExpenseRow";
+import EditExpenseSheet from "../components/EditExpenseSheet";
 
 // Originally ported 1:1 from lovable-design/src/routes/index.tsx (navy
 // "Total Balance" hero + 4-tile quick-action row + "Recent Expenses" list).
@@ -32,29 +34,6 @@ function initialsFor(name, fallback) {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-// Stable per-category tint, cycling through the same style of pairs the
-// design's own mock transactions used (bg-orange-50/text-orange-600,
-// bg-zinc-100/text-zinc-700, bg-brand-teal-soft/text-brand-teal,
-// bg-indigo-50/text-indigo-600), extended to cover the app's full
-// 12-category list so every category always renders the same swatch.
-const TINTS = [
-  "bg-brand-teal-soft text-brand-teal",
-  "bg-orange-50 text-orange-600",
-  "bg-indigo-50 text-indigo-600",
-  "bg-zinc-100 text-zinc-700",
-  "bg-amber-50 text-amber-600",
-  "bg-rose-50 text-rose-500",
-  "bg-sky-50 text-sky-600",
-  "bg-emerald-50 text-emerald-600",
-];
-
-function tintForCategory(category) {
-  const key = category || "Other";
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
-  return TINTS[hash % TINTS.length];
-}
-
 export default function Home({ user }) {
   const router = useRouter();
   const {
@@ -68,10 +47,43 @@ export default function Home({ user }) {
     retryConnection,
   } = useDrive(user);
 
-  const { getMonthRows, ensureMonths } = useMonthRows(accessToken, rootFolderId);
+  const { getMonthRows, ensureMonths, invalidateMonth } = useMonthRows(accessToken, rootFolderId);
 
   // Category filter for the Recent Expenses list (null = All).
   const [filterCat, setFilterCat] = useState(null);
+
+  // Swipe-to-act row state: which row (if any) is swiped open, which row (if
+  // any) has its edit sheet up, and a place for delete errors to surface —
+  // the row itself only shows a spinner/retry state, not the message.
+  const [openRowId, setOpenRowId] = useState(null);
+  const [editingRow, setEditingRow] = useState(null);
+  const [actionError, setActionError] = useState("");
+
+  // Mutations (edit/delete) always refresh both months Home shows — simpler
+  // than tracking which month a specific row's date falls in, and rows are
+  // never spliced locally: a delete/edit shifts every later row's sheet
+  // index in that same month sheet, so only a fresh read from Drive is safe.
+  function refreshVisibleMonths() {
+    const n = new Date();
+    invalidateMonth(n);
+    invalidateMonth(prevMonthDate(n));
+  }
+
+  async function handleDeleteRow(row) {
+    setActionError("");
+    try {
+      await deleteExpenseRow(accessToken, row.sheetId, row.rowIndex);
+      refreshVisibleMonths();
+    } catch (err) {
+      setActionError(err.message || "Couldn't delete — try again");
+      throw err;
+    }
+  }
+
+  function handleSavedRow() {
+    setEditingRow(null);
+    refreshVisibleMonths();
+  }
 
   // Only send someone to onboarding when we positively know they have no BX
   // folder — i.e. Drive answered us. A connection problem (loadError) or a
@@ -235,36 +247,31 @@ export default function Home({ user }) {
             </p>
           )}
 
+          {actionError && <p className="text-xs text-destructive mb-2">{actionError}</p>}
+
           {rows && rows.length > 0 && (
             <ul className="space-y-2.5">
-              {latest.map((r, i) => (
-                <li key={i}>
-                  <a
-                    className="flex items-center justify-between p-3 bg-white rounded-xl ring-1 ring-black/5"
-                    href={r.receiptLink || undefined}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className={`size-10 rounded-lg grid place-items-center shrink-0 ${tintForCategory(r.category)}`}>
-                        <CategoryIcon category={r.category} className="size-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{r.place || "Untitled"}</p>
-                        <p className="text-[11px] text-text-secondary truncate">{r.category || "Other"}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <p className="text-sm font-semibold text-text-primary">-{r.total}</p>
-                      <MoreHorizontal className="size-4 text-zinc-400" />
-                    </div>
-                  </a>
-                </li>
+              {latest.map((r) => (
+                <ExpenseRow
+                  key={rowIdFor(r)}
+                  row={r}
+                  openId={openRowId}
+                  onOpenChange={setOpenRowId}
+                  onEdit={setEditingRow}
+                  onDelete={handleDeleteRow}
+                />
               ))}
             </ul>
           )}
         </section>
       </div>
+
+      <EditExpenseSheet
+        accessToken={accessToken}
+        row={editingRow}
+        onClose={() => setEditingRow(null)}
+        onSaved={handleSavedRow}
+      />
     </div>
   );
 }
