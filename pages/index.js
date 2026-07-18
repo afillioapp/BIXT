@@ -120,7 +120,7 @@ export default function Home({ user }) {
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
       {/* Navy hero: everything above Recent Expenses sits on brand navy with
           a rounded bottom edge (owner request, reference screenshot). */}
-      <div className="bg-brand-navy rounded-b-3xl pb-7 text-white">
+      <div className="bg-brand-navy rounded-b-3xl pb-7 text-white relative z-10 shadow-xl shadow-brand-navy/25">
         <div className="mx-auto max-w-md px-5 pt-10">
         <header className="mb-6 flex items-start justify-between">
           <div>

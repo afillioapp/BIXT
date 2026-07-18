@@ -214,7 +214,7 @@ export default function Settings({ user }) {
       {/* Navy identity header (owner request, reference screenshot): title,
           then a large centered avatar/name/email on brand navy, tall enough
           that the white chevron-row cards below start noticeably lower. */}
-      <div className="bg-brand-navy rounded-b-3xl pt-10 pb-12 text-white">
+      <div className="bg-brand-navy rounded-b-3xl pt-10 pb-12 text-white relative z-10 shadow-xl shadow-brand-navy/25">
         <div className="mx-auto max-w-md px-5">
           <h1 className="text-2xl font-semibold tracking-tight text-center mb-8">Settings</h1>
 
