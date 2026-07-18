@@ -15,7 +15,7 @@ import { setPendingCapture } from "../lib/pendingCapture";
 // "Settings", User icon kept).
 const LEFT_TABS = [
   { href: "/", icon: Home, label: "Home" },
-  { href: "/stats", icon: BarChart3, label: "Stats" },
+  { href: "/stats", icon: BarChart3, label: "Insight" },
 ];
 
 const RIGHT_TABS = [

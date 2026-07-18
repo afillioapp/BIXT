@@ -160,11 +160,10 @@ export default function Home({ user }) {
               >
                 {monthData ? formatCurrency(monthData.total, { decimals: 2 }) : "—"}
               </h1>
-              {pctChange !== null && (
+              {monthData && (
                 <div className="flex items-center gap-2 mt-2">
                   <span className="text-[10px] font-medium bg-brand-teal/20 text-brand-teal px-2 py-0.5 rounded">
-                    {pctChange > 0 ? "+" : ""}
-                    {pctChange}%
+                    {pctChange !== null ? `${pctChange > 0 ? "+" : ""}${pctChange}%` : "—"}
                   </span>
                   <span className="text-[10px] text-white/60">vs last month</span>
                 </div>

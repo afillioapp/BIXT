@@ -354,7 +354,7 @@ export default function Stats({ user }) {
       <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
         <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-white relative z-10 shadow-xl shadow-brand-navy/25">
           <div className="mx-auto max-w-md px-5">
-            <h1 className="text-2xl font-semibold tracking-tight">Statistics</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Insight</h1>
           </div>
         </div>
         <div className="mx-auto max-w-md px-5 pt-6">
@@ -463,7 +463,7 @@ export default function Stats({ user }) {
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
       <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-white relative z-10 shadow-xl shadow-brand-navy/25">
         <div className="mx-auto max-w-md px-5">
-          <h1 className="text-2xl font-semibold tracking-tight">Statistics</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Insight</h1>
           <p className="text-xs text-white/60 mt-1">Track how your business spends.</p>
         </div>
       </div>
