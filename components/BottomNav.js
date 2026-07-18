@@ -8,10 +8,11 @@ import { setPendingCapture } from "../lib/pendingCapture";
 // full-width translucent (backdrop-blur) bar, 5-column grid, a raised
 // bg-brand-navy "+" fab overhanging the top, teal for the active tab /
 // zinc-400 for inactive. Our slots: Home /, Stats /stats, the center "+"
-// (unchanged take-photo/import popover logic, restyled below as two
-// floating pills), History /history (their "Cards" slot — icon swapped for
-// lucide's History glyph, label "History"), Settings /settings (their
-// "Profile" slot, label "Settings", User icon kept).
+// (unchanged take-photo/import popover logic — round 5 restyled the popover
+// itself as a side-by-side teal/navy pair sitting higher above the fab),
+// History /history (their "Cards" slot — icon swapped for lucide's History
+// glyph, label "History"), Settings /settings (their "Profile" slot, label
+// "Settings", User icon kept).
 const LEFT_TABS = [
   { href: "/", icon: Home, label: "Home" },
   { href: "/stats", icon: BarChart3, label: "Stats" },
@@ -90,18 +91,18 @@ export default function BottomNav() {
 
           <div className="flex justify-center relative" ref={wrapRef}>
             {open && (
-              <div className="absolute bottom-[calc(100%+18px)] left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-50">
+              <div className="absolute bottom-[calc(100%+30px)] left-1/2 -translate-x-1/2 flex items-center gap-3 z-50">
                 <label
                   htmlFor="bx-nav-take-photo"
-                  className="flex items-center gap-2.5 whitespace-nowrap rounded-full bg-brand-teal text-white px-5 py-3 text-sm font-semibold shadow-xl cursor-pointer active:scale-95 transition-transform"
+                  className="flex items-center gap-2 whitespace-nowrap rounded-full bg-brand-teal text-white px-5 py-3 text-sm font-semibold shadow-xl cursor-pointer active:scale-95 transition-transform"
                 >
-                  <Camera className="size-4" /> Take photo
+                  <Camera className="size-4" /> Scan
                 </label>
                 <label
                   htmlFor="bx-nav-import"
-                  className="flex items-center gap-2.5 whitespace-nowrap rounded-full bg-brand-navy text-white px-5 py-3 text-sm font-semibold shadow-xl cursor-pointer active:scale-95 transition-transform"
+                  className="flex items-center gap-2 whitespace-nowrap rounded-full bg-brand-navy text-white px-5 py-3 text-sm font-semibold shadow-xl cursor-pointer active:scale-95 transition-transform"
                 >
-                  <GalleryIcon className="size-4" /> Import from gallery
+                  <GalleryIcon className="size-4" /> Gallery
                 </label>
               </div>
             )}

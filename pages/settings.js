@@ -211,30 +211,37 @@ export default function Settings({ user }) {
 
   return (
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-      <div className="mx-auto max-w-md px-5 pt-10">
-        <h1 className="text-2xl font-semibold tracking-tight mb-6">Settings</h1>
+      {/* Navy identity header (owner request, reference screenshot): title,
+          then a large centered avatar/name/email on brand navy, tall enough
+          that the white chevron-row cards below start noticeably lower. */}
+      <div className="bg-brand-navy rounded-b-3xl pt-10 pb-12 text-white">
+        <div className="mx-auto max-w-md px-5">
+          <h1 className="text-2xl font-semibold tracking-tight text-center mb-8">Settings</h1>
 
-        <div className="bg-white ring-1 ring-black/5 rounded-2xl p-5 flex items-center gap-4 mb-6">
-          {user?.photoURL ? (
-            <img
-              src={user.photoURL}
-              alt=""
-              referrerPolicy="no-referrer"
-              width={56}
-              height={56}
-              className="size-14 rounded-full object-cover shrink-0"
-            />
-          ) : (
-            <div className="size-14 rounded-full bg-brand-navy text-white grid place-items-center text-lg font-semibold shrink-0">
-              {initialsFor(user?.displayName, profile.companyName)}
+          <div className="flex flex-col items-center gap-3">
+            {user?.photoURL ? (
+              <img
+                src={user.photoURL}
+                alt=""
+                referrerPolicy="no-referrer"
+                width={96}
+                height={96}
+                className="size-24 rounded-full object-cover ring-2 ring-white/20"
+              />
+            ) : (
+              <div className="size-24 rounded-full bg-white/15 text-white grid place-items-center text-2xl font-semibold ring-2 ring-white/20">
+                {initialsFor(user?.displayName, profile.companyName)}
+              </div>
+            )}
+            <div className="text-center">
+              <p className="font-semibold text-lg">{user?.displayName || profile.companyName}</p>
+              <p className="text-sm text-white/60">{user?.email || user?.phoneNumber || "—"}</p>
             </div>
-          )}
-          <div className="min-w-0">
-            <p className="font-semibold truncate">{user?.displayName || profile.companyName}</p>
-            <p className="text-xs text-text-secondary truncate">{user?.email || user?.phoneNumber || "—"}</p>
           </div>
         </div>
+      </div>
 
+      <div className="mx-auto max-w-md px-5 pt-6">
         <div className="bg-white ring-1 ring-black/5 rounded-2xl divide-y divide-black/5 overflow-hidden mb-6">
           <div className="flex items-center gap-3 p-4">
             <Building2 className="size-4 text-text-secondary shrink-0" />
@@ -247,7 +254,7 @@ export default function Settings({ user }) {
           <div className="p-4">
             <div className="flex items-center gap-3">
               <Cloud className="size-4 text-text-secondary shrink-0" />
-              <span className="text-sm flex-1">Receipts saved to Drive of</span>
+              <span className="text-sm flex-1">Drive</span>
               <span className="text-sm text-text-secondary shrink-0">{driveEmail || "—"}</span>
             </div>
             {driveMismatch && (
