@@ -102,11 +102,11 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
       return;
     }
 
-    // No real drag distance — treat as a tap on the row content.
+    // No real drag distance — treat as a tap on the row content. Tapping
+    // only closes an open row; the receipt is reachable via the swipe
+    // action alone (owner request — tap-to-open removed).
     if (isOpen) {
       closeRow();
-    } else if (row.receiptLink) {
-      window.open(row.receiptLink, "_blank", "noopener,noreferrer");
     }
   }
 
