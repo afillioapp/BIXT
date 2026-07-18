@@ -1,5 +1,15 @@
 import { useState, useEffect } from "react";
 import { signOut } from "firebase/auth";
+import {
+  Building2,
+  Cloud,
+  Mail,
+  Sun,
+  Moon,
+  ScanFace,
+  LogOut,
+  ChevronRight,
+} from "lucide-react";
 import { auth } from "../lib/firebase";
 import { useDrive } from "../lib/useDrive";
 import { listSharedEmails, removeSharedEmail, shareWithEmail, saveProfile } from "../lib/google";
@@ -9,8 +19,59 @@ import { getTheme, setTheme } from "../lib/theme";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// "Jane Doe" -> "JD"; a single name -> first two letters; nothing -> "?".
+function initialsFor(name, fallback) {
+  const source = (name || fallback || "").trim();
+  if (!source) return "?";
+  const parts = source.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function Toggle({ on, onClick, disabled, label }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={`w-12 h-7 rounded-full relative shrink-0 transition-colors disabled:opacity-60 ${
+        on ? "bg-brand-teal" : "bg-zinc-200"
+      }`}
+    >
+      <span
+        className={`absolute top-0.5 left-0.5 size-6 rounded-full bg-white shadow transition-transform ${
+          on ? "translate-x-5" : ""
+        }`}
+      />
+    </button>
+  );
+}
+
+// Ported 1:1 from lovable-design/src/routes/profile.tsx: identity card
+// (avatar + name + email/phone) followed by one white divided-row card.
+// The source's static rows (Notifications/Security/Help & Support/Sign
+// out) are replaced with BX's real settings surface: Company and "Receipts
+// saved to Drive of" (read-only), Accountant's email (expands inline to the
+// existing edit-then-confirm-before-share flow), Appearance and Face ID
+// lock (existing theme.js / biometric.js toggle logic), and Sign out
+// (disconnect() then signOut, unchanged).
 export default function Settings({ user }) {
-  const { accessToken, rootFolderId, profile, profileLoading, needsConnect, loadError, driveEmail, requestAccess, retryConnection, reloadProfile, disconnect } = useDrive(user);
+  const {
+    accessToken,
+    rootFolderId,
+    profile,
+    profileLoading,
+    needsConnect,
+    loadError,
+    driveEmail,
+    requestAccess,
+    retryConnection,
+    reloadProfile,
+    disconnect,
+  } = useDrive(user);
   const [accountantEmail, setAccountantEmail] = useState("");
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -131,14 +192,16 @@ export default function Settings({ user }) {
 
   if (profileLoading || !profile) {
     return (
-      <div className="container">
-        <div className="app-header"><div><h1>Settings</h1></div></div>
-        <DriveFallback
-          needsConnect={needsConnect}
-          loadError={loadError}
-          onConnect={requestAccess}
-          onRetry={retryConnection}
-        />
+      <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
+        <div className="mx-auto max-w-md px-5 pt-10">
+          <h1 className="text-2xl font-semibold tracking-tight mb-6">Settings</h1>
+          <DriveFallback
+            needsConnect={needsConnect}
+            loadError={loadError}
+            onConnect={requestAccess}
+            onRetry={retryConnection}
+          />
+        </div>
       </div>
     );
   }
@@ -147,159 +210,173 @@ export default function Settings({ user }) {
     driveEmail && user?.email && driveEmail.toLowerCase() !== user.email.toLowerCase();
 
   return (
-    <div className="container">
-      <div className="app-header">
-        <div><h1>Settings</h1></div>
-      </div>
+    <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
+      <div className="mx-auto max-w-md px-5 pt-10">
+        <h1 className="text-2xl font-semibold tracking-tight mb-6">Settings</h1>
 
-      <div className="settings-card">
-        <div className="settings-row">
-          <div className="settings-row-label">Company</div>
-          <div className="settings-row-value">{profile.companyName}</div>
-        </div>
-
-        <div className="settings-row">
-          <div className="settings-row-label">Signed in as</div>
-          <div className="settings-row-value">{user?.email || user?.phoneNumber || "—"}</div>
-        </div>
-
-        <div className="settings-row">
-          <div className="settings-row-label">Receipts saved to Google Drive of</div>
-          <div className="settings-row-value">{driveEmail || "—"}</div>
-          {driveMismatch && (
-            <div className="settings-mismatch">
-              ⚠ This doesn't match your sign-in email. Receipts may not sync as expected.
-            </div>
-          )}
-        </div>
-
-        {editing && confirming ? (
-          <div className="settings-row">
-            <div className="settings-confirm-text">
-              Give read-only access to {accountantEmail.trim()} instead?
-            </div>
-            <div className="settings-row-actions">
-              <button
-                className="btn btn-secondary settings-btn-small"
-                onClick={() => setConfirming(false)}
-                disabled={saving}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn btn-primary settings-btn-small"
-                onClick={handleConfirmShare}
-                disabled={saving}
-              >
-                {saving ? "Saving…" : "Yes, update"}
-              </button>
-            </div>
-          </div>
-        ) : editing ? (
-          <div className="settings-row">
-            <div className="settings-row-label" style={{ marginBottom: 8 }}>Accountant's email</div>
-            <input
-              className="settings-edit-input"
-              type="email"
-              value={accountantEmail}
-              onChange={(e) => setAccountantEmail(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSaveAccountant()}
-              autoFocus
+        <div className="bg-white ring-1 ring-black/5 rounded-2xl p-5 flex items-center gap-4 mb-6">
+          {user?.photoURL ? (
+            <img
+              src={user.photoURL}
+              alt=""
+              referrerPolicy="no-referrer"
+              width={56}
+              height={56}
+              className="size-14 rounded-full object-cover shrink-0"
             />
-            <div className="settings-row-actions">
-              <button
-                className="btn btn-secondary settings-btn-small"
-                onClick={() => { setEditing(false); setConfirming(false); setAccountantEmail(profile.accountantEmail || ""); }}
-                disabled={saving}
-              >
-                Cancel
-              </button>
-              <button
-                className="btn btn-primary settings-btn-small"
-                onClick={handleSaveAccountant}
-                disabled={saving || !accountantEmail.trim()}
-              >
-                Save
-              </button>
+          ) : (
+            <div className="size-14 rounded-full bg-brand-navy text-white grid place-items-center text-lg font-semibold shrink-0">
+              {initialsFor(user?.displayName, profile.companyName)}
             </div>
-          </div>
-        ) : (
-          <button className="settings-row settings-row-tappable" onClick={() => setEditing(true)}>
-            <div className="settings-row-split">
-              <div>
-                <div className="settings-row-label">Accountant's email</div>
-                <div className="settings-row-value">{profile.accountantEmail}</div>
-              </div>
-              <span className="settings-edit-hint">Edit</span>
-            </div>
-          </button>
-        )}
-
-        {status && (
-          <div className="settings-row">
-            <div className={`status status-${status.type}`} style={{ marginBottom: 0 }}>{status.text}</div>
-          </div>
-        )}
-      </div>
-
-      <div className="settings-card settings-card-padded">
-        <div className="settings-section-label">Appearance</div>
-        <div className="settings-toggle-row">
-          <div>
-            <div className="settings-toggle-title">Dark mode</div>
-            <div className="settings-toggle-status">{theme === "dark" ? "On" : "Off"}</div>
-          </div>
-          <button
-            className={`pill-toggle ${theme === "dark" ? "on" : ""}`}
-            onClick={() => handleSetTheme(theme === "dark" ? "light" : "dark")}
-            role="switch"
-            aria-checked={theme === "dark"}
-            aria-label="Dark mode"
-          >
-            <span className="pill-toggle-knob" />
-          </button>
-        </div>
-      </div>
-
-      {bioSupported && (
-        <div className="settings-card settings-card-padded">
-          <div className="settings-section-label">Security</div>
-          <div className="settings-toggle-row">
-            <div>
-              <div className="settings-toggle-title">Require Face ID to open BX</div>
-              <div className="settings-toggle-status">
-                {bioSaving ? "Working…" : bioEnabled ? "On" : "Off"}
-              </div>
-            </div>
-            <button
-              className={`pill-toggle ${bioEnabled ? "on" : ""}`}
-              onClick={handleToggleLock}
-              disabled={bioSaving}
-              role="switch"
-              aria-checked={bioEnabled}
-              aria-label="Require Face ID to open BX"
-            >
-              <span className="pill-toggle-knob" />
-            </button>
-          </div>
-          {bioStatus && (
-            <div className={`status status-${bioStatus.type}`} style={{ margin: "10px 0 0" }}>{bioStatus.text}</div>
           )}
+          <div className="min-w-0">
+            <p className="font-semibold truncate">{user?.displayName || profile.companyName}</p>
+            <p className="text-xs text-text-secondary truncate">{user?.email || user?.phoneNumber || "—"}</p>
+          </div>
         </div>
-      )}
 
-      <div className="settings-card">
-        <button
-          className="settings-signout"
-          onClick={async () => {
-            // Let go of the Drive grant first, so the next person signing in
-            // on this device can't silently inherit this user's Drive.
-            await disconnect();
-            await signOut(auth);
-          }}
-        >
-          Sign Out
-        </button>
+        <div className="bg-white ring-1 ring-black/5 rounded-2xl divide-y divide-black/5 overflow-hidden mb-6">
+          <div className="flex items-center gap-3 p-4">
+            <Building2 className="size-4 text-text-secondary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm">Company</p>
+            </div>
+            <span className="text-sm text-text-secondary shrink-0">{profile.companyName}</span>
+          </div>
+
+          <div className="p-4">
+            <div className="flex items-center gap-3">
+              <Cloud className="size-4 text-text-secondary shrink-0" />
+              <span className="text-sm flex-1">Receipts saved to Drive of</span>
+              <span className="text-sm text-text-secondary shrink-0">{driveEmail || "—"}</span>
+            </div>
+            {driveMismatch && (
+              <p className="mt-2 text-xs text-destructive">
+                This doesn't match your sign-in email. Receipts may not sync as expected.
+              </p>
+            )}
+          </div>
+
+          <div className="p-4">
+            {editing && confirming ? (
+              <div>
+                <p className="text-sm mb-3">Give read-only access to {accountantEmail.trim()} instead?</p>
+                <div className="flex gap-2">
+                  <button
+                    className="flex-1 h-9 rounded-full ring-1 ring-black/10 text-sm font-medium"
+                    onClick={() => setConfirming(false)}
+                    disabled={saving}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="flex-1 h-9 rounded-full bg-brand-teal text-white text-sm font-semibold disabled:opacity-60"
+                    onClick={handleConfirmShare}
+                    disabled={saving}
+                  >
+                    {saving ? "Saving…" : "Yes, update"}
+                  </button>
+                </div>
+              </div>
+            ) : editing ? (
+              <div>
+                <p className="text-sm text-text-secondary mb-2">Accountant's email</p>
+                <input
+                  className="w-full h-11 rounded-lg ring-1 ring-black/10 px-3 text-sm mb-3 focus:outline-none focus:ring-brand-teal"
+                  type="email"
+                  value={accountantEmail}
+                  onChange={(e) => setAccountantEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveAccountant()}
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button
+                    className="flex-1 h-9 rounded-full ring-1 ring-black/10 text-sm font-medium"
+                    onClick={() => {
+                      setEditing(false);
+                      setConfirming(false);
+                      setAccountantEmail(profile.accountantEmail || "");
+                    }}
+                    disabled={saving}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="flex-1 h-9 rounded-full bg-brand-teal text-white text-sm font-semibold disabled:opacity-60"
+                    onClick={handleSaveAccountant}
+                    disabled={saving || !accountantEmail.trim()}
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button className="w-full flex items-center gap-3 text-left" onClick={() => setEditing(true)}>
+                <Mail className="size-4 text-text-secondary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm">Accountant's email</p>
+                  <p className="text-xs text-text-secondary truncate">{profile.accountantEmail}</p>
+                </div>
+                <ChevronRight className="size-4 text-zinc-400 shrink-0" />
+              </button>
+            )}
+            {status && (
+              <p className={`mt-2 text-xs ${status.type === "error" ? "text-destructive" : "text-brand-teal"}`}>
+                {status.text}
+              </p>
+            )}
+          </div>
+
+          <div className="p-4">
+            <div className="flex items-center gap-3">
+              {theme === "dark" ? (
+                <Moon className="size-4 text-text-secondary shrink-0" />
+              ) : (
+                <Sun className="size-4 text-text-secondary shrink-0" />
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm">Appearance</p>
+                <p className="text-xs text-text-secondary">{theme === "dark" ? "Dark" : "Light"}</p>
+              </div>
+              <Toggle
+                on={theme === "dark"}
+                onClick={() => handleSetTheme(theme === "dark" ? "light" : "dark")}
+                label="Dark mode"
+              />
+            </div>
+          </div>
+
+          {bioSupported && (
+            <div className="p-4">
+              <div className="flex items-center gap-3">
+                <ScanFace className="size-4 text-text-secondary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm">Face ID lock</p>
+                  <p className="text-xs text-text-secondary">{bioSaving ? "Working…" : bioEnabled ? "On" : "Off"}</p>
+                </div>
+                <Toggle on={bioEnabled} onClick={handleToggleLock} disabled={bioSaving} label="Require Face ID to open BX" />
+              </div>
+              {bioStatus && (
+                <p className={`mt-2 text-xs ${bioStatus.type === "error" ? "text-destructive" : "text-brand-teal"}`}>
+                  {bioStatus.text}
+                </p>
+              )}
+            </div>
+          )}
+
+          <button
+            className="w-full flex items-center gap-3 p-4 text-left"
+            onClick={async () => {
+              // Let go of the Drive grant first, so the next person signing in
+              // on this device can't silently inherit this user's Drive.
+              await disconnect();
+              await signOut(auth);
+            }}
+          >
+            <LogOut className="size-4 text-destructive shrink-0" />
+            <span className="text-sm flex-1 text-destructive font-medium">Sign out</span>
+          </button>
+        </div>
       </div>
     </div>
   );
