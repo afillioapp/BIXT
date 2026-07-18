@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { weeklyTotals, categoryTotals, formatCurrency } from "../lib/insights";
+import { accentForCategory } from "./CategoryIcon";
 
 // Home's chart card (owner round 7): lives on a WHITE card below the
 // compact navy header (pages/index.js), light-themed to match Stats.
@@ -110,12 +111,12 @@ function PanelShell({ title, nav, children }) {
 
 // No panel title — the Week/Month/Year tabs above already say what this is
 // (owner request); the period total takes the title slot in teal.
-function BarsPanel({ nav, ready, total, values, labels, boldIndex }) {
+function BarsPanel({ nav, ready, total, values, labels, boldIndex, accent }) {
   const max = ready ? Math.max(...values, 1) : 1;
   return (
     <PanelShell
       title={
-        <span className="text-base text-brand-teal">
+        <span className="text-base text-brand-teal" style={accent ? { color: accent } : undefined}>
           {ready ? formatCurrency(total, { decimals: 2 }) : "…"}
         </span>
       }
@@ -130,7 +131,10 @@ function BarsPanel({ nav, ready, total, values, labels, boldIndex }) {
               <div
                 key={i}
                 className={`flex-1 rounded-t-md ${i === boldIndex ? "bg-brand-teal" : "bg-zinc-100"}`}
-                style={{ height: `${max > 0 ? Math.max(6, (v / max) * 100) : 6}%` }}
+                style={{
+                  height: `${max > 0 ? Math.max(6, (v / max) * 100) : 6}%`,
+                  ...(accent && i === boldIndex ? { background: accent } : {}),
+                }}
               />
             ))}
           </div>
@@ -147,7 +151,7 @@ function BarsPanel({ nav, ready, total, values, labels, boldIndex }) {
   );
 }
 
-function DarkDonut({ categories, total }) {
+function DarkDonut({ categories, total, colorFor = paletteColor }) {
   const size = 108;
   const stroke = 18;
   const r = (size - stroke) / 2;
@@ -167,7 +171,7 @@ function DarkDonut({ categories, total }) {
               cy={size / 2}
               r={r}
               fill="none"
-              stroke={paletteColor(i)}
+              stroke={colorFor(i)}
               strokeWidth={stroke}
               strokeDasharray={`${len} ${c - len}`}
               strokeDashoffset={-offset}
@@ -186,7 +190,10 @@ function DarkDonut({ categories, total }) {
   );
 }
 
-function CategoryPanel({ monthData, nav }) {
+function CategoryPanel({ monthData, nav, accent }) {
+  // With a category filter active, everything shown IS that category —
+  // color it with the category's own accent instead of the ranked palette.
+  const colorFor = (i) => accent || paletteColor(i);
   return (
     <PanelShell title="By category" nav={nav}>
       {!monthData ? (
@@ -195,11 +202,11 @@ function CategoryPanel({ monthData, nav }) {
         <p className="text-xs text-text-secondary py-8 text-center flex-1">No expenses this month.</p>
       ) : (
         <div className="flex-1 flex items-center gap-4">
-          <DarkDonut categories={monthData.categories} total={monthData.total} />
+          <DarkDonut categories={monthData.categories} total={monthData.total} colorFor={colorFor} />
           <ul className="flex-1 space-y-2 min-w-0">
             {monthData.categories.slice(0, 4).map((c, i) => (
               <li key={c.category} className="flex items-center gap-2">
-                <span className="size-2 rounded-full shrink-0" style={{ background: paletteColor(i) }} />
+                <span className="size-2 rounded-full shrink-0" style={{ background: colorFor(i) }} />
                 <span className="flex-1 min-w-0 text-[11px] text-text-primary truncate">{c.category}</span>
                 <span className="text-[11px] font-semibold text-text-secondary shrink-0">{Math.round(c.percent)}%</span>
               </li>
@@ -211,7 +218,8 @@ function CategoryPanel({ monthData, nav }) {
   );
 }
 
-function TopCategoriesPanel({ monthData, nav }) {
+function TopCategoriesPanel({ monthData, nav, accent }) {
+  const colorFor = (i) => accent || paletteColor(i);
   return (
     <PanelShell title="Top categories" nav={nav}>
       {!monthData ? (
@@ -227,7 +235,7 @@ function TopCategoriesPanel({ monthData, nav }) {
                 <span className="text-[11px] font-semibold text-text-secondary">{Math.round(c.percent)}%</span>
               </div>
               <div className="w-full bg-zinc-100 h-1.5 rounded-full overflow-hidden">
-                <div className="h-full" style={{ width: `${c.percent}%`, background: paletteColor(i) }} />
+                <div className="h-full" style={{ width: `${c.percent}%`, background: colorFor(i) }} />
               </div>
             </div>
           ))}
@@ -247,6 +255,8 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
     if (!r || !filterCategory) return r;
     return r.filter((x) => (x.category || "Other") === filterCategory);
   };
+  // …and every chart wears the filtered category's own color (owner request).
+  const accent = filterCategory ? accentForCategory(filterCategory) : null;
   const [range, setRange] = useState("Week");
   const [weekOffset, setWeekOffset] = useState(0);
   const [barMonthOffset, setBarMonthOffset] = useState(0);
@@ -362,6 +372,7 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
   const panels = [
     <BarsPanel
       key="bars"
+      accent={accent}
       nav={<PeriodNav label={bars.label} onPrev={bars.onPrev} onNext={bars.onNext} nextDisabled={bars.nextDisabled} />}
       ready={bars.ready}
       total={bars.total}
@@ -369,8 +380,8 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
       labels={bars.labels}
       boldIndex={bars.boldIndex}
     />,
-    <CategoryPanel key="category" monthData={monthData} nav={catNav} />,
-    <TopCategoriesPanel key="top" monthData={monthData} nav={catNav} />,
+    <CategoryPanel key="category" monthData={monthData} nav={catNav} accent={accent} />,
+    <TopCategoriesPanel key="top" monthData={monthData} nav={catNav} accent={accent} />,
   ];
 
   return (
