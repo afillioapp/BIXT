@@ -4,78 +4,91 @@ _Last updated: 2026-07-18_
 
 ## Status
 
-**Round 5 (owner's 7-item UI punch list) is COMPLETE on branch
-`ui-round-5`, pushed to origin, awaiting orchestrator review + owner live
-phone test on the Vercel preview.** `main` was never touched.
+**Swipe-to-act expense rows are COMPLETE on branch `swipe-actions`, pushed
+to origin, awaiting orchestrator review + owner live phone test on the
+Vercel preview.** `main` was never touched.
 
-All 7 requested changes landed across 4 commits:
+Owner request, modeled on CamScanner's swipe-reveal row actions: swiping an
+expense row left on Home's Recent Expenses list or on History reveals three
+actions — Receipt (open the photo), Edit (bottom-sheet form), Delete
+(confirm-before-destroy). Landed across 4 commits:
 
-1. `9239891` — Home hero carousel. Removed the navy hero's "This week"/
-   "Last month" inner tiles and the 4-tile quick-action row (Scan/Transfer/
-   Report/Add + its popover). Capture is reached through the bottom-nav
-   "+" popover only — **note:** a mid-round owner instruction asked for an
-   extra "Scan receipt" pill on Home, then a follow-up message revoked
-   that and confirmed capture should stay nav-only; the pill was added and
-   then removed again before this commit landed, so `pages/index.js` has
-   no capture entry point of its own. In its place: a 3-panel CSS
-   scroll-snap carousel (`components/HomeCarousel.js`) — weekly bar chart
-   with week arrows, a by-category donut, and a top-categories list (the
-   latter two sharing one month-offset arrow pair) — all dark-restyled and
-   reusing Stats' own math. `lib/useMonthRows.js` is a new shared hook
-   (per-month expense-row cache + on-demand Drive fetch) used by both
-   `pages/index.js` and `pages/stats.js` so they never double-fetch a
-   month and always agree on numbers.
-2. `22db548` — Settings navy identity header (title, large avatar, name,
-   email centered on brand-navy, generous padding) + shortened the Drive
-   row's label from "Receipts saved to Drive of" to "Drive".
-3. `0bda511` — Navy rounded-bottom header block added to History, Stats,
-   and Capture (title + subtitle where present, white text; DriveFallback
-   states keep the same header above the fallback card). New
-   `components/CategoryIcon.js` maps category name (+ legacy pre-v1
-   aliases) to a lucide icon, used on both History rows and Home's Recent
-   Expenses rows in place of the old tinted first-letter square. Fixed
-   long vendor names compressing the icon square on both lists (icon
-   square `shrink-0`, text container `min-w-0` + `truncate`).
-4. (this commit) — `components/BottomNav.js`'s "+" popover restyled: the
-   two pills are now a side-by-side horizontal pair (teal "Scan", navy
-   "Gallery" — shortened labels) centered above the fab, positioned higher
-   (`bottom-[calc(100%+30px)]` vs the previous `+18px`). Capture pipeline
-   (hidden inputs → pendingCapture → `/capture`) unchanged.
+1. `fcaf0d4` — `lib/google.js`'s `listExpenseRows` now stamps every row
+   with `sheetId`, `rowIndex` (1-based sheet row, computed from each row's
+   original position *before* the empty-row filter so filtered blanks
+   never shift later indices), `layout` (`"v1"`/`"v2"`), and for v1 rows
+   `hadTrailingCategory`. New exports `deleteExpenseRow` (batchUpdate
+   deleteDimension) and `updateExpenseRow` (writes the full row back in
+   the correct column order for that row's layout, routed through the
+   same `sanitizeSheetText`/`cleanAmount` helpers `saveExpenseToDrive`
+   uses). `lib/useMonthRows.js` gained `invalidateMonth(date)` — drops
+   that month's cache entry and immediately re-fetches it.
+2. `8f3fe12` — New `components/ExpenseRow.js`: one shared swipeable row for
+   both lists. Touch + mouse drag slides the row content left up to 192px,
+   revealing three equal action buttons (Receipt/Edit/Delete) clipped to
+   the row's own rounded corners. Only one row is ever open at a time (a
+   parent-owned `openId`/`onOpenChange` pattern). Tapping closed content
+   opens the receipt link (old behavior preserved); tapping open content
+   closes it. Delete swaps in place to a "Delete? / Cancel" confirm state
+   before ever calling `onDelete` — no one-tap destructive action.
+3. `e381f22` — Wired into `pages/index.js` and `pages/history.js`. Both
+   share one edit bottom-sheet (`components/EditExpenseSheet.js`: Vendor,
+   Category — from the new `OFFICIAL_CATEGORIES` export in
+   `components/CategoryIcon.js` — Total, HST, Date), which calls
+   `updateExpenseRow` and surfaces errors inline instead of closing.
+   Delete calls `deleteExpenseRow`. Every mutation refreshes from Drive
+   rather than splicing rows locally (a delete/edit shifts every later
+   row's sheet index in that month's sheet): Home uses
+   `useMonthRows`'s `invalidateMonth` on the current + previous month;
+   History's two-month fetch was extracted into a callable `load()` that
+   re-runs after a mutation. Deleting only removes the sheet row — the
+   receipt photo deliberately stays in Drive (commented at both call
+   sites).
+4. (this commit) — RESUME.md refresh + a small visual fix: the row's
+   `ring-1 ring-black/5` border (present on the original plain-`<a>` rows)
+   had been dropped when the row visuals moved into `ExpenseRow.js`;
+   restored on the row's outer container.
 
 ## Deviations from the written brief
 
-- **Commit 1 churn (see above):** an in-flight "owner veto" message asked
-  for a Home-page "Scan receipt" button; a second message revoked it
-  before the commit landed. Net effect on `pages/index.js` is zero — it
-  matches the original brief (hero + carousel + Recent Expenses + feedback
-  card, capture nav-only). Flagging here in case the owner's intent still
-  needs a Home-page scan entry point in a future round.
-- **Error surfacing on Home/Stats initial load:** the old per-page fetch
-  effects had a top-level `try/catch` that set a page `error` string on
-  any Drive failure. `lib/useMonthRows.js` swallows per-month fetch errors
-  silently (matching the *existing* period-navigation behavior stats.js
-  already had) so a failed month just stays "Loading…" and retries next
-  time `ensureMonths` is called for it, rather than surfacing red error
-  text. Low risk (DriveFallback still gates the whole page on
-  connect/auth failures) but worth knowing about.
-- Category donut/progress-list palette on the Home carousel intentionally
-  keeps the exact same 4-hex palette Stats uses (`#0FB5A7 #1E2A44 #F59E0B
-  #FB7185`) per the brief's "same 4-color palette" instruction, even
-  though the navy-hex entry (`#1E2A44`) is low-contrast against the navy
-  hero card it now sits on. Segments still have a legend label, so
-  identity never depends on color alone.
+- `updateExpenseRow`'s signature keeps the brief's exact positional args
+  (`token, sheetId, rowIndex, layout, { date, place, category, total, hst,
+  receiptLink }`) but the options object also accepts `hadTrailingCategory`
+  — the brief's own prose says v1's trailing-Category write needs that
+  flag, and `layout` alone (just `"v1"`/`"v2"`) can't carry it, so it rides
+  along on the same object that `listExpenseRows` already attaches it to.
+- The brief said Receipt should be "disabled/hidden when no link" — kept
+  as a disabled (grayed, non-interactive) button rather than removing it
+  from layout, so the three action slots stay equal width and the row
+  never reflows depending on data.
+- Delete's confirm state ("Delete? / Cancel") replaces only the Delete
+  button's own 64px slot with two ~32px buttons side by side, not the
+  full three-button row — matches "swaps in-place" literally.
+- `pages/history.js`'s old per-request `cancelled` guard (to avoid a
+  post-unmount `setState`) was dropped when the fetch was extracted into a
+  callable `load()` — safe on React 18 (this repo's version), which no
+  longer warns/breaks on that pattern.
 
 ## Untouched per the do-not-touch list
 
-`lib/useDrive.js`, `lib/google.js`, `lib/biometric.js`, `lib/image.js`,
-`lib/pendingCapture.js`, `lib/insights.js` math (only new imports of its
-existing exports; math functions themselves are byte-identical),
-`lib/theme.js`, `pages/api/extract.js`, `next.config.js`,
-`chrome-extension/`, `UI UX/`, `design_handoff_bxt_app/`, `lovable-design/`,
-`inter/`. All behavioral guards (onboarding redirect, 401 retry-once,
-DriveFallback gating, biometric gate, pendingCapture flow,
-confirm-before-share, theme toggle, disconnect-before-signOut) verified
-still in place.
+`lib/useDrive.js`, `lib/biometric.js`, `lib/image.js`,
+`lib/pendingCapture.js`, `lib/theme.js`, `lib/insights.js` math (only
+consumed, unmodified — `latestReceipts` is a pure sort/slice, new row
+fields pass through untouched), `pages/api/extract.js`, `next.config.js`,
+`chrome-extension/`, `UI UX/`, `design_handoff_bxt_app/`,
+`lovable-design/`, `inter/`. `lib/google.js` only gained new functions
+(`deleteExpenseRow`, `updateExpenseRow`, `putValuesUserEntered`) plus
+additive fields on `listExpenseRows`' return shape — every existing
+function's behavior is unchanged. All behavioral guards (onboarding
+redirect, 401 retry-once, DriveFallback gating, biometric gate,
+pendingCapture flow, confirm-before-share, theme, disconnect-before-
+signOut) verified still in place.
+
+Note: an orchestrator commit (`f340be8` — Stats "By Category" donut
+redesign, `pages/stats.js` only) landed on this branch mid-run because the
+working tree was checked out here when it was made. It's independent of
+this work (only touches the Donut component + legend) and was kept as
+instructed.
 
 ## Next step
 
@@ -83,5 +96,6 @@ Every commit builds clean (`✓ Compiled successfully`; the later "Failed
 to collect page data" / Firebase `auth/invalid-api-key` error is the
 expected-and-documented local-only failure — env keys live in Vercel).
 Branch is pushed. Next step is orchestrator (Fable) review of the Vercel
-preview deploy for `ui-round-5`, then owner phone test, then merge to
-`main` per `docs/REPO-WORKFLOW.md`.
+preview deploy for `swipe-actions`, then owner phone test (swipe gesture
+feel is best judged on an actual touchscreen), then merge to `main` per
+`docs/REPO-WORKFLOW.md`.
