@@ -219,17 +219,6 @@ export default function Home({ user }) {
             </ul>
           )}
         </section>
-
-        <section className="bg-white rounded-2xl p-5 ring-1 ring-black/5 flex flex-col items-start gap-1">
-          <p className="text-sm font-bold">Help us make BX better</p>
-          <p className="text-xs text-text-secondary mb-2">Tell us what's confusing, broken, or missing.</p>
-          <a
-            href="mailto:alireza.mthr@gmail.com?subject=BX%20feedback"
-            className="inline-flex items-center justify-center rounded-full bg-background ring-1 ring-black/5 text-text-primary text-xs font-semibold px-5 h-9"
-          >
-            Send feedback
-          </a>
-        </section>
       </div>
     </div>
   );
