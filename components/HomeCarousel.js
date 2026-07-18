@@ -2,18 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { weeklyTotals, categoryTotals, formatCurrency } from "../lib/insights";
 
-// Three horizontally swipeable panels living inside Home's navy hero, right
-// below the total-balance card: weekly bar chart, by-category donut, and a
-// top-categories progress list — dark-restyled versions of the Stats page's
-// own cards, reusing its exact math (weeklyTotals/categoryTotals) so the
-// numbers always agree with /stats. CSS scroll-snap + dot indicators, same
-// approach components/InsightCards.js used before it was replaced by the
-// current design (see git history), reimplemented against Tailwind classes.
+// The chart half of Home's single hero card (owner round 6): a Week/Month/
+// Year segmented control up top, then three horizontally swipeable panels —
+// range bar chart, by-category donut, top-categories list. Panels carry no
+// card chrome of their own anymore (pages/index.js wraps everything,
+// including the total row above, in ONE translucent card); each panel's
+// period navigation (‹ date ›) sits compactly in its top-right corner.
 //
-// Gestures are kept deliberately separate: swiping the row changes which
-// PANEL is showing (native scroll-snap); the ‹ › buttons inside a panel
-// change the PERIOD that panel's data is drawn from. Panels never attach
-// their own touch handlers, so the two never fight over a horizontal drag.
+// Gestures stay deliberately separate: swiping changes which PANEL shows;
+// the ‹ › buttons change that panel's PERIOD; the segmented control changes
+// the bar panel's RANGE (and scrolls back to it).
 
 function prevMonthDate(d) {
   return new Date(d.getFullYear(), d.getMonth() - 1, 1);
@@ -48,20 +46,43 @@ function formatWeekRange(start, end) {
   return `${startFmt} – ${endFmt}${yearSuffix}`;
 }
 
-// Same exact hex palette Stats' donut/progress list uses, so a category
-// renders the same color whether you're looking at Home or Stats.
+// Weeks-of-month bucketing (W1 = days 1-7, …) — mirrors stats.js's Month
+// chart so Home and Stats always agree.
+function monthBars(rows, refMonth) {
+  const year = refMonth.getFullYear();
+  const month = refMonth.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const weekCount = Math.ceil(daysInMonth / 7);
+  const values = new Array(weekCount).fill(0);
+  let total = 0;
+  for (const r of rows || []) {
+    if (!r.date) continue;
+    const d = new Date(`${r.date}T00:00:00`);
+    if (isNaN(d.getTime()) || d.getFullYear() !== year || d.getMonth() !== month) continue;
+    const n = parseFloat(String(r.total ?? "").replace(/^'/, "").replace(/[$,\s]/g, ""));
+    const amount = Number.isFinite(n) ? n : 0;
+    values[Math.min(weekCount - 1, Math.floor((d.getDate() - 1) / 7))] += amount;
+    total += amount;
+  }
+  return { values, total, labels: values.map((_, i) => `W${i + 1}`) };
+}
+
+const MONTH_LABELS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
+
+// Same exact hex palette Stats' donut/progress list uses.
 const CATEGORY_PALETTE = ["#0FB5A7", "#1E2A44", "#F59E0B", "#FB7185"];
 function paletteColor(i) {
   return CATEGORY_PALETTE[i % CATEGORY_PALETTE.length];
 }
 
-function PeriodHeader({ label, onPrev, onNext, nextDisabled }) {
+// Compact ‹ date › cluster for a panel's top-right corner.
+function PeriodNav({ label, onPrev, onNext, nextDisabled }) {
   return (
-    <div className="flex items-center gap-1.5 mb-1">
-      <button type="button" aria-label="Earlier" onClick={onPrev} className="text-white/50 -ml-1">
+    <div className="flex items-center gap-1 shrink-0">
+      <button type="button" aria-label="Earlier" onClick={onPrev} className="text-white/50">
         <ChevronLeft className="size-4" />
       </button>
-      <p className="text-xs text-white/60">{label}</p>
+      <p className="text-[11px] text-white/60 whitespace-nowrap">{label}</p>
       <button
         type="button"
         aria-label="Later"
@@ -75,48 +96,54 @@ function PeriodHeader({ label, onPrev, onNext, nextDisabled }) {
   );
 }
 
-function WeeklyPanel({ weekly, weekOffset, setWeekOffset, refMonday }) {
-  const label = weekly ? formatWeekRange(weekly.weekStart, weekly.weekEnd) : formatWeekRange(refMonday, addDays(refMonday, 6));
-  const max = weekly ? Math.max(...weekly.days.map((d) => d.amount), 1) : 1;
+function PanelShell({ title, nav, children }) {
   return (
-    <section className="bg-white/5 rounded-2xl p-5 ring-1 ring-white/10 h-[228px] flex flex-col">
-      <PeriodHeader
-        label={label}
-        onPrev={() => setWeekOffset((o) => o + 1)}
-        onNext={() => setWeekOffset((o) => Math.max(0, o - 1))}
-        nextDisabled={weekOffset === 0}
-      />
-      <p className="text-sm font-semibold text-white mb-3">Weekly expenses</p>
-      {!weekly ? (
+    <section className="h-[196px] flex flex-col pt-4">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <p className="text-sm font-semibold text-white">{title}</p>
+        {nav}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function BarsPanel({ title, nav, ready, total, values, labels, boldIndex }) {
+  const max = ready ? Math.max(...values, 1) : 1;
+  return (
+    <PanelShell title={title} nav={nav}>
+      {!ready ? (
         <p className="text-xs text-white/50 py-8 text-center flex-1">Loading…</p>
       ) : (
         <div className="flex-1 flex flex-col">
-          <p className="text-lg font-semibold text-brand-teal mb-3">{formatCurrency(weekly.total, { decimals: 2 })}</p>
+          <p className="text-base font-semibold text-brand-teal mb-2">
+            {formatCurrency(total, { decimals: 2 })}
+          </p>
           <div className="flex-1 flex items-end justify-between gap-1.5">
-            {weekly.days.map((d, i) => (
+            {values.map((v, i) => (
               <div
                 key={i}
-                className={`flex-1 rounded-t-md ${d.isToday ? "bg-brand-teal" : "bg-white/10"}`}
-                style={{ height: `${max > 0 ? Math.max(6, (d.amount / max) * 100) : 6}%` }}
+                className={`flex-1 rounded-t-md ${i === boldIndex ? "bg-brand-teal" : "bg-white/10"}`}
+                style={{ height: `${max > 0 ? Math.max(6, (v / max) * 100) : 6}%` }}
               />
             ))}
           </div>
           <div className="flex justify-between mt-2 text-[10px] text-white/50 uppercase tracking-tight gap-1.5">
-            {weekly.days.map((d, i) => (
-              <span key={i} className={`flex-1 text-center ${d.isToday ? "text-white font-semibold" : ""}`}>
-                {d.label.slice(0, 3)}
+            {labels.map((l, i) => (
+              <span key={i} className={`flex-1 text-center ${i === boldIndex ? "text-white font-semibold" : ""}`}>
+                {l}
               </span>
             ))}
           </div>
         </div>
       )}
-    </section>
+    </PanelShell>
   );
 }
 
 function DarkDonut({ categories, total }) {
-  const size = 116;
-  const stroke = 20;
+  const size = 108;
+  const stroke = 18;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   let offset = 0;
@@ -153,16 +180,9 @@ function DarkDonut({ categories, total }) {
   );
 }
 
-function CategoryPanel({ monthData, label, offset, setOffset }) {
+function CategoryPanel({ monthData, nav }) {
   return (
-    <section className="bg-white/5 rounded-2xl p-5 ring-1 ring-white/10 h-[228px] flex flex-col">
-      <PeriodHeader
-        label={label}
-        onPrev={() => setOffset((o) => o + 1)}
-        onNext={() => setOffset((o) => Math.max(0, o - 1))}
-        nextDisabled={offset === 0}
-      />
-      <p className="text-sm font-semibold text-white mb-3">By category</p>
+    <PanelShell title="By category" nav={nav}>
       {!monthData ? (
         <p className="text-xs text-white/50 py-8 text-center flex-1">Loading…</p>
       ) : monthData.categories.length === 0 ? (
@@ -181,20 +201,13 @@ function CategoryPanel({ monthData, label, offset, setOffset }) {
           </ul>
         </div>
       )}
-    </section>
+    </PanelShell>
   );
 }
 
-function TopCategoriesPanel({ monthData, label, offset, setOffset }) {
+function TopCategoriesPanel({ monthData, nav }) {
   return (
-    <section className="bg-white/5 rounded-2xl p-5 ring-1 ring-white/10 h-[228px] flex flex-col">
-      <PeriodHeader
-        label={label}
-        onPrev={() => setOffset((o) => o + 1)}
-        onNext={() => setOffset((o) => Math.max(0, o - 1))}
-        nextDisabled={offset === 0}
-      />
-      <p className="text-sm font-semibold text-white mb-3">Top categories</p>
+    <PanelShell title="Top categories" nav={nav}>
       {!monthData ? (
         <p className="text-xs text-white/50 py-8 text-center flex-1">Loading…</p>
       ) : monthData.categories.length === 0 ? (
@@ -214,19 +227,22 @@ function TopCategoriesPanel({ monthData, label, offset, setOffset }) {
           ))}
         </div>
       )}
-    </section>
+    </PanelShell>
   );
 }
 
 export default function HomeCarousel({ getMonthRows, ensureMonths }) {
   const now = new Date();
+  const [range, setRange] = useState("Week");
   const [weekOffset, setWeekOffset] = useState(0);
-  // Shared between the "By category" and "Top categories" panels — arrows
-  // in either one move both, per the owner's spec.
+  const [barMonthOffset, setBarMonthOffset] = useState(0);
+  const [yearOffset, setYearOffset] = useState(0);
+  // Shared between the "By category" and "Top categories" panels.
   const [catMonthOffset, setCatMonthOffset] = useState(0);
   const scrollerRef = useRef(null);
   const [active, setActive] = useState(0);
 
+  // ── Bar panel data, per selected range ──
   const refMonday = addDays(mondayOf(now), -7 * weekOffset);
   const weekNeededMonths = (() => {
     const dates = [addDays(refMonday, -7), addDays(refMonday, -1), refMonday, addDays(refMonday, 6)];
@@ -234,28 +250,91 @@ export default function HomeCarousel({ getMonthRows, ensureMonths }) {
     for (const d of dates) seen.set(monthKey(d), new Date(d.getFullYear(), d.getMonth(), 1));
     return [...seen.values()];
   })();
-  const refCatMonth = new Date(now.getFullYear(), now.getMonth() - catMonthOffset, 1);
+  const refBarMonth = new Date(now.getFullYear(), now.getMonth() - barMonthOffset, 1);
+  const targetYear = now.getFullYear() - yearOffset;
+  const yearMonthDates = MONTH_LABELS.map((_, i) => new Date(targetYear, i, 1));
 
   useEffect(() => {
-    ensureMonths(weekNeededMonths);
+    if (range === "Week") ensureMonths(weekNeededMonths);
+    else if (range === "Month") ensureMonths([refBarMonth]);
+    else ensureMonths(yearMonthDates);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weekOffset]);
+  }, [range, weekOffset, barMonthOffset, yearOffset]);
 
   useEffect(() => {
-    ensureMonths([refCatMonth]);
+    ensureMonths([new Date(now.getFullYear(), now.getMonth() - catMonthOffset, 1)]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [catMonthOffset]);
 
-  const weekReady = weekNeededMonths.every((d) => getMonthRows(d));
-  const weekRows = weekReady ? weekNeededMonths.flatMap((d) => getMonthRows(d)) : null;
-  const weekly = weekRows ? weeklyTotals(weekRows, refMonday) : null;
+  let bars;
+  if (range === "Week") {
+    const ready = weekNeededMonths.every((d) => getMonthRows(d));
+    const weekly = ready ? weeklyTotals(weekNeededMonths.flatMap((d) => getMonthRows(d)), refMonday) : null;
+    bars = {
+      title: "Weekly expenses",
+      label: weekly ? formatWeekRange(weekly.weekStart, weekly.weekEnd) : formatWeekRange(refMonday, addDays(refMonday, 6)),
+      ready,
+      total: weekly ? weekly.total : 0,
+      values: weekly ? weekly.days.map((d) => d.amount) : [],
+      labels: weekly ? weekly.days.map((d) => d.label.slice(0, 3)) : [],
+      boldIndex: weekly ? weekly.days.findIndex((d) => d.isToday) : -1,
+      onPrev: () => setWeekOffset((o) => o + 1),
+      onNext: () => setWeekOffset((o) => Math.max(0, o - 1)),
+      nextDisabled: weekOffset === 0,
+    };
+  } else if (range === "Month") {
+    const rows = getMonthRows(refBarMonth);
+    const m = rows ? monthBars(rows, refBarMonth) : null;
+    bars = {
+      title: "Monthly expenses",
+      label:
+        refBarMonth.getFullYear() === now.getFullYear()
+          ? refBarMonth.toLocaleString("en-US", { month: "long" })
+          : refBarMonth.toLocaleString("en-US", { month: "short", year: "numeric" }),
+      ready: !!m,
+      total: m ? m.total : 0,
+      values: m ? m.values : [],
+      labels: m ? m.labels : [],
+      boldIndex: m ? m.values.indexOf(Math.max(...m.values)) : -1,
+      onPrev: () => setBarMonthOffset((o) => o + 1),
+      onNext: () => setBarMonthOffset((o) => Math.max(0, o - 1)),
+      nextDisabled: barMonthOffset === 0,
+    };
+  } else {
+    const ready = yearMonthDates.every((d) => getMonthRows(d));
+    const values = ready
+      ? yearMonthDates.map((d) => categoryTotals(getMonthRows(d), d).total)
+      : [];
+    bars = {
+      title: "Yearly expenses",
+      label: String(targetYear),
+      ready,
+      total: values.reduce((s, v) => s + v, 0),
+      values,
+      labels: MONTH_LABELS,
+      boldIndex: ready ? (yearOffset === 0 ? now.getMonth() : values.indexOf(Math.max(...values))) : -1,
+      onPrev: () => setYearOffset((o) => o + 1),
+      onNext: () => setYearOffset((o) => Math.max(0, o - 1)),
+      nextDisabled: yearOffset === 0,
+    };
+  }
 
+  // ── Category panels data (month-based, shared offset) ──
+  const refCatMonth = new Date(now.getFullYear(), now.getMonth() - catMonthOffset, 1);
   const catRows = getMonthRows(refCatMonth);
   const monthData = catRows ? categoryTotals(catRows, refCatMonth) : null;
   const catMonthLabel =
     refCatMonth.getFullYear() === now.getFullYear()
       ? refCatMonth.toLocaleString("en-US", { month: "long" })
       : refCatMonth.toLocaleString("en-US", { month: "long", year: "numeric" });
+  const catNav = (
+    <PeriodNav
+      label={catMonthLabel}
+      onPrev={() => setCatMonthOffset((o) => o + 1)}
+      onNext={() => setCatMonthOffset((o) => Math.max(0, o - 1))}
+      nextDisabled={catMonthOffset === 0}
+    />
+  );
 
   function handleScroll() {
     const el = scrollerRef.current;
@@ -263,14 +342,44 @@ export default function HomeCarousel({ getMonthRows, ensureMonths }) {
     setActive(Math.round(el.scrollLeft / el.clientWidth));
   }
 
+  // Switching range snaps the carousel back to the bar panel it affects.
+  function changeRange(r) {
+    setRange(r);
+    scrollerRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+  }
+
   const panels = [
-    <WeeklyPanel key="weekly" weekly={weekly} weekOffset={weekOffset} setWeekOffset={setWeekOffset} refMonday={refMonday} />,
-    <CategoryPanel key="category" monthData={monthData} label={catMonthLabel} offset={catMonthOffset} setOffset={setCatMonthOffset} />,
-    <TopCategoriesPanel key="top" monthData={monthData} label={catMonthLabel} offset={catMonthOffset} setOffset={setCatMonthOffset} />,
+    <BarsPanel
+      key="bars"
+      title={bars.title}
+      nav={<PeriodNav label={bars.label} onPrev={bars.onPrev} onNext={bars.onNext} nextDisabled={bars.nextDisabled} />}
+      ready={bars.ready}
+      total={bars.total}
+      values={bars.values}
+      labels={bars.labels}
+      boldIndex={bars.boldIndex}
+    />,
+    <CategoryPanel key="category" monthData={monthData} nav={catNav} />,
+    <TopCategoriesPanel key="top" monthData={monthData} nav={catNav} />,
   ];
 
   return (
     <div>
+      <div className="flex p-1 bg-white/10 rounded-lg mt-4">
+        {["Week", "Month", "Year"].map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => changeRange(t)}
+            className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              range === t ? "bg-white text-brand-navy" : "text-white/60"
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
       <div
         ref={scrollerRef}
         onScroll={handleScroll}
@@ -283,7 +392,7 @@ export default function HomeCarousel({ getMonthRows, ensureMonths }) {
           </div>
         ))}
       </div>
-      <div className="flex justify-center gap-1.5 mt-3">
+      <div className="flex justify-center gap-1.5 mt-2">
         {panels.map((_, i) => (
           <span
             key={i}

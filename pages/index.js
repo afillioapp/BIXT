@@ -170,9 +170,8 @@ export default function Home({ user }) {
               <span className="text-[10px] text-white/60">vs last month</span>
             </div>
           )}
+          <HomeCarousel getMonthRows={getMonthRows} ensureMonths={ensureMonths} />
         </section>
-
-        <HomeCarousel getMonthRows={getMonthRows} ensureMonths={ensureMonths} />
         </div>
       </div>
 
