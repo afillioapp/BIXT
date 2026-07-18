@@ -367,7 +367,21 @@ export default function HomeCarousel({ getMonthRows, ensureMonths }) {
 
   return (
     <div>
-      <div className="flex p-1 bg-white/10 rounded-lg mt-4">
+      <div
+        ref={scrollerRef}
+        onScroll={handleScroll}
+        className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none"
+        style={{ scrollbarWidth: "none" }}
+      >
+        {panels.map((panel, i) => (
+          <div key={i} className="w-full shrink-0 snap-start">
+            {panel}
+          </div>
+        ))}
+      </div>
+
+      {/* Range tabs live at the bottom of the card (owner request). */}
+      <div className="flex p-1 bg-white/10 rounded-lg mt-3">
         {["Week", "Month", "Year"].map((t) => (
           <button
             key={t}
@@ -382,18 +396,6 @@ export default function HomeCarousel({ getMonthRows, ensureMonths }) {
         ))}
       </div>
 
-      <div
-        ref={scrollerRef}
-        onScroll={handleScroll}
-        className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none"
-        style={{ scrollbarWidth: "none" }}
-      >
-        {panels.map((panel, i) => (
-          <div key={i} className="w-full shrink-0 snap-start">
-            {panel}
-          </div>
-        ))}
-      </div>
       <div className="flex justify-center gap-1.5 mt-2">
         {panels.map((_, i) => (
           <span
