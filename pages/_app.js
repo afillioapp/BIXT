@@ -70,6 +70,9 @@ export default function App({ Component, pageProps }) {
       <Head>
         <title>BX</title>
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        {/* iOS home-screen icon: the explicit link beats relying on
+            Safari's root-path auto-discovery. */}
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </Head>
       <div className={`app-shell ${inter.variable}`}>
         <BiometricGate user={user}>
