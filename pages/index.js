@@ -7,7 +7,7 @@ import { useMonthRows } from "../lib/useMonthRows";
 import { latestReceipts, categoryTotals, formatCurrency } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
 import HomeCarousel from "../components/HomeCarousel";
-import CategoryIcon from "../components/CategoryIcon";
+import CategoryIcon, { accentForCategory } from "../components/CategoryIcon";
 
 // Originally ported 1:1 from lovable-design/src/routes/index.tsx (navy
 // "Total Balance" hero + 4-tile quick-action row + "Recent Expenses" list).
@@ -114,16 +114,22 @@ export default function Home({ user }) {
   }
   const filterCats = [...catSpend.entries()].sort((a, b) => b[1] - a[1]).map(([c]) => c).slice(0, 6);
 
+  // An active filter narrows the WHOLE page (owner request): the total, the
+  // %-chip, the hero charts, and the list all speak about that one category.
   const visibleRows =
     rows && filterCat ? rows.filter((r) => (r.category || "Other") === filterCat) : rows;
   const latest = visibleRows ? latestReceipts(visibleRows, 5) : [];
-  const monthData = rows ? categoryTotals(rows, now) : null;
-  const prevMonthTotal = rows ? categoryTotals(rows, prevMonthDate(now)).total : 0;
+  const monthData = visibleRows ? categoryTotals(visibleRows, now) : null;
+  const prevMonthTotal = visibleRows ? categoryTotals(visibleRows, prevMonthDate(now)).total : 0;
   const pctChange =
     monthData && prevMonthTotal > 0
       ? Math.round(((monthData.total - prevMonthTotal) / prevMonthTotal) * 100)
       : null;
   const monthLabel = now.toLocaleString("en-US", { month: "long" }).toUpperCase();
+  const totalLabel = filterCat
+    ? `Total ${filterCat} Expenses · ${monthLabel}`.toUpperCase()
+    : `Total Expenses · ${monthLabel}`.toUpperCase();
+  const filterAccent = filterCat ? accentForCategory(filterCat) : null;
 
   return (
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
@@ -160,9 +166,12 @@ export default function Home({ user }) {
           <div className="flex justify-between items-start mb-4">
             <div>
               <p className="text-[10px] uppercase tracking-widest text-white/60 mb-1">
-                Total Expenses · {monthLabel}
+                {totalLabel}
               </p>
-              <p className="text-3xl font-medium leading-none">
+              <p
+                className="text-3xl font-medium leading-none"
+                style={filterAccent ? { color: filterAccent } : undefined}
+              >
                 {monthData ? formatCurrency(monthData.total, { decimals: 2 }) : "—"}
               </p>
             </div>
@@ -176,7 +185,7 @@ export default function Home({ user }) {
               <span className="text-[10px] text-white/60">vs last month</span>
             </div>
           )}
-          <HomeCarousel getMonthRows={getMonthRows} ensureMonths={ensureMonths} />
+          <HomeCarousel getMonthRows={getMonthRows} ensureMonths={ensureMonths} filterCategory={filterCat} />
         </section>
         </div>
       </div>
@@ -193,9 +202,12 @@ export default function Home({ user }) {
                   onClick={() => setFilterCat(c === "All" ? null : c)}
                   className={`px-4 py-2 rounded-full text-xs font-medium shrink-0 ${
                     active
-                      ? "bg-brand-navy text-white"
+                      ? c === "All"
+                        ? "bg-brand-navy text-white"
+                        : "text-brand-navy font-semibold"
                       : "bg-white ring-1 ring-black/5 text-text-secondary"
                   }`}
+                  style={active && c !== "All" ? { background: accentForCategory(c) } : undefined}
                 >
                   {c}
                 </button>

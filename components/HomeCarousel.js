@@ -237,8 +237,16 @@ function TopCategoriesPanel({ monthData, nav }) {
   );
 }
 
-export default function HomeCarousel({ getMonthRows, ensureMonths }) {
+export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategory = null }) {
   const now = new Date();
+
+  // Home's category filter narrows every panel too (owner request). Cache
+  // presence (loading/ready checks) still uses the unfiltered getMonthRows.
+  const rowsFor = (d) => {
+    const r = getMonthRows(d);
+    if (!r || !filterCategory) return r;
+    return r.filter((x) => (x.category || "Other") === filterCategory);
+  };
   const [range, setRange] = useState("Week");
   const [weekOffset, setWeekOffset] = useState(0);
   const [barMonthOffset, setBarMonthOffset] = useState(0);
@@ -275,7 +283,7 @@ export default function HomeCarousel({ getMonthRows, ensureMonths }) {
   let bars;
   if (range === "Week") {
     const ready = weekNeededMonths.every((d) => getMonthRows(d));
-    const weekly = ready ? weeklyTotals(weekNeededMonths.flatMap((d) => getMonthRows(d)), refMonday) : null;
+    const weekly = ready ? weeklyTotals(weekNeededMonths.flatMap((d) => rowsFor(d)), refMonday) : null;
     bars = {
       label: weekly ? formatWeekRange(weekly.weekStart, weekly.weekEnd) : formatWeekRange(refMonday, addDays(refMonday, 6)),
       ready,
@@ -288,7 +296,7 @@ export default function HomeCarousel({ getMonthRows, ensureMonths }) {
       nextDisabled: weekOffset === 0,
     };
   } else if (range === "Month") {
-    const rows = getMonthRows(refBarMonth);
+    const rows = rowsFor(refBarMonth);
     const m = rows ? monthBars(rows, refBarMonth) : null;
     bars = {
       label:
@@ -307,7 +315,7 @@ export default function HomeCarousel({ getMonthRows, ensureMonths }) {
   } else {
     const ready = yearMonthDates.every((d) => getMonthRows(d));
     const values = ready
-      ? yearMonthDates.map((d) => categoryTotals(getMonthRows(d), d).total)
+      ? yearMonthDates.map((d) => categoryTotals(rowsFor(d), d).total)
       : [];
     bars = {
       label: String(targetYear),
@@ -324,7 +332,7 @@ export default function HomeCarousel({ getMonthRows, ensureMonths }) {
 
   // ── Category panels data (month-based, shared offset) ──
   const refCatMonth = new Date(now.getFullYear(), now.getMonth() - catMonthOffset, 1);
-  const catRows = getMonthRows(refCatMonth);
+  const catRows = rowsFor(refCatMonth);
   const monthData = catRows ? categoryTotals(catRows, refCatMonth) : null;
   const catMonthLabel =
     refCatMonth.getFullYear() === now.getFullYear()
