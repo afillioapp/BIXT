@@ -98,13 +98,13 @@ const MONTH_LABELS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"
 
 function Segmented({ range, setRange }) {
   return (
-    <div className="flex p-1 bg-zinc-100 rounded-lg mb-6">
+    <div className="flex p-1 bg-white ring-1 ring-black/5 rounded-lg mb-6">
       {["Week", "Month", "Year"].map((t) => (
         <button
           key={t}
           onClick={() => setRange(t)}
           className={`flex-1 py-1.5 text-xs font-medium rounded-md transition ${
-            range === t ? "bg-white ring-1 ring-black/5 shadow-sm text-text-primary" : "text-text-secondary"
+            range === t ? "bg-brand-teal text-white" : "text-text-secondary"
           }`}
         >
           {t}

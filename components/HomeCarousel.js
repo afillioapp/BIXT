@@ -376,14 +376,14 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
   return (
     <div>
       {/* Range tabs above the card, exactly like the Stats page. */}
-      <div className="flex p-1 bg-zinc-100 rounded-lg mb-4">
+      <div className="flex p-1 bg-white ring-1 ring-black/5 rounded-lg mb-4">
         {["Week", "Month", "Year"].map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => changeRange(t)}
             className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              range === t ? "bg-white text-brand-navy shadow-sm" : "text-text-secondary"
+              range === t ? "bg-brand-teal text-white" : "text-text-secondary"
             }`}
           >
             {t}
