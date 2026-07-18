@@ -316,7 +316,12 @@ export default function Stats({ user }) {
   if (profileLoading || !profile) {
     return (
       <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-        <div className="mx-auto max-w-md px-5 pt-10">
+        <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-white">
+          <div className="mx-auto max-w-md px-5">
+            <h1 className="text-2xl font-semibold tracking-tight">Statistics</h1>
+          </div>
+        </div>
+        <div className="mx-auto max-w-md px-5 pt-6">
           <DriveFallback
             needsConnect={needsConnect}
             loadError={loadError}
@@ -420,12 +425,14 @@ export default function Stats({ user }) {
 
   return (
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-      <div className="mx-auto max-w-md px-5 pt-10">
-        <header className="mb-6">
+      <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-white">
+        <div className="mx-auto max-w-md px-5">
           <h1 className="text-2xl font-semibold tracking-tight">Statistics</h1>
-          <p className="text-xs text-text-secondary mt-1">Track how your business spends.</p>
-        </header>
+          <p className="text-xs text-white/60 mt-1">Track how your business spends.</p>
+        </div>
+      </div>
 
+      <div className="mx-auto max-w-md px-5 pt-6">
         <Segmented range={range} setRange={setRange} />
 
         {rows === null && <p className="text-xs text-text-secondary mb-4">Loading receipts…</p>}

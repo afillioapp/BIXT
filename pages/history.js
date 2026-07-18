@@ -3,12 +3,15 @@ import { MoreHorizontal } from "lucide-react";
 import { useDrive } from "../lib/useDrive";
 import { findMonthExpenseSheetId, listExpenseRows } from "../lib/google";
 import DriveFallback from "../components/DriveFallback";
+import CategoryIcon from "../components/CategoryIcon";
 
 // Extends the ported Lovable design language (routes/index.tsx's "Recent
-// Expenses" white rows with tinted first-letter squares) to the full
-// history view: page title + sub per the design's header pattern, date
-// group headers, and the same expense-row component. Two-month read and
-// all load/empty/error states unchanged.
+// Expenses" white rows) to the full history view: navy rounded-bottom
+// header (owner request — "the top part is dark on all pages") with the
+// title + sub, date group headers, and the same expense-row component (now
+// showing the category's icon instead of a tinted first-letter square, see
+// components/CategoryIcon.js). Two-month read and all load/empty/error
+// states unchanged.
 
 function prevMonthDate(d) {
   return new Date(d.getFullYear(), d.getMonth() - 1, 1);
@@ -96,8 +99,12 @@ export default function History({ user }) {
   if (profileLoading || !profile) {
     return (
       <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-        <div className="mx-auto max-w-md px-5 pt-10">
-          <h1 className="text-2xl font-semibold tracking-tight mb-6">History</h1>
+        <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-white">
+          <div className="mx-auto max-w-md px-5">
+            <h1 className="text-2xl font-semibold tracking-tight">History</h1>
+          </div>
+        </div>
+        <div className="mx-auto max-w-md px-5 pt-6">
           <DriveFallback
             needsConnect={needsConnect}
             loadError={loadError}
@@ -111,12 +118,14 @@ export default function History({ user }) {
 
   return (
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-      <div className="mx-auto max-w-md px-5 pt-10">
-        <header className="mb-6">
+      <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-white">
+        <div className="mx-auto max-w-md px-5">
           <h1 className="text-2xl font-semibold tracking-tight">History</h1>
-          <p className="text-xs text-text-secondary mt-1">Last two months</p>
-        </header>
+          <p className="text-xs text-white/60 mt-1">Last two months</p>
+        </div>
+      </div>
 
+      <div className="mx-auto max-w-md px-5 pt-6">
         {error && <div className="text-xs text-destructive mb-4">{error}</div>}
 
         {rows === null && !error && (
@@ -147,8 +156,8 @@ export default function History({ user }) {
                         rel="noreferrer"
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className={`size-10 rounded-lg grid place-items-center text-sm font-semibold ${tintForCategory(r.category)}`}>
-                            {(r.place || "?").trim().charAt(0).toUpperCase()}
+                          <div className={`size-10 rounded-lg grid place-items-center shrink-0 ${tintForCategory(r.category)}`}>
+                            <CategoryIcon category={r.category} className="size-4" />
                           </div>
                           <div className="min-w-0">
                             <p className="text-sm font-medium truncate">{r.place || "Untitled"}</p>

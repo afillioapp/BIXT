@@ -7,6 +7,7 @@ import { useMonthRows } from "../lib/useMonthRows";
 import { latestReceipts, categoryTotals, formatCurrency } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
 import HomeCarousel from "../components/HomeCarousel";
+import CategoryIcon from "../components/CategoryIcon";
 
 // Originally ported 1:1 from lovable-design/src/routes/index.tsx (navy
 // "Total Balance" hero + 4-tile quick-action row + "Recent Expenses" list).
@@ -208,8 +209,8 @@ export default function Home({ user }) {
                     rel="noreferrer"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className={`size-10 rounded-lg grid place-items-center text-sm font-semibold ${tintForCategory(r.category)}`}>
-                        {(r.place || "?").trim().charAt(0).toUpperCase()}
+                      <div className={`size-10 rounded-lg grid place-items-center shrink-0 ${tintForCategory(r.category)}`}>
+                        <CategoryIcon category={r.category} className="size-4" />
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">{r.place || "Untitled"}</p>

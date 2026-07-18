@@ -185,8 +185,12 @@ export default function Capture({ user }) {
   if (profileLoading || !profile) {
     return (
       <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-        <div className="mx-auto max-w-md px-5 pt-10">
-          <h1 className="text-2xl font-semibold tracking-tight mb-6">New receipt</h1>
+        <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-white">
+          <div className="mx-auto max-w-md px-5">
+            <h1 className="text-2xl font-semibold tracking-tight">New receipt</h1>
+          </div>
+        </div>
+        <div className="mx-auto max-w-md px-5 pt-6">
           <DriveFallback
             needsConnect={needsConnect}
             loadError={loadError}
@@ -206,10 +210,14 @@ export default function Capture({ user }) {
     status?.type === "error" ? "text-destructive" : status?.type === "success" ? "text-brand-teal" : "text-text-secondary";
 
   return (
-    <div className="min-h-screen bg-background font-sans text-text-primary">
-      <div className="mx-auto max-w-md px-5 pt-10 pb-28 flex flex-col min-h-screen">
-        <h1 className="text-2xl font-semibold tracking-tight mb-6">New receipt</h1>
+    <div className="min-h-screen bg-background font-sans text-text-primary flex flex-col">
+      <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-white">
+        <div className="mx-auto max-w-md px-5">
+          <h1 className="text-2xl font-semibold tracking-tight">New receipt</h1>
+        </div>
+      </div>
 
+      <div className="mx-auto max-w-md w-full px-5 pt-6 pb-28 flex flex-col flex-1">
         <input
           ref={fileInputRef}
           type="file"
