@@ -22,13 +22,6 @@ function prevMonthDate(d) {
   return new Date(d.getFullYear(), d.getMonth() - 1, 1);
 }
 
-function greetingForHour(date = new Date()) {
-  const h = date.getHours();
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
-}
-
 // "Jane Doe" -> "JD"; a single name -> first two letters; nothing -> "?".
 // Fallback avatar for phone sign-in users, who have no Google photoURL.
 function initialsFor(name, fallback) {
@@ -126,7 +119,7 @@ export default function Home({ user }) {
           <div>
             <p className="text-xs text-white/60 mb-1">{profile.companyName}</p>
             <h1 className="text-2xl font-semibold tracking-tight">
-              {greetingForHour()}, {firstName}
+              Hi, {firstName}
             </h1>
           </div>
           <Link href="/settings" aria-label="Settings" className="shrink-0">
