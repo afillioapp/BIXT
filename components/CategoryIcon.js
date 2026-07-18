@@ -79,6 +79,25 @@ export function accentForCategory(category) {
   return CATEGORY_ACCENT_MAP[category] || CATEGORY_ACCENT_MAP.Other;
 }
 
+// The official v1 12-category list, kept identical to pages/api/extract.js's
+// CATEGORIES (that file is untouched/server-only, so the edit-row category
+// <select> imports this copy instead — same exact names, since they're
+// written into users' sheets as a stable schema).
+export const OFFICIAL_CATEGORIES = [
+  "Dining & Meals",
+  "Coffee & Drinks",
+  "Travel",
+  "Ground Transport",
+  "Fuel",
+  "Accommodation",
+  "Office & Supplies",
+  "Software & Tech",
+  "Marketing",
+  "Professional Services",
+  "Meetings & Events",
+  "Other",
+];
+
 export default function CategoryIcon({ category, className }) {
   const Icon = iconForCategory(category);
   return <Icon className={className} aria-hidden="true" />;

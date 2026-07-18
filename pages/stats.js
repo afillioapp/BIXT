@@ -186,40 +186,76 @@ function RangeCard({ sub, total, delta, labels, values, boldIndex, onPrev, onNex
   );
 }
 
+// Large centered donut per the owner's reference: % labels sit ON the ring
+// (only for slices big enough to fit one), the total lives in the hole, and
+// the legend is a wrap of color-outlined chips below (rendered by the card).
 function Donut({ categories, total }) {
-  const size = 168;
-  const stroke = 26;
-  const r = (size - stroke) / 2;
+  const size = 250;
+  const stroke = 30;
+  const r = (size - stroke) / 2 - 6;
   const c = 2 * Math.PI * r;
-  let offset = 0;
+  const cx = size / 2;
+  const cy = size / 2;
   const sumPct = categories.reduce((s, x) => s + x.percent, 0) || 1;
+
+  let acc = 0;
+  const arcs = categories.map((cat, i) => {
+    const frac = cat.percent / sumPct;
+    const len = frac * c;
+    const startFrac = acc;
+    acc += frac;
+    // Mid-angle of the slice, in radians; arcs start at 12 o'clock.
+    const midAngle = (startFrac + frac / 2) * 2 * Math.PI - Math.PI / 2;
+    return {
+      ...cat,
+      len,
+      offset: (startFrac) * c,
+      color: paletteColor(i),
+      labelX: cx + r * Math.cos(midAngle),
+      labelY: cy + r * Math.sin(midAngle),
+      showLabel: cat.percent >= 8,
+    };
+  });
+
   return (
-    <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#F4F4F5" strokeWidth={stroke} />
-        {categories.map((cat, i) => {
-          const len = (cat.percent / sumPct) * c;
-          const el = (
+    <div className="relative mx-auto" style={{ width: size, height: size }}>
+      <svg width={size} height={size}>
+        <g transform={`rotate(-90 ${cx} ${cy})`}>
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F4F4F5" strokeWidth={stroke} />
+          {arcs.map((arc) => (
             <circle
-              key={cat.category}
-              cx={size / 2}
-              cy={size / 2}
+              key={arc.category}
+              cx={cx}
+              cy={cy}
               r={r}
               fill="none"
-              stroke={paletteColor(i)}
+              stroke={arc.color}
               strokeWidth={stroke}
-              strokeDasharray={`${len} ${c - len}`}
-              strokeDashoffset={-offset}
+              strokeDasharray={`${arc.len} ${c - arc.len}`}
+              strokeDashoffset={-arc.offset}
               strokeLinecap="butt"
             />
-          );
-          offset += len;
-          return el;
-        })}
+          ))}
+        </g>
+        {arcs.map(
+          (arc) =>
+            arc.showLabel && (
+              <text
+                key={`${arc.category}-label`}
+                x={arc.labelX}
+                y={arc.labelY}
+                textAnchor="middle"
+                dominantBaseline="central"
+                className="fill-white text-[13px] font-semibold"
+              >
+                {Math.round(arc.percent)}%
+              </text>
+            )
+        )}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[10px] text-text-secondary uppercase tracking-wider">Total</span>
-        <span className="text-lg font-semibold">{formatCurrency(total, { decimals: 0 })}</span>
+        <span className="text-xs text-text-secondary">Total</span>
+        <span className="text-2xl font-semibold">{formatCurrency(total, { decimals: 2 })}</span>
       </div>
     </div>
   );
@@ -450,19 +486,21 @@ export default function Stats({ user }) {
           {monthData.categories.length === 0 ? (
             <p className="text-xs text-text-secondary py-6 text-center">No expenses yet this month.</p>
           ) : (
-            <div className="flex items-center gap-5">
+            <div>
               <Donut categories={monthData.categories} total={monthData.total} />
-              <ul className="flex-1 space-y-2.5 min-w-0">
-                {monthData.categories.map((c, i) => (
-                  <li key={c.category} className="flex items-center gap-2">
-                    <span className="size-2.5 rounded-full shrink-0" style={{ background: paletteColor(i) }} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[11px] font-medium truncate">{c.category}</p>
-                    </div>
-                    <span className="text-[11px] font-semibold text-text-secondary">{Math.round(c.percent)}%</span>
-                  </li>
+              {/* Legend: color-outlined chips wrapping below the donut,
+                  per the owner's reference. */}
+              <div className="flex flex-wrap justify-center gap-2 mt-5">
+                {monthData.categories.slice(0, 6).map((c, i) => (
+                  <span
+                    key={c.category}
+                    className="px-4 py-1.5 rounded-full text-xs font-medium border"
+                    style={{ borderColor: paletteColor(i), color: paletteColor(i) }}
+                  >
+                    {c.category}
+                  </span>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
         </section>
