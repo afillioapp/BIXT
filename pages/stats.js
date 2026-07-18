@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import { ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useDrive } from "../lib/useDrive";
 import { findMonthExpenseSheetId, listExpenseRows } from "../lib/google";
 import { weeklyTotals, categoryTotals, formatCurrency } from "../lib/insights";
@@ -14,6 +14,39 @@ import DriveFallback from "../components/DriveFallback";
 
 function prevMonthDate(d) {
   return new Date(d.getFullYear(), d.getMonth() - 1, 1);
+}
+
+// Period navigation (owner request): every range card can slide back to
+// earlier periods. Past periods live in past months' Expenses sheets, so a
+// per-month row cache is fetched on demand (same idea the Year tab already
+// used) and views are computed from whichever months the period needs.
+function mondayOf(date) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return d;
+}
+
+function addDays(date, n) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+function monthKey(d) {
+  return `${d.getFullYear()}-${d.getMonth()}`;
+}
+
+// "Jul 13 – 19" within one month; "Jun 29 – Jul 5" across months; adds the
+// year when it isn't the current one.
+function formatWeekRange(start, end) {
+  if (!start || !end) return "This week";
+  const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
+  const startFmt = start.toLocaleString("en-US", { month: "short", day: "numeric" });
+  const endFmt = sameMonth
+    ? String(end.getDate())
+    : end.toLocaleString("en-US", { month: "short", day: "numeric" });
+  const yearSuffix = end.getFullYear() !== new Date().getFullYear() ? `, ${end.getFullYear()}` : "";
+  return `${startFmt} – ${endFmt}${yearSuffix}`;
 }
 
 // Exact hex palette lovable-design's stats.tsx uses for its 4 mock
@@ -80,13 +113,45 @@ function Segmented({ range, setRange }) {
   );
 }
 
-function RangeCard({ sub, total, delta, labels, values, boldIndex }) {
+function RangeCard({ sub, total, delta, labels, values, boldIndex, onPrev, onNext, nextDisabled }) {
   const max = Math.max(...values, 1);
+  const touchStartX = useRef(null);
   return (
-    <section className="bg-white rounded-2xl p-5 mb-6 ring-1 ring-black/5">
+    <section
+      className="bg-white rounded-2xl p-5 mb-6 ring-1 ring-black/5"
+      onTouchStart={(e) => {
+        touchStartX.current = e.touches[0]?.clientX ?? null;
+      }}
+      onTouchEnd={(e) => {
+        if (touchStartX.current === null) return;
+        const dx = (e.changedTouches[0]?.clientX ?? touchStartX.current) - touchStartX.current;
+        touchStartX.current = null;
+        // Swipe right → earlier period; swipe left → back toward now.
+        if (dx > 48) onPrev?.();
+        else if (dx < -48 && !nextDisabled) onNext?.();
+      }}
+    >
       <div className="flex justify-between items-end mb-6">
         <div>
-          <p className="text-xs text-text-secondary">{sub}</p>
+          <div className="flex items-center gap-1.5">
+            {onPrev && (
+              <button type="button" aria-label="Earlier" onClick={onPrev} className="text-zinc-400 -ml-1">
+                <ChevronLeft className="size-4" />
+              </button>
+            )}
+            <p className="text-xs text-text-secondary">{sub}</p>
+            {onNext && (
+              <button
+                type="button"
+                aria-label="Later"
+                onClick={onNext}
+                disabled={nextDisabled}
+                className="text-zinc-400 disabled:opacity-30"
+              >
+                <ChevronRight className="size-4" />
+              </button>
+            )}
+          </div>
           <p className="text-2xl font-semibold">{total}</p>
         </div>
         {delta && (
@@ -175,7 +240,18 @@ export default function Stats({ user }) {
   const [error, setError] = useState("");
   const [range, setRange] = useState("Week");
 
-  const [yearMonths, setYearMonths] = useState(null); // array of 12 totals, or null until loaded
+  // How many periods back from "now" each range is currently showing.
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [monthOffset, setMonthOffset] = useState(0);
+  const [yearOffset, setYearOffset] = useState(0);
+
+  // Per-month row cache backing period navigation; cacheVersion bumps to
+  // rerender once background fetches land.
+  const monthCacheRef = useRef(new Map());
+  const [, setCacheVersion] = useState(0);
+  const [periodLoading, setPeriodLoading] = useState(false);
+
+  const [yearCache, setYearCache] = useState({}); // { [year]: number[12] }
   const [yearLoading, setYearLoading] = useState(false);
 
   useEffect(() => {
@@ -194,6 +270,8 @@ export default function Stats({ user }) {
           })
         );
         if (cancelled) return;
+        // Seed the period cache so offset 0 renders without a second fetch.
+        months.forEach((d, i) => monthCacheRef.current.set(monthKey(d), results[i]));
         setRows(results.flat());
       } catch (err) {
         if (!cancelled) setError(err.message);
@@ -205,21 +283,67 @@ export default function Stats({ user }) {
     };
   }, [accessToken, rootFolderId]);
 
-  // Year tab is on-demand: walk every month of the current year the first
-  // time it's selected, skip months with no Expenses sheet, and cache the
-  // per-month totals in state so switching tabs back and forth never
+  // The months the currently shown period needs (its own span plus the
+  // previous period, for the vs-last delta).
+  function neededMonthDates() {
+    const now = new Date();
+    if (range === "Week") {
+      const refMonday = addDays(mondayOf(now), -7 * weekOffset);
+      const dates = [addDays(refMonday, -7), addDays(refMonday, -1), refMonday, addDays(refMonday, 6)];
+      const seen = new Map();
+      for (const d of dates) seen.set(monthKey(d), new Date(d.getFullYear(), d.getMonth(), 1));
+      return [...seen.values()];
+    }
+    if (range === "Month") {
+      const ref = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
+      return [ref, prevMonthDate(ref)];
+    }
+    return [];
+  }
+
+  // Fetch any months the current period needs but the cache lacks.
+  useEffect(() => {
+    if (!accessToken || !rootFolderId) return;
+    const missing = neededMonthDates().filter((d) => !monthCacheRef.current.has(monthKey(d)));
+    if (missing.length === 0) return;
+    let cancelled = false;
+    setPeriodLoading(true);
+    (async () => {
+      await Promise.all(
+        missing.map(async (d) => {
+          try {
+            const sheetId = await findMonthExpenseSheetId(accessToken, rootFolderId, d);
+            const monthRows = sheetId ? await listExpenseRows(accessToken, sheetId) : [];
+            monthCacheRef.current.set(monthKey(d), monthRows);
+          } catch {
+            // Leave it missing — a retry happens next time the effect runs.
+          }
+        })
+      );
+      if (!cancelled) {
+        setPeriodLoading(false);
+        setCacheVersion((v) => v + 1);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range, weekOffset, monthOffset, accessToken, rootFolderId]);
+
+  // Year tab: walk every month of the selected year on demand, skip months
+  // with no Expenses sheet, cache per year so sliding back and forth never
   // refetches.
   useEffect(() => {
-    if (range !== "Year" || yearMonths || yearLoading || !accessToken || !rootFolderId) return;
+    const targetYear = new Date().getFullYear() - yearOffset;
+    if (range !== "Year" || yearCache[targetYear] || yearLoading || !accessToken || !rootFolderId) return;
     let cancelled = false;
     setYearLoading(true);
     async function loadYear() {
-      const now = new Date();
-      const year = now.getFullYear();
       const totals = new Array(12).fill(0);
       await Promise.all(
         MONTH_LABELS.map(async (_, i) => {
-          const d = new Date(year, i, 1);
+          const d = new Date(targetYear, i, 1);
           try {
             const sheetId = await findMonthExpenseSheetId(accessToken, rootFolderId, d);
             if (!sheetId) return;
@@ -231,7 +355,7 @@ export default function Stats({ user }) {
         })
       );
       if (!cancelled) {
-        setYearMonths(totals);
+        setYearCache((c) => ({ ...c, [targetYear]: totals }));
         setYearLoading(false);
       }
     }
@@ -239,7 +363,7 @@ export default function Stats({ user }) {
     return () => {
       cancelled = true;
     };
-  }, [range, yearMonths, yearLoading, accessToken, rootFolderId]);
+  }, [range, yearOffset, yearCache, yearLoading, accessToken, rootFolderId]);
 
   if (profileLoading || !profile) {
     return (
@@ -259,52 +383,85 @@ export default function Stats({ user }) {
   const now = new Date();
   const monthTag = now.toLocaleString("en-US", { month: "long" });
   const monthData = rows ? categoryTotals(rows, now) : { total: 0, categories: [] };
-  const weekly = rows ? weeklyTotals(rows, now) : null;
+
+  // Rows for the shown period, drawn from the per-month cache; null while
+  // any needed month is still fetching.
+  const needed = neededMonthDates();
+  const periodReady = needed.every((d) => monthCacheRef.current.has(monthKey(d)));
+  const periodRows = periodReady ? needed.flatMap((d) => monthCacheRef.current.get(monthKey(d))) : null;
+
+  const loadingCard = (
+    <section className="bg-white rounded-2xl p-5 mb-6 ring-1 ring-black/5">
+      <p className="text-xs text-text-secondary">Loading…</p>
+    </section>
+  );
 
   let rangeCard = null;
-  if (range === "Week" && weekly) {
-    const rounded = weekly.percentChange !== null ? Math.round(Math.abs(weekly.percentChange)) : null;
-    rangeCard = (
-      <RangeCard
-        sub="This week"
-        total={formatCurrency(weekly.total, { decimals: 2 })}
-        delta={rounded !== null ? { up: weekly.percentChange > 0, text: `${rounded}% vs last week` } : null}
-        labels={weekly.days.map((d) => d.label.slice(0, 3))}
-        values={weekly.days.map((d) => d.amount)}
-        boldIndex={weekly.days.findIndex((d) => d.isToday)}
-      />
-    );
-  } else if (range === "Month" && rows) {
-    const monthWeekly = monthWeeklyBreakdown(rows, now);
-    const prevTotal = categoryTotals(rows, prevMonthDate(now)).total;
-    const change = prevTotal > 0 ? Math.round(((monthWeekly.total - prevTotal) / prevTotal) * 100) : null;
-    rangeCard = (
-      <RangeCard
-        sub="This month"
-        total={formatCurrency(monthWeekly.total, { decimals: 2 })}
-        delta={change !== null ? { up: change > 0, text: `${Math.abs(change)}% vs last month` } : null}
-        labels={monthWeekly.labels}
-        values={monthWeekly.values}
-        boldIndex={monthWeekly.values.indexOf(Math.max(...monthWeekly.values))}
-      />
-    );
-  } else if (range === "Year") {
-    if (yearLoading || !yearMonths) {
-      rangeCard = (
-        <section className="bg-white rounded-2xl p-5 mb-6 ring-1 ring-black/5">
-          <p className="text-xs text-text-secondary">Loading year…</p>
-        </section>
-      );
+  if (range === "Week") {
+    if (!periodRows) {
+      rangeCard = loadingCard;
     } else {
-      const yearTotal = yearMonths.reduce((s, v) => s + v, 0);
+      const refDate = addDays(mondayOf(now), -7 * weekOffset);
+      const weekly = weeklyTotals(periodRows, refDate);
+      const rounded = weekly.percentChange !== null ? Math.round(Math.abs(weekly.percentChange)) : null;
       rangeCard = (
         <RangeCard
-          sub="Year to date"
+          sub={formatWeekRange(weekly.weekStart, weekly.weekEnd)}
+          total={formatCurrency(weekly.total, { decimals: 2 })}
+          delta={rounded !== null ? { up: weekly.percentChange > 0, text: `${rounded}% vs prior week` } : null}
+          labels={weekly.days.map((d) => d.label.slice(0, 3))}
+          values={weekly.days.map((d) => d.amount)}
+          boldIndex={weekly.days.findIndex((d) => d.isToday)}
+          onPrev={() => setWeekOffset((o) => o + 1)}
+          onNext={() => setWeekOffset((o) => Math.max(0, o - 1))}
+          nextDisabled={weekOffset === 0}
+        />
+      );
+    }
+  } else if (range === "Month") {
+    if (!periodRows) {
+      rangeCard = loadingCard;
+    } else {
+      const refMonth = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
+      const monthWeekly = monthWeeklyBreakdown(periodRows, refMonth);
+      const prevTotal = categoryTotals(periodRows, prevMonthDate(refMonth)).total;
+      const change = prevTotal > 0 ? Math.round(((monthWeekly.total - prevTotal) / prevTotal) * 100) : null;
+      const monthLabel =
+        refMonth.getFullYear() === now.getFullYear()
+          ? refMonth.toLocaleString("en-US", { month: "long" })
+          : refMonth.toLocaleString("en-US", { month: "long", year: "numeric" });
+      rangeCard = (
+        <RangeCard
+          sub={monthLabel}
+          total={formatCurrency(monthWeekly.total, { decimals: 2 })}
+          delta={change !== null ? { up: change > 0, text: `${Math.abs(change)}% vs prior month` } : null}
+          labels={monthWeekly.labels}
+          values={monthWeekly.values}
+          boldIndex={monthWeekly.values.indexOf(Math.max(...monthWeekly.values))}
+          onPrev={() => setMonthOffset((o) => o + 1)}
+          onNext={() => setMonthOffset((o) => Math.max(0, o - 1))}
+          nextDisabled={monthOffset === 0}
+        />
+      );
+    }
+  } else if (range === "Year") {
+    const targetYear = now.getFullYear() - yearOffset;
+    const totals = yearCache[targetYear];
+    if (yearLoading || !totals) {
+      rangeCard = loadingCard;
+    } else {
+      const yearTotal = totals.reduce((s, v) => s + v, 0);
+      rangeCard = (
+        <RangeCard
+          sub={yearOffset === 0 ? `${targetYear} · year to date` : String(targetYear)}
           total={formatCurrency(yearTotal, { decimals: 2 })}
           delta={null}
           labels={MONTH_LABELS}
-          values={yearMonths}
-          boldIndex={now.getMonth()}
+          values={totals}
+          boldIndex={yearOffset === 0 ? now.getMonth() : totals.indexOf(Math.max(...totals))}
+          onPrev={() => setYearOffset((o) => o + 1)}
+          onNext={() => setYearOffset((o) => Math.max(0, o - 1))}
+          nextDisabled={yearOffset === 0}
         />
       );
     }
