@@ -1,45 +1,51 @@
+import { Cloud } from "lucide-react";
+
 // Shared "Drive isn't ready" card for every authenticated tab, so no page
 // can dead-end on a bare "Loading…" again. Exactly one of three states:
 // connect (no token), retry (token but Drive unreachable), or still loading.
-// Restyled per design_handoff_bxt_app's "Connect Google Drive card" and
-// "Retry / connection-error card" shared components.
+// Restyled with the ported Lovable design primitives (white ring-1 card,
+// navy icon tile, teal pill button); the three-state gating is unchanged.
 export default function DriveFallback({ needsConnect, loadError, onConnect, onRetry }) {
   if (needsConnect) {
     return (
-      <div className="drive-fallback">
-        <div className="drive-fallback-icon" aria-hidden="true">
-          <svg width="28" height="28" viewBox="0 0 28 28">
-            <path
-              d="M10 3h8l7 12-4 7H7l-4-7z"
-              fill="none"
-              stroke="var(--on-dark)"
-              strokeWidth="1.6"
-              strokeLinejoin="round"
-            />
-          </svg>
+      <div className="bg-white ring-1 ring-black/5 rounded-2xl p-6 flex flex-col items-center gap-4 text-center">
+        <div className="size-14 rounded-2xl bg-brand-navy grid place-items-center" aria-hidden="true">
+          <Cloud className="size-6 text-white" />
         </div>
-        <div className="drive-fallback-title">Connect your Google Drive</div>
-        <div className="drive-fallback-copy">
+        <p className="text-base font-semibold">Connect your Google Drive</p>
+        <p className="text-sm text-text-secondary leading-relaxed max-w-[270px]">
           BX saves every receipt straight into a folder in your own Drive — you always own the
           files.
-        </div>
-        <button className="btn btn-primary" onClick={onConnect}>Connect Google Drive</button>
+        </p>
+        <button
+          type="button"
+          onClick={onConnect}
+          className="w-full rounded-full bg-brand-teal py-3.5 font-semibold text-white hover:opacity-90 transition"
+        >
+          Connect Google Drive
+        </button>
       </div>
     );
   }
   if (loadError) {
     return (
-      <div className="drive-fallback">
-        <div className="status status-error">
+      <div className="bg-white ring-1 ring-black/5 rounded-2xl p-6 flex flex-col items-center gap-4 text-center">
+        <p className="text-sm text-destructive leading-relaxed">
           We couldn't reach Google Drive. Check your internet connection and try again.
-        </div>
-        <button className="btn btn-secondary" onClick={onRetry}>Retry</button>
+        </p>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="w-full rounded-full ring-1 ring-black/10 bg-white py-3.5 font-semibold text-text-primary hover:bg-zinc-50 transition"
+        >
+          Retry
+        </button>
       </div>
     );
   }
   return (
-    <div className="drive-fallback">
-      <div className="status status-info">Loading…</div>
+    <div className="flex flex-col items-center py-10">
+      <p className="text-xs text-text-secondary">Loading…</p>
     </div>
   );
 }
