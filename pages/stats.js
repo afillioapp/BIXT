@@ -99,12 +99,14 @@ function RangeCard({ sub, total, delta, labels, values, boldIndex }) {
 
       <div className="flex items-end justify-between h-36 gap-1.5">
         {values.map((v, i) => (
-          <div key={i} className="flex-1 flex flex-col items-center gap-2">
-            <div
-              className={`w-full rounded-t-md ${i === boldIndex ? "bg-brand-teal" : "bg-zinc-100"}`}
-              style={{ height: `${Math.max(6, (v / max) * 100)}%` }}
-            />
-          </div>
+          // The bar must be a DIRECT child of the h-36 row: percentage
+          // heights only resolve against a parent with a definite height.
+          // (An intermediate auto-height wrapper here made every bar 0px.)
+          <div
+            key={i}
+            className={`flex-1 rounded-t-md ${i === boldIndex ? "bg-brand-teal" : "bg-zinc-100"}`}
+            style={{ height: `${max > 0 ? Math.max(6, (v / max) * 100) : 6}%` }}
+          />
         ))}
       </div>
       <div className="flex justify-between mt-2 text-[10px] text-text-secondary uppercase tracking-tight gap-1.5">
