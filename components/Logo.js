@@ -1,44 +1,35 @@
-// Wordmark logo: bold "BX" in navy (or white when `onDark` is set, for
-// placement on a navy/dark surface) with a rounded teal underline bar
-// spanning the full width of the letters (per lovable-design's BXLogo.tsx —
-// navy-on-light / white-on-dark variants, teal underline). Pure inline
-// styles (no CSS class) so it renders identically wherever it's dropped in;
-// `animated` adds the splash-loader animation where the line extends out to
-// the left and right (keyframes in styles/globals.css).
-export default function Logo({ size = 32, animated = false, onDark = false }) {
+import { cn } from "../lib/cn";
+
+// Wordmark logo — markup/classes ported verbatim from lovable-design's
+// BXLogo.tsx (bold "BX" + a rounded teal underline bar spanning the full
+// width of the letters), kept API-compatible with this app's existing call
+// sites (pages/login.js, components/SplashLoader.js, components/
+// BiometricGate.js all pass a raw pixel `size`, not BXLogo's sm/md/lg/xl
+// enum) — so the enum is dropped in favor of the numeric size this app
+// already uses everywhere, and the arbitrary pixel sizing is done via
+// inline style (Tailwind's static class scanner can't see interpolated
+// arbitrary-value classes like `text-[${size}px]`). `onDark` mirrors
+// BXLogo's `variant` prop (light text for navy/dark surfaces); `animated`
+// keeps the splash-loader's line-extend loop, whose keyframes still live in
+// styles/globals.css (logo-line-anim / logo-line-extend).
+export default function Logo({ size = 32, animated = false, onDark = false, className }) {
   const underlineHeight = Math.max(4, Math.round(size * 0.15));
 
   return (
-    <span
-      style={{
-        display: "inline-flex",
-        flexDirection: "column",
-        alignItems: "center",
-        lineHeight: 1,
-      }}
-    >
+    <span className={cn("inline-flex flex-col items-start", className)}>
       <span
-        style={{
-          fontFamily: "var(--font-sans)",
-          fontWeight: 700,
-          fontSize: size,
-          color: onDark ? "var(--on-dark)" : "var(--logo-ink)",
-          letterSpacing: "0.01em",
-        }}
+        className={cn(
+          "font-bold tracking-tight leading-none",
+          onDark ? "text-white" : "text-brand-navy",
+        )}
+        style={{ fontSize: size }}
       >
         BX
       </span>
       <span
         aria-hidden="true"
-        className={animated ? "logo-line-anim" : undefined}
-        style={{
-          display: "block",
-          alignSelf: "stretch",
-          height: underlineHeight,
-          borderRadius: 999,
-          background: "var(--highlight)",
-          marginTop: Math.max(2, Math.round(size * 0.09)),
-        }}
+        className={cn("mt-1 w-full self-stretch rounded-full bg-brand-teal", animated && "logo-line-anim")}
+        style={{ height: underlineHeight }}
       />
     </span>
   );

@@ -1,11 +1,38 @@
 import { useState, useEffect } from "react";
+import { MoreHorizontal } from "lucide-react";
 import { useDrive } from "../lib/useDrive";
 import { findMonthExpenseSheetId, listExpenseRows } from "../lib/google";
-import { categoryIcon } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
+
+// Extends the ported Lovable design language (routes/index.tsx's "Recent
+// Expenses" white rows with tinted first-letter squares) to the full
+// history view: page title + sub per the design's header pattern, date
+// group headers, and the same expense-row component. Two-month read and
+// all load/empty/error states unchanged.
 
 function prevMonthDate(d) {
   return new Date(d.getFullYear(), d.getMonth() - 1, 1);
+}
+
+// Same stable per-category tint approach as pages/index.js (design's
+// bg-*-50/text-*-600 pairs, hashed per category so a category always
+// renders the same swatch).
+const TINTS = [
+  "bg-brand-teal-soft text-brand-teal",
+  "bg-orange-50 text-orange-600",
+  "bg-indigo-50 text-indigo-600",
+  "bg-zinc-100 text-zinc-700",
+  "bg-amber-50 text-amber-600",
+  "bg-rose-50 text-rose-500",
+  "bg-sky-50 text-sky-600",
+  "bg-emerald-50 text-emerald-600",
+];
+
+function tintForCategory(category) {
+  const key = category || "Other";
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  return TINTS[hash % TINTS.length];
 }
 
 // Rows arrive already sorted most-recent-first; bucket consecutive rows that
@@ -68,71 +95,79 @@ export default function History({ user }) {
 
   if (profileLoading || !profile) {
     return (
-      <div className="container">
-        <div className="app-header">
-          <div><h1>History</h1></div>
+      <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
+        <div className="mx-auto max-w-md px-5 pt-10">
+          <h1 className="text-2xl font-semibold tracking-tight mb-6">History</h1>
+          <DriveFallback
+            needsConnect={needsConnect}
+            loadError={loadError}
+            onConnect={requestAccess}
+            onRetry={retryConnection}
+          />
         </div>
-        <DriveFallback
-          needsConnect={needsConnect}
-          loadError={loadError}
-          onConnect={requestAccess}
-          onRetry={retryConnection}
-        />
       </div>
     );
   }
 
   return (
-    <div className="container">
-      <div className="app-header">
-        <div>
-          <h1>History</h1>
-          <div className="subtitle">Last two months</div>
-        </div>
+    <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
+      <div className="mx-auto max-w-md px-5 pt-10">
+        <header className="mb-6">
+          <h1 className="text-2xl font-semibold tracking-tight">History</h1>
+          <p className="text-xs text-text-secondary mt-1">Last two months</p>
+        </header>
+
+        {error && <div className="text-xs text-destructive mb-4">{error}</div>}
+
+        {rows === null && !error && (
+          <p className="text-xs text-text-secondary">Loading receipts…</p>
+        )}
+
+        {rows && rows.length === 0 && (
+          <div className="flex flex-col items-center text-center gap-2 py-20">
+            <p className="text-sm font-semibold">Nothing here yet</p>
+            <p className="text-xs text-text-secondary max-w-[230px]">
+              Receipts you save will show up here, grouped by day.
+            </p>
+          </div>
+        )}
+
+        {rows && rows.length > 0 && (
+          <div className="space-y-6">
+            {groupByDate(rows).map((group) => (
+              <section key={group.date}>
+                <h2 className="text-sm font-semibold mb-3">{formatDateHeader(group.date)}</h2>
+                <ul className="space-y-2.5">
+                  {group.rows.map((r, i) => (
+                    <li key={i}>
+                      <a
+                        className="flex items-center justify-between p-3 bg-white rounded-xl ring-1 ring-black/5"
+                        href={r.receiptLink || undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className={`size-10 rounded-lg grid place-items-center text-sm font-semibold ${tintForCategory(r.category)}`}>
+                            {(r.place || "?").trim().charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{r.place || "Untitled"}</p>
+                            <p className="text-[11px] text-text-secondary truncate">{r.category || "Other"}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <p className="text-sm font-semibold text-text-primary">-{r.total}</p>
+                          <MoreHorizontal className="size-4 text-zinc-400" />
+                        </div>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
+        )}
       </div>
-
-      {error && <div className="status status-error">{error}</div>}
-
-      {rows === null && !error && (
-        <div className="status status-info">Loading receipts…</div>
-      )}
-
-      {rows && rows.length === 0 && (
-        <div className="history-empty">
-          <div className="history-empty-title">Nothing here yet</div>
-          <div className="history-empty-sub">Receipts you save will show up here, grouped by day.</div>
-        </div>
-      )}
-
-      {rows && rows.length > 0 && (
-        <div className="history-groups">
-          {groupByDate(rows).map((group) => (
-            <div key={group.date} className="history-group">
-              <div className="history-group-header">{formatDateHeader(group.date)}</div>
-              <div className="receipt-list">
-                {group.rows.map((r, i) => (
-                  <a
-                    key={i}
-                    className="receipt-row"
-                    href={r.receiptLink || undefined}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <span className="receipt-icon" aria-hidden="true">
-                      {categoryIcon(r.category)}
-                    </span>
-                    <div className="receipt-row-main">
-                      <span className="receipt-place">{r.place || "Untitled"}</span>
-                      <span className="receipt-date">{r.category || "Other"}</span>
-                    </div>
-                    <span className="receipt-amount">{r.total}</span>
-                  </a>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

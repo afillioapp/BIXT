@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { signOut } from "firebase/auth";
+import { ScanFace } from "lucide-react";
 import { auth } from "../lib/firebase";
 import { isLockEnabled, verifyLock } from "../lib/biometric";
 import Logo from "./Logo";
@@ -8,6 +9,12 @@ import Logo from "./Logo";
 // signed-in user has turned the lock on in Settings. This only runs client
 // side (sessionStorage/localStorage), so it renders children untouched
 // during SSR/first paint for any route with no user (e.g. /login).
+//
+// Markup/classes ported 1:1 from lovable-design/src/routes/login.tsx (their
+// Face-ID sign-in screen becomes our local re-lock screen): BX wordmark +
+// "Welcome back", the big teal Face-ID tile (tap = handleUnlock; the
+// existing auto-attempt effect is unchanged), an error slot, and — in place
+// of their "Use passcode instead" — our own escape hatch, "Sign out".
 export default function BiometricGate({ user, children }) {
   const unlockedFlag = user ? `bx_unlocked_${user.uid}` : null;
   const alreadyUnlocked =
@@ -24,7 +31,7 @@ export default function BiometricGate({ user, children }) {
 
   // Pop the Face ID prompt automatically the moment the lock screen appears
   // (owner request). Some browsers refuse WebAuthn without a tap and reject
-  // instantly — the auto attempt fails silently there and the Unlock button
+  // instantly — the auto attempt fails silently there and the Unlock tile
   // remains as the fallback, with no error shown for the automatic try.
   useEffect(() => {
     if (!locked || autoTriedRef.current) return;
@@ -38,7 +45,7 @@ export default function BiometricGate({ user, children }) {
           setUnlocked(true);
         }
       } catch {
-        // Silent — the button below is the fallback.
+        // Silent — the tile below is the fallback.
       } finally {
         setVerifying(false);
       }
@@ -73,26 +80,40 @@ export default function BiometricGate({ user, children }) {
   }
 
   return (
-    <div className="lock-screen">
-      <div className="lock-wordmark">
-        <Logo size={24} />
+    <div className="fixed inset-0 z-[100] bg-brand-navy text-white flex flex-col px-8 pt-20 pb-10">
+      <div className="flex flex-col items-center gap-4">
+        <Logo size={40} onDark />
+        <p className="text-sm text-white/60">Welcome back</p>
       </div>
-      <div className="lock-glyph" aria-hidden="true">
-        <svg width="24" height="24" viewBox="0 0 24 24">
-          <rect x="4" y="10" width="16" height="11" rx="2" fill="none" stroke="var(--text)" strokeWidth="1.6" />
-          <path d="M7 10V7a5 5 0 0 1 10 0v3" fill="none" stroke="var(--text)" strokeWidth="1.6" />
-        </svg>
+
+      <div className="flex-1 flex flex-col items-center justify-center gap-8">
+        <button
+          type="button"
+          onClick={handleUnlock}
+          disabled={verifying}
+          aria-label="Unlock with Face ID"
+          className="relative h-44 w-44 rounded-[40px] bg-gradient-to-br from-brand-teal/40 via-brand-teal/10 to-transparent ring-1 ring-brand-teal/40 flex items-center justify-center transition active:scale-95 disabled:opacity-80"
+        >
+          <span
+            className={`absolute inset-2 rounded-[32px] ring-1 ring-brand-teal/30 ${verifying ? "animate-pulse" : ""}`}
+          />
+          <ScanFace className="h-20 w-20 text-brand-teal" strokeWidth={1.4} />
+        </button>
+        <div className="text-center">
+          <p className="text-lg font-semibold">{verifying ? "Checking…" : "Tap to unlock BX"}</p>
+          {error ? (
+            <p className="mt-2 text-sm text-red-300">Couldn't verify — try again.</p>
+          ) : (
+            <p className="mt-2 text-sm text-white/50">Use your face or fingerprint to unlock.</p>
+          )}
+        </div>
       </div>
-      <h1 className="lock-title">BX is locked</h1>
-      {error && (
-        <div className="status status-error lock-error">Couldn't verify — try again.</div>
-      )}
-      <button className="btn btn-primary lock-btn" onClick={handleUnlock} disabled={verifying}>
-        {verifying ? "Checking…" : "Unlock with Face ID"}
-      </button>
-      <button className="quiet-link" onClick={handleSignOut}>
-        Sign out
-      </button>
+
+      <div className="text-center">
+        <button type="button" className="text-sm text-white/70 underline underline-offset-4" onClick={handleSignOut}>
+          Sign out
+        </button>
+      </div>
     </div>
   );
 }

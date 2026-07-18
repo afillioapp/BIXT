@@ -1,10 +1,17 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
+import { Camera, Image as GalleryIcon } from "lucide-react";
 import { useDrive } from "../lib/useDrive";
 import { compressImage } from "../lib/image";
 import { saveExpenseToDrive } from "../lib/google";
 import { takePendingCapture } from "../lib/pendingCapture";
 import DriveFallback from "../components/DriveFallback";
+
+// Rebuilt in the ported Lovable design language (light bg-background page,
+// white ring-1 cards, teal/navy pills, design-system inputs) — the
+// initial/busy/review stages, category select, and retake/save actions all
+// keep their exact prior behavior: pendingCapture pickup, /setup redirect
+// guard, and the 401 retry-once save are byte-equivalent in effect.
 
 // "04 july 2026 Dollarama.jpg" — falls back to "Untitled" if the merchant name wasn't read.
 function formatReceiptFilename(dateStr, place) {
@@ -15,6 +22,9 @@ function formatReceiptFilename(dateStr, place) {
   const merchant = (place || "").trim().replace(/[\\/:*?"<>|]/g, "").trim();
   return `${day} ${month} ${d.getFullYear()} ${merchant || "Untitled"}.jpg`;
 }
+
+const inputClass =
+  "w-full h-12 rounded-xl bg-white ring-1 ring-black/10 px-4 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-brand-teal";
 
 export default function Capture({ user }) {
   const router = useRouter();
@@ -174,18 +184,16 @@ export default function Capture({ user }) {
 
   if (profileLoading || !profile) {
     return (
-      <div className="container">
-        <div className="app-header">
-          <div>
-            <h1>New receipt</h1>
-          </div>
+      <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
+        <div className="mx-auto max-w-md px-5 pt-10">
+          <h1 className="text-2xl font-semibold tracking-tight mb-6">New receipt</h1>
+          <DriveFallback
+            needsConnect={needsConnect}
+            loadError={loadError}
+            onConnect={requestAccess}
+            onRetry={retryConnection}
+          />
         </div>
-        <DriveFallback
-          needsConnect={needsConnect}
-          loadError={loadError}
-          onConnect={requestAccess}
-          onRetry={retryConnection}
-        />
       </div>
     );
   }
@@ -194,128 +202,146 @@ export default function Capture({ user }) {
   // as the same "busy" pattern — a spinner + status line under the photo.
   const busy = compressing || extracting;
 
+  const statusColor =
+    status?.type === "error" ? "text-destructive" : status?.type === "success" ? "text-brand-teal" : "text-text-secondary";
+
   return (
-    <div className="container capture-screen">
-      <h1 className="capture-title">New receipt</h1>
+    <div className="min-h-screen bg-background font-sans text-text-primary">
+      <div className="mx-auto max-w-md px-5 pt-10 pb-28 flex flex-col min-h-screen">
+        <h1 className="text-2xl font-semibold tracking-tight mb-6">New receipt</h1>
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={handleFileChange}
-        className="hidden-input"
-        id="receiptInput"
-      />
-      <input
-        ref={importInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileChange}
-        className="hidden-input"
-        id="receiptImport"
-      />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleFileChange}
+          className="hidden"
+          id="receiptInput"
+        />
+        <input
+          ref={importInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="hidden"
+          id="receiptImport"
+        />
 
-      {!imagePreview && !form && (
-        <>
-          <div className="capture-placeholder-wrap">
-            <div className="capture-placeholder" aria-hidden="true">
-              <svg width="44" height="38" viewBox="0 0 44 38">
-                <path
-                  d="M15 4l3-3h8l3 3h8a4 4 0 0 1 4 4v22a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4z"
-                  fill="none"
-                  stroke="var(--muted)"
-                  strokeWidth="1.6"
-                  strokeLinejoin="round"
-                />
-                <circle cx="22" cy="20" r="8" fill="none" stroke="var(--muted)" strokeWidth="1.6" />
-              </svg>
+        {!imagePreview && !form && (
+          <>
+            <div className="flex-1 flex items-center justify-center min-h-[160px]">
+              <div className="size-32 rounded-3xl bg-brand-teal-soft grid place-items-center" aria-hidden="true">
+                <Camera className="size-11 text-brand-teal" strokeWidth={1.4} />
+              </div>
             </div>
-          </div>
-          <div className="capture-initial-actions">
-            <label htmlFor="receiptInput" className="btn btn-primary">
-              {compressing ? "Processing…" : "Take Receipt Photo"}
-            </label>
-            <label htmlFor="receiptImport" className="btn btn-secondary">
-              Import from Phone
-            </label>
-          </div>
-        </>
-      )}
-
-      {imagePreview && (
-        <div className="capture-body">
-          <img src={imagePreview} className="receipt-preview" alt="receipt" />
-
-          {!form && status && (
-            <div className="capture-busy-row">
-              {busy && <span className="capture-spinner" aria-hidden="true" />}
-              <span className={`status status-${status.type}`}>{status.text}</span>
+            <div className="flex flex-col gap-2.5">
+              <label
+                htmlFor="receiptInput"
+                className="w-full rounded-full bg-brand-teal py-4 font-semibold text-white text-center cursor-pointer hover:opacity-90 transition"
+              >
+                {compressing ? "Processing…" : "Take Receipt Photo"}
+              </label>
+              <label
+                htmlFor="receiptImport"
+                className="w-full rounded-full bg-white ring-1 ring-black/10 py-4 font-semibold text-text-primary cursor-pointer hover:bg-zinc-50 transition inline-flex items-center justify-center gap-2"
+              >
+                <GalleryIcon className="size-4" /> Import from Phone
+              </label>
             </div>
-          )}
+          </>
+        )}
 
-          {form && (
-            <>
-              {status && <div className={`status status-${status.type}`}>{status.text}</div>}
+        {imagePreview && (
+          <div className="flex flex-col gap-4 flex-1">
+            <img
+              src={imagePreview}
+              className="w-full max-h-72 object-cover rounded-2xl ring-1 ring-black/5"
+              alt="receipt"
+            />
 
-              <div className="capture-fields">
-                <input
-                  value={form.place}
-                  onChange={(e) => updateField("place", e.target.value)}
-                  placeholder="Vendor"
-                />
-
-                <div className="row">
-                  <input
-                    value={form.total}
-                    onChange={(e) => updateField("total", e.target.value)}
-                    placeholder="Total"
+            {!form && status && (
+              <div className="flex items-center gap-2">
+                {busy && (
+                  <span
+                    className="size-3.5 rounded-full border-2 border-zinc-200 border-t-brand-teal animate-spin shrink-0"
+                    aria-hidden="true"
                   />
+                )}
+                <span className={`text-sm ${statusColor}`}>{status.text}</span>
+              </div>
+            )}
+
+            {form && (
+              <>
+                {status && <p className={`text-sm ${statusColor}`}>{status.text}</p>}
+
+                <div className="flex flex-col gap-2.5">
                   <input
-                    value={form.hst}
-                    onChange={(e) => updateField("hst", e.target.value)}
-                    placeholder="HST / Tax"
+                    className={inputClass}
+                    value={form.place}
+                    onChange={(e) => updateField("place", e.target.value)}
+                    placeholder="Vendor"
                   />
+
+                  <div className="flex gap-2.5">
+                    <input
+                      className={inputClass}
+                      value={form.total}
+                      onChange={(e) => updateField("total", e.target.value)}
+                      placeholder="Total"
+                    />
+                    <input
+                      className={inputClass}
+                      value={form.hst}
+                      onChange={(e) => updateField("hst", e.target.value)}
+                      placeholder="HST / Tax"
+                    />
+                  </div>
+
+                  <input
+                    className={inputClass}
+                    type="date"
+                    value={form.date}
+                    onChange={(e) => updateField("date", e.target.value)}
+                    placeholder="YYYY-MM-DD"
+                    onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
+                  />
+
+                  <select
+                    className={`${inputClass} appearance-none`}
+                    value={form.category}
+                    onChange={(e) => updateField("category", e.target.value)}
+                  >
+                    {(categoryOptions.length ? categoryOptions : [form.category]).map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-                <input
-                  type="date"
-                  value={form.date}
-                  onChange={(e) => updateField("date", e.target.value)}
-                  placeholder="YYYY-MM-DD"
-                  onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
-                />
-
-                <select
-                  value={form.category}
-                  onChange={(e) => updateField("category", e.target.value)}
-                >
-                  {(categoryOptions.length ? categoryOptions : [form.category]).map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="capture-form-actions">
-                <button
-                  className="btn btn-secondary"
-                  onClick={resetForNext}
-                  disabled={saving}
-                >
-                  Retake
-                </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={handleConfirm}
-                  disabled={saving}
-                >
-                  {saving ? "Saving…" : "✓ Save"}
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      )}
+                <div className="flex gap-2.5 mt-auto pt-4">
+                  <button
+                    className="flex-1 rounded-full bg-white ring-1 ring-black/10 py-4 font-semibold text-text-primary hover:bg-zinc-50 transition disabled:opacity-60"
+                    onClick={resetForNext}
+                    disabled={saving}
+                  >
+                    Retake
+                  </button>
+                  <button
+                    className="flex-1 rounded-full bg-brand-teal py-4 font-semibold text-white hover:opacity-90 transition disabled:opacity-60"
+                    onClick={handleConfirm}
+                    disabled={saving}
+                  >
+                    {saving ? "Saving…" : "✓ Save"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

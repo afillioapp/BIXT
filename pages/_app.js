@@ -8,6 +8,7 @@ import BottomNav from "../components/BottomNav";
 import SplashLoader from "../components/SplashLoader";
 import BiometricGate from "../components/BiometricGate";
 import { getTheme, setTheme } from "../lib/theme";
+import "../styles/tailwind.css";
 import "../styles/globals.css";
 
 // One typeface for everything (owner decision 2026-07-17, Lovable navy/teal
