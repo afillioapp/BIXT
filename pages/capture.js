@@ -207,7 +207,7 @@ export default function Capture({ user }) {
   const busy = compressing || extracting;
 
   const statusColor =
-    status?.type === "error" ? "text-destructive" : status?.type === "success" ? "text-brand-teal" : "text-text-secondary";
+    status?.type === "error" ? "text-destructive" : status?.type === "success" ? "text-brand-teal-text" : "text-text-secondary";
 
   return (
     <div className="min-h-screen bg-background font-sans text-text-primary flex flex-col">

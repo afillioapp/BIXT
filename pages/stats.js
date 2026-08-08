@@ -158,10 +158,10 @@ function RangeCard({ sub, total, delta, labels, values, boldIndex, onPrev, onNex
               </button>
             )}
           </div>
-          <p className="text-2xl font-semibold">{total}</p>
+          <p className="text-[40px] leading-[44px] tracking-[-0.02em] font-mono font-semibold tabular-nums">{total}</p>
         </div>
         {delta && (
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-brand-teal">
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-brand-teal-text">
             {delta.up ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}
             {delta.text}
           </span>
@@ -251,7 +251,7 @@ function Donut({ categories, total }) {
                 y={arc.labelY}
                 textAnchor="middle"
                 dominantBaseline="central"
-                className="fill-on-chart-label text-[13px] font-semibold"
+                className="fill-on-chart-label text-xs font-mono font-semibold tabular-nums"
               >
                 {Math.round(arc.percent)}%
               </text>
@@ -260,7 +260,9 @@ function Donut({ categories, total }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-xs text-text-secondary">Total</span>
-        <span className="text-2xl font-semibold">{formatCurrency(total, { decimals: 2 })}</span>
+        <span className="text-[26px] leading-[30px] tracking-[-0.01em] font-mono font-semibold tabular-nums">
+          {formatCurrency(total, { decimals: 2 })}
+        </span>
       </div>
     </div>
   );

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
-import { Inter } from "next/font/google";
+import { Inter, IBM_Plex_Mono } from "next/font/google";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../lib/firebase";
 import BottomNav from "../components/BottomNav";
@@ -16,8 +16,14 @@ import "../styles/globals.css";
 // without edits.
 const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600"],
   variable: "--font-inter",
+  display: "swap",
+});
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["600"],
+  variable: "--font-plex-mono",
   display: "swap",
 });
 
@@ -74,7 +80,7 @@ export default function App({ Component, pageProps }) {
             Safari's root-path auto-discovery. */}
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </Head>
-      <div className={`app-shell ${inter.variable}`}>
+      <div className={`app-shell ${inter.variable} ${plexMono.variable}`}>
         <BiometricGate user={user}>
           <Component {...pageProps} user={user} />
           {showNav && <BottomNav />}

@@ -4,8 +4,12 @@
    in pages/_app.js). Only one rule is still referenced:
 
    .app-shell — the pages/_app.js wrapper that carries next/font's
-   --font-inter variable class; this rule resolves the app's default font
-   stack from the theme's --font-sans. */
+   --font-inter AND --font-plex-mono variable classes; this rule resolves the
+   app's default font stack from the theme's --font-sans. Money is set in
+   Plex Mono via the `font-mono` utility, which resolves through the theme's
+   --font-mono. Both families must stay in sync across three places:
+   pages/_app.js (the loaders), styles/tailwind.css (--font-sans/--font-mono)
+   and this rule. */
 
 .app-shell {
   font-family: var(--font-sans, var(--font-inter), ui-sans-serif, system-ui, sans-serif);

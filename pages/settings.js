@@ -327,7 +327,7 @@ export default function Settings({ user }) {
               </button>
             )}
             {status && (
-              <p className={`mt-2 text-xs ${status.type === "error" ? "text-destructive" : "text-brand-teal"}`}>
+              <p className={`mt-2 text-xs ${status.type === "error" ? "text-destructive" : "text-brand-teal-text"}`}>
                 {status.text}
               </p>
             )}
@@ -357,7 +357,7 @@ export default function Settings({ user }) {
                 <Toggle on={bioEnabled} onClick={handleToggleLock} disabled={bioSaving} label="Require Face ID to open BX" />
               </div>
               {bioStatus && (
-                <p className={`mt-2 text-xs ${bioStatus.type === "error" ? "text-destructive" : "text-brand-teal"}`}>
+                <p className={`mt-2 text-xs ${bioStatus.type === "error" ? "text-destructive" : "text-brand-teal-text"}`}>
                   {bioStatus.text}
                 </p>
               )}
@@ -380,7 +380,7 @@ export default function Settings({ user }) {
 
         {/* Moved here from Home (owner request) — Settings' last card. */}
         <section className="mt-4 bg-card shadow-card rounded-2xl p-5 ring-1 ring-hairline flex flex-col items-start gap-1">
-          <p className="text-sm font-bold">Help us make BX better</p>
+          <p className="text-[15px] leading-5 font-semibold">Help us make BX better</p>
           <p className="text-xs text-text-secondary mb-2">Tell us what's confusing, broken, or missing.</p>
           <a
             href="mailto:alireza.mthr@gmail.com?subject=BX%20feedback"

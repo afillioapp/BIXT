@@ -151,18 +151,18 @@ export default function Home({ user }) {
         <div className="mx-auto max-w-md px-5">
           <header className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-ink-foreground/60 mb-1">
+              <p className="text-[11px] leading-[14px] font-semibold uppercase tracking-[0.08em] text-ink-foreground/60 mb-1">
                 {totalLabel}
               </p>
               <h1
-                className="text-3xl font-semibold tracking-tight leading-none"
+                className="text-[40px] leading-[44px] tracking-[-0.02em] font-mono font-semibold tabular-nums"
                 style={filterAccent ? { color: filterAccent } : undefined}
               >
                 {monthData ? formatCurrency(monthData.total, { decimals: 2 }) : "—"}
               </h1>
               {monthData && (
                 <div className="flex items-center gap-2 mt-2">
-                  <span className="text-[10px] font-medium bg-brand-teal/20 text-brand-teal px-2 py-0.5 rounded">
+                  <span className="text-xs leading-4 font-mono font-semibold tabular-nums bg-brand-teal/20 text-brand-teal px-2 py-0.5 rounded">
                     {pctChange !== null ? `${pctChange > 0 ? "+" : ""}${pctChange}%` : "—"}
                   </span>
                   <span className="text-[10px] text-ink-foreground/60">vs last month</span>
@@ -222,7 +222,7 @@ export default function Home({ user }) {
         <section className="mb-4">
           <div className="flex justify-between items-center mb-3">
             <h2 className="text-sm font-semibold">Recent Expenses</h2>
-            <Link href="/history" className="text-xs text-brand-teal font-medium">
+            <Link href="/history" className="text-xs text-brand-teal-text font-medium">
               View All
             </Link>
           </div>

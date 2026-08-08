@@ -236,7 +236,7 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <p className="text-sm font-semibold text-text-primary">-{row.total}</p>
+          <p className="text-[15px] leading-5 font-mono font-semibold tabular-nums text-text-primary">-{row.total}</p>
           <MoreHorizontal className="size-4 text-chrome" />
         </div>
       </div>

@@ -123,7 +123,7 @@ function BarsPanel({ nav, ready, total, values, labels, boldIndex, accent }) {
   return (
     <PanelShell
       title={
-        <span className="text-base text-brand-teal" style={accent ? { color: accent } : undefined}>
+        <span className="text-base font-mono font-semibold tabular-nums text-brand-teal-text" style={accent ? { color: accent } : undefined}>
           {ready ? formatCurrency(total, { decimals: 2 }) : "…"}
         </span>
       }
@@ -191,7 +191,9 @@ function DarkDonut({ categories, total, colorFor = paletteColor }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-[9px] text-text-secondary uppercase tracking-wider">Total</span>
-        <span className="text-sm font-semibold text-text-primary">{formatCurrency(total, { decimals: 0 })}</span>
+        <span className="text-[15px] leading-5 font-mono font-semibold tabular-nums text-text-primary">
+          {formatCurrency(total, { decimals: 0 })}
+        </span>
       </div>
     </div>
   );

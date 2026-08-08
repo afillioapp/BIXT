@@ -19,7 +19,7 @@ export default function Logo({ size = 32, animated = false, onDark = false, clas
     <span className={cn("inline-flex flex-col items-start", className)}>
       <span
         className={cn(
-          "font-bold tracking-tight leading-none",
+          "font-semibold tracking-tight leading-none",
           onDark ? "text-ink-foreground" : "text-brand-navy",
         )}
         style={{ fontSize: size }}

@@ -30,7 +30,7 @@ function NavTab({ tab, active }) {
       href={tab.href}
       aria-label={tab.label}
       aria-current={active ? "page" : undefined}
-      className={`flex flex-col items-center gap-1 ${active ? "text-brand-teal" : "text-chrome"}`}
+      className={`flex flex-col items-center gap-1 ${active ? "text-brand-teal-text" : "text-chrome"}`}
     >
       <Icon className="size-5" />
       <span className="text-[10px] font-medium">{tab.label}</span>

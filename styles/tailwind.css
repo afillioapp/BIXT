@@ -47,6 +47,12 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
   --font-sans: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
+  /* Every monetary figure in the app. NB: this references --font-plex-mono
+     (produced by next/font in pages/_app.js) — a custom property cannot
+     reference itself, and `--font-mono: var(--font-mono), ...` would be
+     guaranteed-invalid, silently rendering all money in the default sans
+     with a perfectly green build. */
+  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", Menlo, monospace;
 
   /* Brand */
   --color-brand-navy: var(--brand-navy);
