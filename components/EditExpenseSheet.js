@@ -22,6 +22,16 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved })
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  // The sheet used to pop in with no transition at all. This is one of the
+  // few moments in the app that is genuinely "a sheet arriving" rather than
+  // a value changing, so it gets the standard 200ms. Transform + opacity
+  // only, so it composites and cannot jank a mid-range phone.
+  const [entered, setEntered] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setEntered(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
   // Re-seed the form fields every time a different row is opened for
   // editing (rowIdFor gives a stable identity per sheet+row).
   const rowKey = row ? rowIdFor(row) : null;
@@ -62,11 +72,18 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved })
   return (
     <>
       <div
-        className="fixed inset-0 z-40 bg-scrim"
+        className={`fixed inset-0 z-40 bg-scrim transition-opacity duration-200 ease-out motion-reduce:transition-none ${
+          entered ? "opacity-100" : "opacity-0"
+        }`}
         onClick={saving ? undefined : onClose}
         aria-hidden="true"
       />
-      <div className="fixed inset-x-0 bottom-0 z-50 bg-card rounded-t-3xl">
+      <div
+        className={`fixed inset-x-0 bottom-0 z-50 bg-card rounded-t-3xl transition-transform duration-200 motion-reduce:transition-none ${
+          entered ? "translate-y-0" : "translate-y-full"
+        }`}
+        style={{ transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" }}
+      >
         <div className="mx-auto max-w-md px-6 pt-5 pb-8">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-base font-semibold">Edit expense</h2>
@@ -82,17 +99,43 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved })
           </div>
 
           <div className="flex flex-col gap-3">
+            {/* Total leads, and is the only field set at Amount Row scale in
+                Plex Mono. Of the four it is the one with real financial and
+                tax consequence — and the one Claude is most likely to have
+                misread, which is why the user opened this sheet. */}
+            <div className="flex gap-3">
+              <input
+                className={`${inputClass} text-[15px] font-mono font-semibold tabular-nums`}
+                value={total}
+                onChange={(e) => setTotal(e.target.value)}
+                placeholder="Total"
+                inputMode="decimal"
+                aria-label="Total"
+                disabled={saving}
+              />
+              <input
+                className={`${inputClass} text-[15px] font-mono font-semibold tabular-nums`}
+                value={hst}
+                onChange={(e) => setHst(e.target.value)}
+                placeholder="HST"
+                inputMode="decimal"
+                aria-label="HST"
+                disabled={saving}
+              />
+            </div>
             <input
               className={inputClass}
               value={place}
               onChange={(e) => setPlace(e.target.value)}
               placeholder="Vendor"
+              aria-label="Vendor"
               disabled={saving}
             />
             <select
               className={inputClass}
               value={category}
               onChange={(e) => setCategory(e.target.value)}
+              aria-label="Category"
               disabled={saving}
             >
               {OFFICIAL_CATEGORIES.map((c) => (
@@ -101,29 +144,12 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved })
                 </option>
               ))}
             </select>
-            <div className="flex gap-3">
-              <input
-                className={inputClass}
-                value={total}
-                onChange={(e) => setTotal(e.target.value)}
-                placeholder="Total"
-                inputMode="decimal"
-                disabled={saving}
-              />
-              <input
-                className={inputClass}
-                value={hst}
-                onChange={(e) => setHst(e.target.value)}
-                placeholder="HST"
-                inputMode="decimal"
-                disabled={saving}
-              />
-            </div>
             <input
               className={inputClass}
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
+              aria-label="Date"
               disabled={saving}
             />
           </div>

@@ -145,7 +145,11 @@ export default function History({ user }) {
           <div className="space-y-6">
             {groupByDate(rows).map((group) => (
               <section key={group.date}>
-                <h2 className="text-sm font-semibold mb-3">{formatDateHeader(group.date)}</h2>
+                {/* This is the only navigation this screen offers — someone
+                    scanning for "the one from around my birthday" is reading
+                    these, not the rows. Section Title scale, and it stays the
+                    most legible thing on the page. */}
+                <h2 className="text-[15px] leading-5 font-semibold mb-3">{formatDateHeader(group.date)}</h2>
                 <ul className="space-y-2.5">
                   {group.rows.map((r) => (
                     <ExpenseRow
