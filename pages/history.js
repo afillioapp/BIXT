@@ -4,6 +4,7 @@ import { findMonthExpenseSheetId, listExpenseRows, deleteExpenseRow } from "../l
 import DriveFallback from "../components/DriveFallback";
 import ExpenseRow, { rowIdFor } from "../components/ExpenseRow";
 import EditExpenseSheet from "../components/EditExpenseSheet";
+import PageHero, { PageHeroTitle, PageHeroSub } from "../components/PageHero";
 
 // Extends the ported Lovable design language (routes/index.tsx's "Recent
 // Expenses" white rows) to the full history view: navy rounded-bottom
@@ -100,11 +101,9 @@ export default function History({ user }) {
   if (profileLoading || !profile) {
     return (
       <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-        <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-ink-foreground relative z-10 shadow-xl shadow-brand-navy/25">
-          <div className="mx-auto max-w-md px-5">
-            <h1 className="text-2xl font-semibold tracking-tight">History</h1>
-          </div>
-        </div>
+        <PageHero>
+          <PageHeroTitle>History</PageHeroTitle>
+        </PageHero>
         <div className="mx-auto max-w-md px-5 pt-6">
           <DriveFallback
             needsConnect={needsConnect}
@@ -119,12 +118,10 @@ export default function History({ user }) {
 
   return (
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-      <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-ink-foreground relative z-10 shadow-xl shadow-brand-navy/25">
-        <div className="mx-auto max-w-md px-5">
-          <h1 className="text-2xl font-semibold tracking-tight">History</h1>
-          <p className="text-xs text-ink-foreground/60 mt-1">Last two months</p>
-        </div>
-      </div>
+      <PageHero>
+        <PageHeroTitle>History</PageHeroTitle>
+        <PageHeroSub>Last two months</PageHeroSub>
+      </PageHero>
 
       <div className="mx-auto max-w-md px-5 pt-6">
         {error && <div className="text-xs text-destructive mb-4">{error}</div>}

@@ -5,6 +5,7 @@ import { findMonthExpenseSheetId, listExpenseRows } from "../lib/google";
 import { useMonthRows } from "../lib/useMonthRows";
 import { weeklyTotals, categoryTotals, formatCurrency } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
+import PageHero, { PageHeroTitle, PageHeroSub } from "../components/PageHero";
 
 // Ported 1:1 from lovable-design/src/routes/stats.tsx: Week/Month/Year
 // segmented control driving a bar chart card, a separate always-monthly "By
@@ -359,11 +360,9 @@ export default function Stats({ user }) {
   if (profileLoading || !profile) {
     return (
       <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-        <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-ink-foreground relative z-10 shadow-xl shadow-brand-navy/25">
-          <div className="mx-auto max-w-md px-5">
-            <h1 className="text-2xl font-semibold tracking-tight">Insight</h1>
-          </div>
-        </div>
+        <PageHero>
+          <PageHeroTitle>Insight</PageHeroTitle>
+        </PageHero>
         <div className="mx-auto max-w-md px-5 pt-6">
           <DriveFallback
             needsConnect={needsConnect}
@@ -468,12 +467,10 @@ export default function Stats({ user }) {
 
   return (
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-      <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-ink-foreground relative z-10 shadow-xl shadow-brand-navy/25">
-        <div className="mx-auto max-w-md px-5">
-          <h1 className="text-2xl font-semibold tracking-tight">Insight</h1>
-          <p className="text-xs text-ink-foreground/60 mt-1">Track how your business spends.</p>
-        </div>
-      </div>
+      <PageHero>
+        <PageHeroTitle>Insight</PageHeroTitle>
+        <PageHeroSub>Track how your business spends.</PageHeroSub>
+      </PageHero>
 
       <div className="mx-auto max-w-md px-5 pt-6">
         <Segmented range={range} setRange={setRange} />

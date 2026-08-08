@@ -6,6 +6,7 @@ import { compressImage } from "../lib/image";
 import { saveExpenseToDrive } from "../lib/google";
 import { takePendingCapture } from "../lib/pendingCapture";
 import DriveFallback from "../components/DriveFallback";
+import PageHero, { PageHeroTitle, PageHeroSub } from "../components/PageHero";
 
 // Rebuilt in the ported Lovable design language (light bg-background page,
 // white ring-1 cards, teal/navy pills, design-system inputs) — the
@@ -185,11 +186,9 @@ export default function Capture({ user }) {
   if (profileLoading || !profile) {
     return (
       <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-        <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-ink-foreground relative z-10 shadow-xl shadow-brand-navy/25">
-          <div className="mx-auto max-w-md px-5">
-            <h1 className="text-2xl font-semibold tracking-tight">New receipt</h1>
-          </div>
-        </div>
+        <PageHero>
+          <PageHeroTitle>New receipt</PageHeroTitle>
+        </PageHero>
         <div className="mx-auto max-w-md px-5 pt-6">
           <DriveFallback
             needsConnect={needsConnect}
@@ -211,11 +210,9 @@ export default function Capture({ user }) {
 
   return (
     <div className="min-h-screen bg-background font-sans text-text-primary flex flex-col">
-      <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-ink-foreground relative z-10 shadow-xl shadow-brand-navy/25">
-        <div className="mx-auto max-w-md px-5">
-          <h1 className="text-2xl font-semibold tracking-tight">New receipt</h1>
-        </div>
-      </div>
+      <PageHero>
+        <PageHeroTitle>New receipt</PageHeroTitle>
+      </PageHero>
 
       <div className="mx-auto max-w-md w-full px-5 pt-6 pb-28 flex flex-col flex-1">
         <input

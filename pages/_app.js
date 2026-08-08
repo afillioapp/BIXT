@@ -75,7 +75,23 @@ export default function App({ Component, pageProps }) {
     <>
       <Head>
         <title>BX</title>
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        {/* Two flat colour states of one mark — never two shapes. The ink
+            tile is the default; browsers that understand the media query
+            swap to the paper tile on dark chrome. */}
+        <link
+          rel="icon"
+          href="/favicon.svg"
+          type="image/svg+xml"
+          media="(prefers-color-scheme: light)"
+        />
+        <link
+          rel="icon"
+          href="/favicon-dark.svg"
+          type="image/svg+xml"
+          media="(prefers-color-scheme: dark)"
+        />
+        {/* Fallback for browsers that ignore `media` on an icon link. */}
+        <link rel="alternate icon" href="/favicon.svg" type="image/svg+xml" />
         {/* iOS home-screen icon: the explicit link beats relying on
             Safari's root-path auto-discovery. */}
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

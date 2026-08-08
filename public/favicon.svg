@@ -1,5 +1,8 @@
-<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-  <rect width="32" height="32" rx="8" fill="#1B2340"/>
-  <text x="16" y="19" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="800" fill="#ffffff">BX</text>
-  <rect x="9" y="23" width="14" height="3" rx="1.5" fill="#35A79F"/>
+<svg width="96" height="96" viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="BX">
+  <path d="M22,0 L66,0 L96,30 L96,74 A22,22 0 0 1 74,96 L22,96 A22,22 0 0 1 0,74 L0,22 A22,22 0 0 1 22,0 Z" fill="#0c1723"/>
+  <path d="M66,0 L96,0 L96,30 Z" fill="#fbf8f2"/>
+  <line x1="66" y1="0" x2="96" y2="30" stroke="#0c1723" stroke-width="1.5" stroke-opacity="0.18"/>
+  <path fill-rule="evenodd" fill="#fbf8f2" d="M14,28 H30 A8,8 0 0 1 30,44 H32 A10,10 0 0 1 32,64 H14 Z M22,33.5 H30.5 A4.25,4.25 0 0 1 30.5,42 H22 Z M22,49 H32 A5,5 0 0 1 32,59 H22 Z"/>
+  <path fill="#fbf8f2" d="M47,28 L55.4,28 L61,37.5 L66.6,28 L75,28 L65.6,46 L75,64 L66.6,64 L61,54.5 L55.4,64 L47,64 L56.4,46 Z"/>
+  <rect x="26.5" y="70" width="36" height="6" rx="3" fill="#c47800"/>
 </svg>

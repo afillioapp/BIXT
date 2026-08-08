@@ -16,6 +16,7 @@ import { listSharedEmails, removeSharedEmail, shareWithEmail, saveProfile } from
 import DriveFallback from "../components/DriveFallback";
 import { biometricAvailable, isLockEnabled, enableLock, disableLock } from "../lib/biometric";
 import { getTheme, setTheme } from "../lib/theme";
+import PageHero, { PageHeroTitle, PageHeroSub } from "../components/PageHero";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -214,32 +215,30 @@ export default function Settings({ user }) {
       {/* Navy identity header (owner request, reference screenshot): title,
           then a large centered avatar/name/email on brand navy, tall enough
           that the white chevron-row cards below start noticeably lower. */}
-      <div className="bg-brand-navy rounded-b-3xl pt-10 pb-12 text-ink-foreground relative z-10 shadow-xl shadow-brand-navy/25">
-        <div className="mx-auto max-w-md px-5">
-          <h1 className="text-2xl font-semibold tracking-tight text-center mb-8">Settings</h1>
+      <PageHero className="pb-12">
+        <PageHeroTitle className="text-center mb-8">Settings</PageHeroTitle>
 
-          <div className="flex flex-col items-center gap-3">
-            {user?.photoURL ? (
-              <img
-                src={user.photoURL}
-                alt=""
-                referrerPolicy="no-referrer"
-                width={96}
-                height={96}
-                className="size-24 rounded-full object-cover ring-2 ring-ink-foreground/20"
-              />
-            ) : (
-              <div className="size-24 rounded-full bg-ink-foreground/15 text-ink-foreground grid place-items-center text-2xl font-semibold ring-2 ring-ink-foreground/20">
-                {initialsFor(user?.displayName, profile.companyName)}
-              </div>
-            )}
-            <div className="text-center">
-              <p className="font-semibold text-lg">{user?.displayName || profile.companyName}</p>
-              <p className="text-sm text-ink-foreground/60">{user?.email || user?.phoneNumber || "—"}</p>
+        <div className="flex flex-col items-center gap-3">
+          {user?.photoURL ? (
+            <img
+              src={user.photoURL}
+              alt=""
+              referrerPolicy="no-referrer"
+              width={96}
+              height={96}
+              className="size-24 rounded-full object-cover ring-2 ring-ink-foreground/20"
+            />
+          ) : (
+            <div className="size-24 rounded-full bg-ink-foreground/15 text-ink-foreground grid place-items-center text-2xl font-semibold ring-2 ring-ink-foreground/20">
+              {initialsFor(user?.displayName, profile.companyName)}
             </div>
+          )}
+          <div className="text-center">
+            <p className="font-semibold text-lg">{user?.displayName || profile.companyName}</p>
+            <p className="text-sm text-ink-foreground/60">{user?.email || user?.phoneNumber || "—"}</p>
           </div>
         </div>
-      </div>
+      </PageHero>
 
       <div className="mx-auto max-w-md px-5 pt-6">
         <div className="bg-card shadow-card ring-1 ring-hairline rounded-2xl divide-y divide-hairline overflow-hidden mb-6">

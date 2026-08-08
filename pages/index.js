@@ -10,6 +10,7 @@ import HomeCarousel from "../components/HomeCarousel";
 import { accentForCategory } from "../components/CategoryIcon";
 import ExpenseRow, { rowIdFor } from "../components/ExpenseRow";
 import EditExpenseSheet from "../components/EditExpenseSheet";
+import PageHero, { PageHeroTitle, PageHeroSub } from "../components/PageHero";
 
 // Originally ported 1:1 from lovable-design/src/routes/index.tsx (navy
 // "Total Balance" hero + 4-tile quick-action row + "Recent Expenses" list).
@@ -147,47 +148,45 @@ export default function Home({ user }) {
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
       {/* Compact navy header, same scale as Settings/Stats (owner request):
           the month total IS the headline; greeting and company are gone. */}
-      <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-ink-foreground relative z-10 shadow-xl shadow-brand-navy/25">
-        <div className="mx-auto max-w-md px-5">
-          <header className="flex items-start justify-between">
-            <div>
-              <p className="text-[11px] leading-[14px] font-semibold uppercase tracking-[0.08em] text-ink-foreground/60 mb-1">
-                {totalLabel}
-              </p>
-              <h1
-                className="text-[40px] leading-[44px] tracking-[-0.02em] font-mono font-semibold tabular-nums"
-                style={filterAccent ? { color: filterAccent } : undefined}
-              >
-                {monthData ? formatCurrency(monthData.total, { decimals: 2 }) : "—"}
-              </h1>
-              {monthData && (
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="text-xs leading-4 font-mono font-semibold tabular-nums bg-brand-teal/20 text-brand-teal px-2 py-0.5 rounded">
-                    {pctChange !== null ? `${pctChange > 0 ? "+" : ""}${pctChange}%` : "—"}
-                  </span>
-                  <span className="text-[10px] text-ink-foreground/60">vs last month</span>
-                </div>
-              )}
-            </div>
-            <Link href="/settings" aria-label="Settings" className="shrink-0">
-              {user?.photoURL ? (
-                <img
-                  src={user.photoURL}
-                  alt=""
-                  referrerPolicy="no-referrer"
-                  width={40}
-                  height={40}
-                  className="size-10 rounded-full object-cover"
-                />
-              ) : (
-                <div className="size-10 rounded-full bg-ink-foreground/15 text-ink-foreground grid place-items-center text-sm font-semibold">
-                  {initialsFor(user?.displayName, profile.companyName)}
-                </div>
-              )}
-            </Link>
-          </header>
-        </div>
-      </div>
+      <PageHero>
+        <header className="flex items-start justify-between">
+          <div>
+            <p className="text-[11px] leading-[14px] font-semibold uppercase tracking-[0.08em] text-ink-foreground/60 mb-1">
+              {totalLabel}
+            </p>
+            <h1
+              className="text-[40px] leading-[44px] tracking-[-0.02em] font-mono font-semibold tabular-nums"
+              style={filterAccent ? { color: filterAccent } : undefined}
+            >
+              {monthData ? formatCurrency(monthData.total, { decimals: 2 }) : "—"}
+            </h1>
+            {monthData && (
+              <div className="flex items-center gap-2 mt-2">
+                <span className="text-xs leading-4 font-mono font-semibold tabular-nums bg-brand-teal/20 text-brand-teal px-2 py-0.5 rounded">
+                  {pctChange !== null ? `${pctChange > 0 ? "+" : ""}${pctChange}%` : "—"}
+                </span>
+                <span className="text-[10px] text-ink-foreground/60">vs last month</span>
+              </div>
+            )}
+          </div>
+          <Link href="/settings" aria-label="Settings" className="shrink-0">
+            {user?.photoURL ? (
+              <img
+                src={user.photoURL}
+                alt=""
+                referrerPolicy="no-referrer"
+                width={40}
+                height={40}
+                className="size-10 rounded-full object-cover"
+              />
+            ) : (
+              <div className="size-10 rounded-full bg-ink-foreground/15 text-ink-foreground grid place-items-center text-sm font-semibold">
+                {initialsFor(user?.displayName, profile.companyName)}
+              </div>
+            )}
+          </Link>
+        </header>
+      </PageHero>
 
       <div className="mx-auto max-w-md px-5 pt-6">
         <div className="mb-6">
