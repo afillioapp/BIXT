@@ -86,8 +86,8 @@ export default function Setup({ user }) {
           <div className="size-16 rounded-full bg-brand-teal grid place-items-center" aria-hidden="true">
             <Check className="size-7 text-brand-teal-foreground" strokeWidth={2.4} />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight">You're all set</h1>
-          <p className="text-sm text-text-secondary">Receipts will be saved to:</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Done. Your filing cabinet is ready.</h1>
+          <p className="text-sm text-text-secondary">Every receipt from here goes to:</p>
           <div className="bg-card shadow-card ring-1 ring-hairline rounded-xl px-4 py-3 text-[13px] font-mono">
             BX - {companyName} / {now.getFullYear()} / {now.toLocaleString("en-US", { month: "long" })}
           </div>
@@ -104,7 +104,7 @@ export default function Setup({ user }) {
 
   return (
     <div className="min-h-dvh bg-background font-sans text-text-primary flex flex-col max-w-md mx-auto px-7 pt-16 pb-8">
-      <h1 className="text-2xl font-semibold tracking-tight mb-7">Tell us about your business.</h1>
+      <h1 className="text-2xl font-semibold tracking-tight mb-7">Where should your receipts go?</h1>
 
       {!accessToken ? (
         <DriveFallback
@@ -150,13 +150,9 @@ export default function Setup({ user }) {
             </button>
           ) : (
             <div className="flex flex-col items-center gap-3">
-              <p className="text-[15px] leading-5 text-center">
-                Give read-only access to{" "}
-                <strong className="font-semibold">{accountantEmail.trim()}</strong>?
-              </p>
-              <p className="text-[13px] leading-[18px] text-text-secondary text-center max-w-[16rem]">
-                They'll be able to see your receipts and expense sheet — not
-                change them. You can undo this any time in Settings.
+              <p className="text-[15px] leading-5 text-center max-w-[19rem]">
+                <strong className="font-semibold">{accountantEmail.trim()}</strong> will be
+                able to view your receipts and totals — never edit or delete them.
               </p>
               <button
                 className="w-full rounded-full bg-brand-teal py-4 font-semibold text-brand-teal-foreground hover:opacity-90 transition disabled:opacity-60"
@@ -170,7 +166,7 @@ export default function Setup({ user }) {
                 onClick={handleEditFromConfirm}
                 disabled={creating}
               >
-                edit
+                Edit
               </button>
             </div>
           )}

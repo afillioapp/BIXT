@@ -260,7 +260,7 @@ export default function Settings({ user }) {
             </div>
             {driveMismatch && (
               <p className="mt-2 text-xs text-destructive">
-                This doesn't match your sign-in email. Receipts may not sync as expected.
+                This is a different account than the one you signed in with. New receipts may end up in the wrong place.
               </p>
             )}
           </div>
@@ -268,13 +268,9 @@ export default function Settings({ user }) {
           <div className="p-4">
             {editing && confirming ? (
               <div>
-                <p className="text-[15px] leading-5 mb-1">
-                  Give read-only access to{" "}
-                  <strong className="font-semibold">{accountantEmail.trim()}</strong> instead?
-                </p>
-                <p className="text-[13px] leading-[18px] text-text-secondary mb-3">
-                  The previous reader loses access. Read-only either way — they
-                  can see your receipts, not change them.
+                <p className="text-[15px] leading-5 mb-3">
+                  <strong className="font-semibold">{accountantEmail.trim()}</strong> will be
+                  able to view your receipts and totals instead — never edit or delete them.
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -388,8 +384,8 @@ export default function Settings({ user }) {
 
         {/* Moved here from Home (owner request) — Settings' last card. */}
         <section className="mt-4 bg-card shadow-card rounded-2xl p-5 ring-1 ring-hairline flex flex-col items-start gap-1">
-          <p className="text-[15px] leading-5 font-semibold">Help us make BX better</p>
-          <p className="text-xs text-text-secondary mb-2">Tell us what's confusing, broken, or missing.</p>
+          <p className="text-[15px] leading-5 font-semibold">Something not working right?</p>
+          <p className="text-xs text-text-secondary mb-2">Tell us what's confusing, broken, or missing — we read every one.</p>
           <a
             href="mailto:alireza.mthr@gmail.com?subject=BX%20feedback"
             className="inline-flex items-center justify-center rounded-xl bg-background ring-1 ring-hairline text-text-primary text-xs font-semibold px-5 h-9"
