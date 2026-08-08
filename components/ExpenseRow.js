@@ -144,7 +144,7 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
   const tintStyle = tintStyleFor(row.category);
 
   return (
-    <li className="relative rounded-xl overflow-hidden ring-1 ring-hairline">
+    <li className="relative rounded-xl overflow-hidden ring-1 ring-hairline shadow-card">
       {/* Action layer — sharp-cornered, revealed as the content slides left.
           Clipped to the outer rounded-xl by the li's overflow-hidden. */}
       <div className="absolute inset-y-0 right-0 flex" style={{ width: MAX_OPEN }}>

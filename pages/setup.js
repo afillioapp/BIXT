@@ -150,8 +150,13 @@ export default function Setup({ user }) {
             </button>
           ) : (
             <div className="flex flex-col items-center gap-3">
-              <p className="text-sm text-center">
-                Give read-only access to <strong>{accountantEmail.trim()}</strong>?
+              <p className="text-[15px] leading-5 text-center">
+                Give read-only access to{" "}
+                <strong className="font-semibold">{accountantEmail.trim()}</strong>?
+              </p>
+              <p className="text-[13px] leading-[18px] text-text-secondary text-center max-w-[16rem]">
+                They'll be able to see your receipts and expense sheet — not
+                change them. You can undo this any time in Settings.
               </p>
               <button
                 className="w-full rounded-full bg-brand-teal py-4 font-semibold text-brand-teal-foreground hover:opacity-90 transition disabled:opacity-60"

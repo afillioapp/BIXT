@@ -194,8 +194,10 @@ export default function Settings({ user }) {
   if (profileLoading || !profile) {
     return (
       <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-        <div className="mx-auto max-w-md px-5 pt-10">
-          <h1 className="text-2xl font-semibold tracking-tight mb-6">Settings</h1>
+        <PageHero>
+          <PageHeroTitle>Settings</PageHeroTitle>
+        </PageHero>
+        <div className="mx-auto max-w-md px-5 pt-6">
           <DriveFallback
             needsConnect={needsConnect}
             loadError={loadError}
@@ -266,7 +268,14 @@ export default function Settings({ user }) {
           <div className="p-4">
             {editing && confirming ? (
               <div>
-                <p className="text-sm mb-3">Give read-only access to {accountantEmail.trim()} instead?</p>
+                <p className="text-[15px] leading-5 mb-1">
+                  Give read-only access to{" "}
+                  <strong className="font-semibold">{accountantEmail.trim()}</strong> instead?
+                </p>
+                <p className="text-[13px] leading-[18px] text-text-secondary mb-3">
+                  The previous reader loses access. Read-only either way — they
+                  can see your receipts, not change them.
+                </p>
                 <div className="flex gap-2">
                   <button
                     className="flex-1 h-9 rounded-full ring-1 ring-input-border text-sm font-medium"
