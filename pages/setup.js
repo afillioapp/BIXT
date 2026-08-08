@@ -14,7 +14,7 @@ import DriveFallback from "../components/DriveFallback";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const inputClass =
-  "w-full h-12 rounded-xl bg-white ring-1 ring-black/10 px-4 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-brand-teal disabled:opacity-60";
+  "w-full h-12 rounded-xl bg-card ring-1 ring-input-border px-4 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-brand-teal disabled:opacity-60";
 
 // Rebuilt in the ported Lovable design language (light page, design-system
 // inputs, teal pills). Behavior unchanged: single-screen onboarding whose
@@ -84,15 +84,15 @@ export default function Setup({ user }) {
       <div className="min-h-dvh bg-background font-sans text-text-primary flex flex-col max-w-md mx-auto px-7 pt-16 pb-8">
         <div className="flex-1 flex flex-col items-center justify-center text-center gap-4">
           <div className="size-16 rounded-full bg-brand-teal grid place-items-center" aria-hidden="true">
-            <Check className="size-7 text-white" strokeWidth={2.4} />
+            <Check className="size-7 text-brand-teal-foreground" strokeWidth={2.4} />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight">You're all set</h1>
           <p className="text-sm text-text-secondary">Receipts will be saved to:</p>
-          <div className="bg-white ring-1 ring-black/5 rounded-xl px-4 py-3 text-[13px] font-mono">
+          <div className="bg-card shadow-card ring-1 ring-hairline rounded-xl px-4 py-3 text-[13px] font-mono">
             BX - {companyName} / {now.getFullYear()} / {now.toLocaleString("en-US", { month: "long" })}
           </div>
           <button
-            className="w-full rounded-full bg-brand-teal py-4 font-semibold text-white hover:opacity-90 transition mt-3"
+            className="w-full rounded-full bg-brand-teal py-4 font-semibold text-brand-teal-foreground hover:opacity-90 transition mt-3"
             onClick={() => router.replace("/")}
           >
             Go to BX
@@ -142,7 +142,7 @@ export default function Setup({ user }) {
 
           {!confirming ? (
             <button
-              className="w-full rounded-full bg-brand-teal py-4 font-semibold text-white hover:opacity-90 transition disabled:opacity-60"
+              className="w-full rounded-full bg-brand-teal py-4 font-semibold text-brand-teal-foreground hover:opacity-90 transition disabled:opacity-60"
               onClick={handleGetStarted}
               disabled={!companyName.trim() || !accountantEmail.trim()}
             >
@@ -154,7 +154,7 @@ export default function Setup({ user }) {
                 Give read-only access to <strong>{accountantEmail.trim()}</strong>?
               </p>
               <button
-                className="w-full rounded-full bg-brand-teal py-4 font-semibold text-white hover:opacity-90 transition disabled:opacity-60"
+                className="w-full rounded-full bg-brand-teal py-4 font-semibold text-brand-teal-foreground hover:opacity-90 transition disabled:opacity-60"
                 onClick={handleConfirmShare}
                 disabled={creating}
               >

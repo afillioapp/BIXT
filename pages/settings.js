@@ -38,11 +38,11 @@ function Toggle({ on, onClick, disabled, label }) {
       disabled={disabled}
       onClick={onClick}
       className={`w-12 h-7 rounded-full relative shrink-0 transition-colors disabled:opacity-60 ${
-        on ? "bg-brand-teal" : "bg-zinc-200"
+        on ? "bg-brand-teal" : "bg-track-strong"
       }`}
     >
       <span
-        className={`absolute top-0.5 left-0.5 size-6 rounded-full bg-white shadow transition-transform ${
+        className={`absolute top-0.5 left-0.5 size-6 rounded-full bg-ink-foreground shadow transition-transform ${
           on ? "translate-x-5" : ""
         }`}
       />
@@ -214,7 +214,7 @@ export default function Settings({ user }) {
       {/* Navy identity header (owner request, reference screenshot): title,
           then a large centered avatar/name/email on brand navy, tall enough
           that the white chevron-row cards below start noticeably lower. */}
-      <div className="bg-brand-navy rounded-b-3xl pt-10 pb-12 text-white relative z-10 shadow-xl shadow-brand-navy/25">
+      <div className="bg-brand-navy rounded-b-3xl pt-10 pb-12 text-ink-foreground relative z-10 shadow-xl shadow-brand-navy/25">
         <div className="mx-auto max-w-md px-5">
           <h1 className="text-2xl font-semibold tracking-tight text-center mb-8">Settings</h1>
 
@@ -226,23 +226,23 @@ export default function Settings({ user }) {
                 referrerPolicy="no-referrer"
                 width={96}
                 height={96}
-                className="size-24 rounded-full object-cover ring-2 ring-white/20"
+                className="size-24 rounded-full object-cover ring-2 ring-ink-foreground/20"
               />
             ) : (
-              <div className="size-24 rounded-full bg-white/15 text-white grid place-items-center text-2xl font-semibold ring-2 ring-white/20">
+              <div className="size-24 rounded-full bg-ink-foreground/15 text-ink-foreground grid place-items-center text-2xl font-semibold ring-2 ring-ink-foreground/20">
                 {initialsFor(user?.displayName, profile.companyName)}
               </div>
             )}
             <div className="text-center">
               <p className="font-semibold text-lg">{user?.displayName || profile.companyName}</p>
-              <p className="text-sm text-white/60">{user?.email || user?.phoneNumber || "—"}</p>
+              <p className="text-sm text-ink-foreground/60">{user?.email || user?.phoneNumber || "—"}</p>
             </div>
           </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-md px-5 pt-6">
-        <div className="bg-white ring-1 ring-black/5 rounded-2xl divide-y divide-black/5 overflow-hidden mb-6">
+        <div className="bg-card shadow-card ring-1 ring-hairline rounded-2xl divide-y divide-hairline overflow-hidden mb-6">
           <div className="flex items-center gap-3 p-4">
             <Building2 className="size-4 text-text-secondary shrink-0" />
             <div className="flex-1 min-w-0">
@@ -270,14 +270,14 @@ export default function Settings({ user }) {
                 <p className="text-sm mb-3">Give read-only access to {accountantEmail.trim()} instead?</p>
                 <div className="flex gap-2">
                   <button
-                    className="flex-1 h-9 rounded-full ring-1 ring-black/10 text-sm font-medium"
+                    className="flex-1 h-9 rounded-full ring-1 ring-input-border text-sm font-medium"
                     onClick={() => setConfirming(false)}
                     disabled={saving}
                   >
                     Cancel
                   </button>
                   <button
-                    className="flex-1 h-9 rounded-full bg-brand-teal text-white text-sm font-semibold disabled:opacity-60"
+                    className="flex-1 h-9 rounded-full bg-brand-teal text-brand-teal-foreground text-sm font-semibold disabled:opacity-60"
                     onClick={handleConfirmShare}
                     disabled={saving}
                   >
@@ -289,7 +289,7 @@ export default function Settings({ user }) {
               <div>
                 <p className="text-sm text-text-secondary mb-2">Accountant's email</p>
                 <input
-                  className="w-full h-11 rounded-lg ring-1 ring-black/10 px-3 text-sm mb-3 focus:outline-none focus:ring-brand-teal"
+                  className="w-full h-11 rounded-lg ring-1 ring-input-border px-3 text-sm mb-3 focus:outline-none focus:ring-brand-teal"
                   type="email"
                   value={accountantEmail}
                   onChange={(e) => setAccountantEmail(e.target.value)}
@@ -298,7 +298,7 @@ export default function Settings({ user }) {
                 />
                 <div className="flex gap-2">
                   <button
-                    className="flex-1 h-9 rounded-full ring-1 ring-black/10 text-sm font-medium"
+                    className="flex-1 h-9 rounded-full ring-1 ring-input-border text-sm font-medium"
                     onClick={() => {
                       setEditing(false);
                       setConfirming(false);
@@ -309,7 +309,7 @@ export default function Settings({ user }) {
                     Cancel
                   </button>
                   <button
-                    className="flex-1 h-9 rounded-full bg-brand-teal text-white text-sm font-semibold disabled:opacity-60"
+                    className="flex-1 h-9 rounded-full bg-brand-teal text-brand-teal-foreground text-sm font-semibold disabled:opacity-60"
                     onClick={handleSaveAccountant}
                     disabled={saving || !accountantEmail.trim()}
                   >
@@ -323,7 +323,7 @@ export default function Settings({ user }) {
                 {/* One-liner (owner request): the current email only appears
                     after tapping, inside the edit view. */}
                 <p className="flex-1 min-w-0 text-sm">Accountant's email</p>
-                <ChevronRight className="size-4 text-zinc-400 shrink-0" />
+                <ChevronRight className="size-4 text-chrome shrink-0" />
               </button>
             )}
             {status && (
@@ -379,12 +379,12 @@ export default function Settings({ user }) {
         </div>
 
         {/* Moved here from Home (owner request) — Settings' last card. */}
-        <section className="mt-4 bg-white rounded-2xl p-5 ring-1 ring-black/5 flex flex-col items-start gap-1">
+        <section className="mt-4 bg-card shadow-card rounded-2xl p-5 ring-1 ring-hairline flex flex-col items-start gap-1">
           <p className="text-sm font-bold">Help us make BX better</p>
           <p className="text-xs text-text-secondary mb-2">Tell us what's confusing, broken, or missing.</p>
           <a
             href="mailto:alireza.mthr@gmail.com?subject=BX%20feedback"
-            className="inline-flex items-center justify-center rounded-xl bg-background ring-1 ring-black/5 text-text-primary text-xs font-semibold px-5 h-9"
+            className="inline-flex items-center justify-center rounded-xl bg-background ring-1 ring-hairline text-text-primary text-xs font-semibold px-5 h-9"
           >
             Send feedback
           </a>

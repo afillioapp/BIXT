@@ -26,6 +26,17 @@ const DRAG_SLOP = 4; // px of movement before a touch/click counts as a drag, no
 // Same stable per-category tint approach both pages used inline before this
 // component existed (design's bg-*-50/text-*-600 pairs, hashed per category
 // so a category always renders the same swatch).
+//
+// DELIBERATELY LEFT HARDCODED BY WP1 — the one painted surface in the app that
+// still is. Every other hardcoded color became a token in WP1 without changing
+// a pixel, but these eight pairs cannot: they are a *second*, rival color
+// system. A category's swatch here is a hash over 8 Tailwind palettes, while
+// the same category's donut slice and filter pill come from
+// accentForCategory(), so the two disagree today. Fixing that is a change of
+// identity, not of plumbing, and it cannot be done invisibly — so it belongs
+// with the palette flip in WP2, where the tint becomes a 14% wash of the
+// category's own --cat-* color behind a full-opacity icon in that same color,
+// and this array and its hash are deleted.
 const TINTS = [
   "bg-brand-teal-soft text-brand-teal",
   "bg-orange-50 text-orange-600",
@@ -147,7 +158,7 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
   const tint = tintForCategory(row.category);
 
   return (
-    <li className="relative rounded-xl overflow-hidden ring-1 ring-black/5">
+    <li className="relative rounded-xl overflow-hidden ring-1 ring-hairline">
       {/* Action layer — sharp-cornered, revealed as the content slides left.
           Clipped to the outer rounded-xl by the li's overflow-hidden. */}
       <div className="absolute inset-y-0 right-0 flex" style={{ width: MAX_OPEN }}>
@@ -160,7 +171,7 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
             window.open(row.receiptLink, "_blank", "noopener,noreferrer");
             closeRow();
           }}
-          className="flex-1 flex flex-col items-center justify-center gap-1 bg-zinc-500 text-white text-[10px] font-medium disabled:opacity-40"
+          className="flex-1 flex flex-col items-center justify-center gap-1 bg-chrome-surface text-action-foreground text-[10px] font-medium disabled:opacity-40"
         >
           <ReceiptText className="size-4" />
           Receipt
@@ -173,7 +184,7 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
             onEdit(row);
             closeRow();
           }}
-          className="flex-1 flex flex-col items-center justify-center gap-1 bg-brand-teal text-white text-[10px] font-medium"
+          className="flex-1 flex flex-col items-center justify-center gap-1 bg-brand-teal text-brand-teal-foreground text-[10px] font-medium"
         >
           <Pencil className="size-4" />
           Edit
@@ -186,7 +197,7 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
               e.stopPropagation();
               setConfirmingDelete(true);
             }}
-            className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive text-white text-[10px] font-medium"
+            className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive text-action-foreground text-[10px] font-medium"
           >
             <Trash2 className="size-4" />
             Delete
@@ -197,7 +208,7 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
               type="button"
               onClick={handleConfirmDelete}
               disabled={deleting}
-              className="flex-1 bg-destructive text-white text-[10px] font-semibold disabled:opacity-60"
+              className="flex-1 bg-destructive text-action-foreground text-[10px] font-semibold disabled:opacity-60"
             >
               {deleting ? "…" : "Delete?"}
             </button>
@@ -208,7 +219,7 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
                 setConfirmingDelete(false);
               }}
               disabled={deleting}
-              className="flex-1 bg-zinc-600 text-white text-[10px] font-semibold disabled:opacity-60"
+              className="flex-1 bg-chrome-surface-strong text-action-foreground text-[10px] font-semibold disabled:opacity-60"
             >
               Cancel
             </button>
@@ -218,7 +229,7 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
 
       {/* Content layer — slides left to reveal the actions behind it. */}
       <div
-        className="relative z-10 flex items-center justify-between p-3 bg-white select-none"
+        className="relative z-10 flex items-center justify-between p-3 bg-card select-none"
         style={{
           transform: `translateX(-${offset}px)`,
           transition: dragging ? "none" : "transform 200ms ease-out",
@@ -240,7 +251,7 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <p className="text-sm font-semibold text-text-primary">-{row.total}</p>
-          <MoreHorizontal className="size-4 text-zinc-400" />
+          <MoreHorizontal className="size-4 text-chrome" />
         </div>
       </div>
     </li>

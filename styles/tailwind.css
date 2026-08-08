@@ -1,11 +1,18 @@
-/* Ported verbatim (structure + oklch values + semantic names) from
-   lovable-design/src/styles.css — the Lovable design source of truth.
-   Only the @source paths are adapted to this repo's Next.js pages-router
-   layout, and --font-sans is wired to next/font's Inter variable (see
-   pages/_app.js) instead of a bare "Inter" family name. Do not rename the
-   brand-navy/brand-teal/etc. tokens — every ported screen's classes
-   (bg-brand-navy, text-brand-teal, bg-background, text-text-primary, …)
-   depend on these exact names existing. */
+/* Originally ported verbatim (structure + oklch values + semantic names) from
+   lovable-design/src/styles.css. The @source paths are adapted to this repo's
+   Next.js pages-router layout, and --font-sans is wired to next/font's Inter
+   variable (see pages/_app.js) instead of a bare "Inter" family name.
+
+   Do not rename the brand-navy/brand-teal/etc. tokens. Every screen's classes
+   (bg-brand-navy, text-brand-teal, bg-background, text-text-primary, …) depend
+   on these exact names existing, and Tailwind emits *nothing* for an
+   unrecognised utility without erroring — so a rename un-styles the app
+   silently, with a green build. `npm run verify` gates this.
+
+   WP1 (redesign-2026-08) completed the token system: every painted surface in
+   the app now resolves through a token here, and every token has a light AND a
+   dark value. Values are unchanged from before WP1 — this pass was plumbing
+   only. The palette re-value is WP2. */
 @import "tailwindcss" source(none);
 @source "../pages";
 @source "../components";
@@ -24,6 +31,9 @@
  * To add a new semantic color:
  * 1. Add the variable to :root (light value) and .dark (dark value)
  * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ *
+ * Miss step 1's dark value and dark mode goes unreadable; miss step 2 and the
+ * utility silently emits no CSS. `npm run verify` checks both.
  */
 
 @theme inline {
@@ -35,9 +45,19 @@
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
   --font-sans: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand */
   --color-brand-navy: var(--brand-navy);
   --color-brand-teal: var(--brand-teal);
   --color-brand-teal-soft: var(--brand-teal-soft);
+  /* Label on a filled accent surface (the primary CTA). Paired with
+     --brand-teal as a fill+label pair, never chosen independently. */
+  --color-brand-teal-foreground: var(--brand-teal-foreground);
+  /* Small accent-colored *text* (inline links, "View All"). Distinct from the
+     fill color because small text needs more contrast than a fill does. */
+  --color-brand-teal-text: var(--brand-teal-text);
+
+  /* Surfaces & text */
   --color-surface: var(--surface);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
@@ -47,6 +67,50 @@
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+
+  /* Content that sits on the dark "ink" hero header. The header stays dark in
+     both themes (brand doc §5.1 Q9), so these are theme-stable. */
+  --color-ink-foreground: var(--ink-foreground);
+  --color-on-ink-destructive: var(--on-ink-destructive);
+  /* Label on a filled *action* surface (swipe-row action buttons). */
+  --color-action-foreground: var(--action-foreground);
+
+  /* Lines */
+  --color-hairline: var(--hairline);
+  --color-input-border: var(--input-border);
+
+  /* Neutral chrome */
+  --color-track: var(--track);
+  --color-track-strong: var(--track-strong);
+  --color-chrome: var(--chrome);
+  --color-chrome-surface: var(--chrome-surface);
+  --color-chrome-surface-strong: var(--chrome-surface-strong);
+  --color-hover: var(--hover);
+  --color-scrim: var(--scrim);
+
+  /* Charts */
+  --color-chart-track: var(--chart-track);
+  --color-on-chart-label: var(--on-chart-label);
+
+  /* One color per official category, in OFFICIAL_CATEGORIES order. */
+  --color-cat-1: var(--cat-1);
+  --color-cat-2: var(--cat-2);
+  --color-cat-3: var(--cat-3);
+  --color-cat-4: var(--cat-4);
+  --color-cat-5: var(--cat-5);
+  --color-cat-6: var(--cat-6);
+  --color-cat-7: var(--cat-7);
+  --color-cat-8: var(--cat-8);
+  --color-cat-9: var(--cat-9);
+  --color-cat-10: var(--cat-10);
+  --color-cat-11: var(--cat-11);
+  --color-cat-12: var(--cat-12);
+
+  /* Paper elevation. WP1 ships this as a no-op so the plumbing exists with
+     today's (shadow-less) appearance; WP2 gives it the real value. */
+  --shadow-card: var(--card-shadow);
+
+  /* shadcn-inherited semantic family */
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
@@ -61,11 +125,6 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -80,9 +139,13 @@
   --radius: 0.625rem;
   --background: oklch(0.97 0.005 260);
   --foreground: oklch(0.18 0.02 260);
+
   --brand-navy: oklch(0.22 0.04 264);
   --brand-teal: oklch(0.62 0.11 190);
   --brand-teal-soft: oklch(0.62 0.11 190 / 0.12);
+  --brand-teal-foreground: oklch(1 0 0);
+  --brand-teal-text: oklch(0.62 0.11 190);
+
   --surface: oklch(0.99 0.002 260);
   --text-primary: oklch(0.2 0.02 260);
   --text-secondary: oklch(0.5 0.015 260);
@@ -90,6 +153,45 @@
   --card-foreground: oklch(0.18 0.02 260);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0.02 260);
+
+  --ink-foreground: oklch(1 0 0);
+  --on-ink-destructive: oklch(80.8% 0.114 19.571);
+  --action-foreground: oklch(1 0 0);
+
+  --hairline: oklch(0 0 0 / 0.05);
+  --input-border: oklch(0 0 0 / 0.1);
+
+  --track: oklch(96.7% 0.001 286.375);
+  --track-strong: oklch(92% 0.004 286.32);
+  --chrome: oklch(70.5% 0.015 286.067);
+  --chrome-surface: oklch(55.2% 0.016 285.938);
+  --chrome-surface-strong: oklch(44.2% 0.017 285.786);
+  --hover: oklch(98.5% 0 0);
+  --scrim: oklch(0 0 0 / 0.4);
+
+  --chart-track: oklch(96.7% 0.001 286.375);
+  --on-chart-label: oklch(1 0 0);
+
+  /* Pre-WP2 values: the five --chart-* colors this app cycled across twelve
+     categories, written out per category so the mapping is explicit and the
+     rendering is byte-identical to before. WP2 replaces these with twelve
+     distinct, CVD-validated hues (brand doc §5.2) — at which point a category
+     stops changing color when it moves up or down the spend ranking. */
+  --cat-1: #d96a2a; /* Dining & Meals */
+  --cat-2: #3e9a9e; /* Coffee & Drinks */
+  --cat-3: #3a5a87; /* Travel */
+  --cat-4: #e6b742; /* Ground Transport */
+  --cat-5: #d69b3a; /* Fuel */
+  --cat-6: #d96a2a; /* Accommodation */
+  --cat-7: #3e9a9e; /* Office & Supplies */
+  --cat-8: #3a5a87; /* Software & Tech */
+  --cat-9: #e6b742; /* Marketing */
+  --cat-10: #d69b3a; /* Professional Services */
+  --cat-11: #d96a2a; /* Meetings & Events */
+  --cat-12: #3e9a9e; /* Other */
+
+  --card-shadow: 0 0 #0000;
+
   --primary: oklch(0.22 0.04 264);
   --primary-foreground: oklch(0.984 0.003 247.858);
   --secondary: oklch(0.96 0.005 260);
@@ -103,11 +205,6 @@
   --border: oklch(0.929 0.013 255.508);
   --input: oklch(0.929 0.013 255.508);
   --ring: oklch(0.704 0.04 256.788);
-  --chart-1: #D96A2A;
-  --chart-2: #3E9A9E;
-  --chart-3: #3A5A87;
-  --chart-4: #E6B742;
-  --chart-5: #D69B3A;
   --sidebar: oklch(0.984 0.003 247.858);
   --sidebar-foreground: oklch(0.129 0.042 264.695);
   --sidebar-primary: oklch(0.208 0.042 265.755);
@@ -118,13 +215,64 @@
   --sidebar-ring: oklch(0.704 0.04 256.788);
 }
 
+/* Dark mode. Before WP1 six tokens had no value here at all, so they inherited
+   their light values and body text computed to 1.01:1 against the dark page
+   background — i.e. invisible. Every token now has an explicit dark value.
+   These are *provisional* values in the current hue family, chosen to make
+   dark mode readable; WP2 replaces the whole set with the brand palette. */
 .dark {
   --background: oklch(0.129 0.042 264.695);
   --foreground: oklch(0.984 0.003 247.858);
+
+  /* Lighter than --background on purpose, so the hero still reads as a raised
+     surface rather than "more black". */
+  --brand-navy: oklch(0.26 0.04 264);
+  --brand-teal: oklch(0.72 0.11 190);
+  --brand-teal-soft: oklch(0.72 0.11 190 / 0.16);
+  --brand-teal-foreground: oklch(1 0 0);
+  --brand-teal-text: oklch(0.72 0.11 190);
+
+  --surface: oklch(0.208 0.042 265.755);
+  --text-primary: oklch(0.984 0.003 247.858);
+  --text-secondary: oklch(0.704 0.04 256.788);
   --card: oklch(0.208 0.042 265.755);
   --card-foreground: oklch(0.984 0.003 247.858);
   --popover: oklch(0.208 0.042 265.755);
   --popover-foreground: oklch(0.984 0.003 247.858);
+
+  --ink-foreground: oklch(1 0 0);
+  --on-ink-destructive: oklch(80.8% 0.114 19.571);
+  --action-foreground: oklch(1 0 0);
+
+  --hairline: oklch(1 0 0 / 0.1);
+  --input-border: oklch(1 0 0 / 0.16);
+
+  --track: oklch(0.279 0.041 260.031);
+  --track-strong: oklch(0.35 0.04 260.031);
+  --chrome: oklch(0.62 0.03 260.031);
+  --chrome-surface: oklch(0.44 0.017 285.938);
+  --chrome-surface-strong: oklch(0.36 0.017 285.786);
+  --hover: oklch(0.24 0.04 264);
+  --scrim: oklch(0 0 0 / 0.6);
+
+  --chart-track: oklch(0.30 0.03 264);
+  --on-chart-label: oklch(1 0 0);
+
+  --cat-1: #6a62e6; /* Dining & Meals */
+  --cat-2: #4fc79a; /* Coffee & Drinks */
+  --cat-3: #d69b3a; /* Travel */
+  --cat-4: #a15ae0; /* Ground Transport */
+  --cat-5: #e45a76; /* Fuel */
+  --cat-6: #6a62e6; /* Accommodation */
+  --cat-7: #4fc79a; /* Office & Supplies */
+  --cat-8: #d69b3a; /* Software & Tech */
+  --cat-9: #a15ae0; /* Marketing */
+  --cat-10: #e45a76; /* Professional Services */
+  --cat-11: #6a62e6; /* Meetings & Events */
+  --cat-12: #4fc79a; /* Other */
+
+  --card-shadow: 0 0 #0000;
+
   --primary: oklch(0.929 0.013 255.508);
   --primary-foreground: oklch(0.208 0.042 265.755);
   --secondary: oklch(0.279 0.041 260.031);
@@ -138,11 +286,6 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.551 0.027 264.364);
-  --chart-1: #6A62E6;
-  --chart-2: #4FC79A;
-  --chart-3: #D69B3A;
-  --chart-4: #A15AE0;
-  --chart-5: #E45A76;
   --sidebar: oklch(0.208 0.042 265.755);
   --sidebar-foreground: oklch(0.984 0.003 247.858);
   --sidebar-primary: oklch(0.488 0.243 264.376);

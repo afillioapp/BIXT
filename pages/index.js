@@ -147,11 +147,11 @@ export default function Home({ user }) {
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
       {/* Compact navy header, same scale as Settings/Stats (owner request):
           the month total IS the headline; greeting and company are gone. */}
-      <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-white relative z-10 shadow-xl shadow-brand-navy/25">
+      <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-ink-foreground relative z-10 shadow-xl shadow-brand-navy/25">
         <div className="mx-auto max-w-md px-5">
           <header className="flex items-start justify-between">
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-white/60 mb-1">
+              <p className="text-[10px] uppercase tracking-widest text-ink-foreground/60 mb-1">
                 {totalLabel}
               </p>
               <h1
@@ -165,7 +165,7 @@ export default function Home({ user }) {
                   <span className="text-[10px] font-medium bg-brand-teal/20 text-brand-teal px-2 py-0.5 rounded">
                     {pctChange !== null ? `${pctChange > 0 ? "+" : ""}${pctChange}%` : "—"}
                   </span>
-                  <span className="text-[10px] text-white/60">vs last month</span>
+                  <span className="text-[10px] text-ink-foreground/60">vs last month</span>
                 </div>
               )}
             </div>
@@ -180,7 +180,7 @@ export default function Home({ user }) {
                   className="size-10 rounded-full object-cover"
                 />
               ) : (
-                <div className="size-10 rounded-full bg-white/15 text-white grid place-items-center text-sm font-semibold">
+                <div className="size-10 rounded-full bg-ink-foreground/15 text-ink-foreground grid place-items-center text-sm font-semibold">
                   {initialsFor(user?.displayName, profile.companyName)}
                 </div>
               )}
@@ -206,9 +206,9 @@ export default function Home({ user }) {
                   className={`px-4 py-2 rounded-full text-xs font-medium shrink-0 ${
                     active
                       ? c === "All"
-                        ? "bg-brand-navy text-white"
+                        ? "bg-brand-navy text-ink-foreground"
                         : "text-brand-navy font-semibold"
-                      : "bg-white ring-1 ring-black/5 text-text-secondary"
+                      : "bg-card shadow-card ring-1 ring-hairline text-text-secondary"
                   }`}
                   style={active && c !== "All" ? { background: accentForCategory(c) } : undefined}
                 >

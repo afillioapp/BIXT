@@ -93,10 +93,43 @@ const REQUIRED_UTILITIES = [
   "text-text-secondary",
   "text-destructive",
   "bg-destructive",
+  // Introduced by WP1. Each one replaced a hardcoded literal, so if any of
+  // these stops emitting CSS the surface it paints goes transparent.
+  "bg-card",
+  "ring-hairline",
+  "divide-hairline",
+  "border-hairline",
+  "ring-input-border",
+  "bg-track",
+  "bg-track-strong",
+  "text-chrome",
+  "bg-chrome-surface",
+  "bg-chrome-surface-strong",
+  "hover:bg-hover",
+  "bg-scrim",
+  "text-ink-foreground",
+  "bg-ink-foreground",
+  "bg-ink-foreground/15",
+  "ring-ink-foreground/20",
+  "text-ink-foreground/60",
+  "text-on-ink-destructive",
+  "text-brand-teal-foreground",
+  "text-action-foreground",
+  "fill-on-chart-label",
+  "shadow-card",
 ];
 
-// Tailwind escapes `/` as `\/` in the emitted selector.
-const selectorFor = (u) => "." + u.replace(/\//g, "\\/");
+// Category tokens are consumed as `var(--cat-N)` from JS (CategoryIcon's
+// accent map, the donut palettes), not as Tailwind utilities — so the
+// utility gate above cannot see them. Check the custom properties directly.
+const REQUIRED_CUSTOM_PROPS = Array.from(
+  { length: 12 },
+  (_, i) => `--cat-${i + 1}`
+).concat(["--chart-track"]);
+
+// Tailwind escapes `/` and the variant `:` in the emitted selector, so
+// `hover:bg-hover` lands as `.hover\:bg-hover:hover`.
+const selectorFor = (u) => "." + u.replace(/[/:]/g, (c) => "\\" + c);
 
 console.log("utility-exists");
 try {
@@ -117,6 +150,20 @@ try {
     ok(
       "utility-exists",
       `all ${REQUIRED_UTILITIES.length} load-bearing utilities present`
+    );
+  }
+
+  // var(--cat-N) is read from JS, so it never appears as a utility.
+  const missingProps = REQUIRED_CUSTOM_PROPS.filter(
+    (p) => !compiled.includes(`${p}:`)
+  );
+  if (missingProps.length) {
+    for (const p of missingProps)
+      fail("utility-exists", `${p} is not emitted (read via var() from JS)`);
+  } else {
+    ok(
+      "utility-exists",
+      `all ${REQUIRED_CUSTOM_PROPS.length} JS-consumed custom properties emitted`
     );
   }
 } catch (e) {

@@ -20,7 +20,7 @@ export default function Logo({ size = 32, animated = false, onDark = false, clas
       <span
         className={cn(
           "font-bold tracking-tight leading-none",
-          onDark ? "text-white" : "text-brand-navy",
+          onDark ? "text-ink-foreground" : "text-brand-navy",
         )}
         style={{ fontSize: size }}
       >

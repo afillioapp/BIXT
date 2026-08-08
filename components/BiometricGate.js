@@ -80,10 +80,10 @@ export default function BiometricGate({ user, children }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[100] bg-brand-navy text-white flex flex-col px-8 pt-20 pb-10">
+    <div className="fixed inset-0 z-[100] bg-brand-navy text-ink-foreground flex flex-col px-8 pt-20 pb-10">
       <div className="flex flex-col items-center gap-4">
         <Logo size={40} onDark />
-        <p className="text-sm text-white/60">Welcome back</p>
+        <p className="text-sm text-ink-foreground/60">Welcome back</p>
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center gap-8">
@@ -102,15 +102,15 @@ export default function BiometricGate({ user, children }) {
         <div className="text-center">
           <p className="text-lg font-semibold">{verifying ? "Checking…" : "Tap to unlock BX"}</p>
           {error ? (
-            <p className="mt-2 text-sm text-red-300">Couldn't verify — try again.</p>
+            <p className="mt-2 text-sm text-on-ink-destructive">Couldn't verify — try again.</p>
           ) : (
-            <p className="mt-2 text-sm text-white/50">Use your face or fingerprint to unlock.</p>
+            <p className="mt-2 text-sm text-ink-foreground/50">Use your face or fingerprint to unlock.</p>
           )}
         </div>
       </div>
 
       <div className="text-center">
-        <button type="button" className="text-sm text-white/70 underline underline-offset-4" onClick={handleSignOut}>
+        <button type="button" className="text-sm text-ink-foreground/70 underline underline-offset-4" onClick={handleSignOut}>
           Sign out
         </button>
       </div>

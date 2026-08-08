@@ -112,23 +112,23 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-dvh bg-brand-navy text-white flex flex-col px-8 pt-20 pb-10">
+    <div className="min-h-dvh bg-brand-navy text-ink-foreground flex flex-col px-8 pt-20 pb-10">
       {step === "main" && (
         <>
           <div className="flex-1 flex flex-col items-center justify-center">
-            <div className="rounded-[36px] bg-gradient-to-br from-brand-teal/60 via-brand-teal/30 to-brand-navy p-10 shadow-2xl ring-1 ring-white/10">
+            <div className="rounded-[36px] bg-gradient-to-br from-brand-teal/60 via-brand-teal/30 to-brand-navy p-10 shadow-2xl ring-1 ring-ink-foreground/10">
               <Logo size={64} onDark />
             </div>
             <h1 className="mt-12 text-3xl font-semibold text-center leading-tight max-w-xs">
               Track every expense, anywhere.
             </h1>
-            <p className="mt-3 text-sm text-white/60 text-center max-w-xs">
+            <p className="mt-3 text-sm text-ink-foreground/60 text-center max-w-xs">
               The business expense tracker built for teams on the move.
             </p>
           </div>
 
           {error && (
-            <div className="mb-4 rounded-xl bg-white/5 text-red-300 text-sm px-4 py-3 text-center">{error}</div>
+            <div className="mb-4 rounded-xl bg-ink-foreground/5 text-on-ink-destructive text-sm px-4 py-3 text-center">{error}</div>
           )}
 
           <div className="space-y-5">
@@ -148,12 +148,12 @@ export default function Login() {
                 setStep("phone");
               }}
               disabled={!!loading}
-              className="w-full text-sm text-white/70 underline underline-offset-4"
+              className="w-full text-sm text-ink-foreground/70 underline underline-offset-4"
             >
               Continue with Phone
             </button>
 
-            <p className="text-center text-xs text-white/40 leading-relaxed">
+            <p className="text-center text-xs text-ink-foreground/40 leading-relaxed">
               By using BX you agree to our <a href="#" className="underline">Terms</a> and{" "}
               <a href="#" className="underline">Privacy Policy</a>
             </p>
@@ -170,21 +170,21 @@ export default function Login() {
               setStep("main");
             }}
             aria-label="Back"
-            className="self-start mb-8 text-white/70"
+            className="self-start mb-8 text-ink-foreground/70"
           >
             <ChevronLeft className="size-6" />
           </button>
           <h1 className="text-2xl font-semibold mb-2">What's your number?</h1>
-          <p className="text-sm text-white/50 mb-7">We'll text you a 6-digit code.</p>
+          <p className="text-sm text-ink-foreground/50 mb-7">We'll text you a 6-digit code.</p>
           <input
-            className="w-full h-14 rounded-2xl bg-white/5 ring-1 ring-white/10 px-4 text-base text-white placeholder:text-white/40 mb-4 focus:outline-none focus:ring-brand-teal/60"
+            className="w-full h-14 rounded-2xl bg-ink-foreground/5 ring-1 ring-ink-foreground/10 px-4 text-base text-ink-foreground placeholder:text-ink-foreground/40 mb-4 focus:outline-none focus:ring-brand-teal/60"
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="(555) 123-4567"
             autoFocus
           />
-          {error && <div className="rounded-xl bg-white/5 text-red-300 text-sm px-4 py-3 mb-4">{error}</div>}
+          {error && <div className="rounded-xl bg-ink-foreground/5 text-on-ink-destructive text-sm px-4 py-3 mb-4">{error}</div>}
           <div className="flex-1" />
           <button
             type="button"
@@ -207,21 +207,21 @@ export default function Login() {
               setStep("phone");
             }}
             aria-label="Back"
-            className="self-start mb-8 text-white/70"
+            className="self-start mb-8 text-ink-foreground/70"
           >
             <ChevronLeft className="size-6" />
           </button>
           <h1 className="text-2xl font-semibold mb-2">Enter the code</h1>
-          <p className="text-sm text-white/50 mb-7">Sent to {phone}</p>
+          <p className="text-sm text-ink-foreground/50 mb-7">Sent to {phone}</p>
           <input
-            className="w-full h-14 rounded-2xl bg-white/5 ring-1 ring-white/10 px-4 text-center text-2xl tracking-[0.3em] text-white placeholder:text-white/40 mb-4 focus:outline-none focus:ring-brand-teal/60"
+            className="w-full h-14 rounded-2xl bg-ink-foreground/5 ring-1 ring-ink-foreground/10 px-4 text-center text-2xl tracking-[0.3em] text-ink-foreground placeholder:text-ink-foreground/40 mb-4 focus:outline-none focus:ring-brand-teal/60"
             type="number"
             value={otp}
             onChange={(e) => setOtp(e.target.value.slice(0, 6))}
             placeholder="000000"
             autoFocus
           />
-          {error && <div className="rounded-xl bg-white/5 text-red-300 text-sm px-4 py-3 mb-4">{error}</div>}
+          {error && <div className="rounded-xl bg-ink-foreground/5 text-on-ink-destructive text-sm px-4 py-3 mb-4">{error}</div>}
           <div className="flex-1" />
           <button
             type="button"
@@ -237,7 +237,7 @@ export default function Login() {
               clearError();
               setStep("phone");
             }}
-            className="mt-4 text-sm text-white/60 underline underline-offset-4 mx-auto"
+            className="mt-4 text-sm text-ink-foreground/60 underline underline-offset-4 mx-auto"
           >
             Didn't get a code? Resend
           </button>

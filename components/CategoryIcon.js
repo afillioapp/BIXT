@@ -48,31 +48,34 @@ export function iconForCategory(category) {
 
 // One signature color per category (owner request): shown on the hero
 // total when that category is filtered, and on the active filter pill.
-// Values are the theme's chart tokens (styles/tailwind.css --chart-1..5,
-// owner-supplied light AND dark variants), assigned to the official
-// 12-category list in order and cycled — so pills, hero, donut, and top
-// lists all draw from the same 5-color system in both themes. Same alias
-// rule as the icons.
+// Values are the theme's category tokens (styles/tailwind.css --cat-1..12),
+// one per official category in OFFICIAL_CATEGORIES order, each with a light
+// AND a dark value. Same alias rule as the icons — a legacy name resolves to
+// its successor's color, so old receipts keep their identity.
+//
+// These tokens still hold the pre-redesign five cycled values, which is why
+// several categories below share a color; WP2 re-values --cat-1..12 to twelve
+// distinct hues without touching this map.
 const CATEGORY_ACCENT_MAP = {
-  "Dining & Meals": "var(--chart-1)",
-  "Coffee & Drinks": "var(--chart-2)",
-  Travel: "var(--chart-3)",
-  "Ground Transport": "var(--chart-4)",
-  Fuel: "var(--chart-5)",
-  Accommodation: "var(--chart-1)",
-  "Office & Supplies": "var(--chart-2)",
-  "Software & Tech": "var(--chart-3)",
-  Marketing: "var(--chart-4)",
-  "Professional Services": "var(--chart-5)",
-  "Meetings & Events": "var(--chart-1)",
-  Other: "var(--chart-2)",
+  "Dining & Meals": "var(--cat-1)",
+  "Coffee & Drinks": "var(--cat-2)",
+  Travel: "var(--cat-3)",
+  "Ground Transport": "var(--cat-4)",
+  Fuel: "var(--cat-5)",
+  Accommodation: "var(--cat-6)",
+  "Office & Supplies": "var(--cat-7)",
+  "Software & Tech": "var(--cat-8)",
+  Marketing: "var(--cat-9)",
+  "Professional Services": "var(--cat-10)",
+  "Meetings & Events": "var(--cat-11)",
+  Other: "var(--cat-12)",
   // Legacy aliases (pre-v1 rows) -> successor category's color
-  "Meals & Entertainment": "var(--chart-1)",
-  "Office Supplies": "var(--chart-2)",
-  "Software & Subscriptions": "var(--chart-3)",
-  "Marketing & Advertising": "var(--chart-4)",
-  Equipment: "var(--chart-2)",
-  "Fuel & Vehicle": "var(--chart-5)",
+  "Meals & Entertainment": "var(--cat-1)",
+  "Office Supplies": "var(--cat-7)",
+  "Software & Subscriptions": "var(--cat-8)",
+  "Marketing & Advertising": "var(--cat-9)",
+  Equipment: "var(--cat-7)",
+  "Fuel & Vehicle": "var(--cat-5)",
 };
 
 export function accentForCategory(category) {

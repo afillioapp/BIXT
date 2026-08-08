@@ -8,9 +8,9 @@ import { Cloud } from "lucide-react";
 export default function DriveFallback({ needsConnect, loadError, onConnect, onRetry }) {
   if (needsConnect) {
     return (
-      <div className="bg-white ring-1 ring-black/5 rounded-2xl p-6 flex flex-col items-center gap-4 text-center">
+      <div className="bg-card shadow-card ring-1 ring-hairline rounded-2xl p-6 flex flex-col items-center gap-4 text-center">
         <div className="size-14 rounded-2xl bg-brand-navy grid place-items-center" aria-hidden="true">
-          <Cloud className="size-6 text-white" />
+          <Cloud className="size-6 text-ink-foreground" />
         </div>
         <p className="text-base font-semibold">Connect your Google Drive</p>
         <p className="text-sm text-text-secondary leading-relaxed max-w-[270px]">
@@ -20,7 +20,7 @@ export default function DriveFallback({ needsConnect, loadError, onConnect, onRe
         <button
           type="button"
           onClick={onConnect}
-          className="w-full rounded-full bg-brand-teal py-3.5 font-semibold text-white hover:opacity-90 transition"
+          className="w-full rounded-full bg-brand-teal py-3.5 font-semibold text-brand-teal-foreground hover:opacity-90 transition"
         >
           Connect Google Drive
         </button>
@@ -29,14 +29,14 @@ export default function DriveFallback({ needsConnect, loadError, onConnect, onRe
   }
   if (loadError) {
     return (
-      <div className="bg-white ring-1 ring-black/5 rounded-2xl p-6 flex flex-col items-center gap-4 text-center">
+      <div className="bg-card shadow-card ring-1 ring-hairline rounded-2xl p-6 flex flex-col items-center gap-4 text-center">
         <p className="text-sm text-destructive leading-relaxed">
           We couldn't reach Google Drive. Check your internet connection and try again.
         </p>
         <button
           type="button"
           onClick={onRetry}
-          className="w-full rounded-full ring-1 ring-black/10 bg-white py-3.5 font-semibold text-text-primary hover:bg-zinc-50 transition"
+          className="w-full rounded-full ring-1 ring-input-border bg-card py-3.5 font-semibold text-text-primary hover:bg-hover transition"
         >
           Retry
         </button>

@@ -50,10 +50,15 @@ function formatWeekRange(start, end) {
   return `${startFmt} – ${endFmt}${yearSuffix}`;
 }
 
-// Exact hex palette lovable-design's stats.tsx uses for its 4 mock
-// categories (teal/navy/amber/rose), cycled for however many categories a
-// real month actually has.
-const CATEGORY_PALETTE = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
+// Donut/legend/progress-bar colors, indexed by a category's *rank* in this
+// period's spend — not by which category it is. So the same category can draw
+// in a different color month to month, and disagree with the color
+// accentForCategory() gives it on the hero and the filter pills.
+//
+// Kept as-is here (pointing at the first five category tokens, which is what
+// these five values were before WP1) so this pass stays visually empty. WP6b
+// switches this to a per-category lookup, which is the actual fix.
+const CATEGORY_PALETTE = ["var(--cat-1)", "var(--cat-2)", "var(--cat-3)", "var(--cat-4)", "var(--cat-5)"];
 
 function paletteColor(i) {
   return CATEGORY_PALETTE[i % CATEGORY_PALETTE.length];
@@ -98,13 +103,13 @@ const MONTH_LABELS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"
 
 function Segmented({ range, setRange }) {
   return (
-    <div className="flex p-1 bg-white ring-1 ring-black/5 rounded-lg mb-6">
+    <div className="flex p-1 bg-card shadow-card ring-1 ring-hairline rounded-lg mb-6">
       {["Week", "Month", "Year"].map((t) => (
         <button
           key={t}
           onClick={() => setRange(t)}
           className={`flex-1 py-1.5 text-xs font-medium rounded-md transition ${
-            range === t ? "bg-brand-teal text-white" : "text-text-secondary"
+            range === t ? "bg-brand-teal text-brand-teal-foreground" : "text-text-secondary"
           }`}
         >
           {t}
@@ -119,7 +124,7 @@ function RangeCard({ sub, total, delta, labels, values, boldIndex, onPrev, onNex
   const touchStartX = useRef(null);
   return (
     <section
-      className="bg-white rounded-2xl p-5 mb-6 ring-1 ring-black/5"
+      className="bg-card shadow-card rounded-2xl p-5 mb-6 ring-1 ring-hairline"
       onTouchStart={(e) => {
         touchStartX.current = e.touches[0]?.clientX ?? null;
       }}
@@ -136,7 +141,7 @@ function RangeCard({ sub, total, delta, labels, values, boldIndex, onPrev, onNex
         <div>
           <div className="flex items-center gap-1.5">
             {onPrev && (
-              <button type="button" aria-label="Earlier" onClick={onPrev} className="text-zinc-400 -ml-1">
+              <button type="button" aria-label="Earlier" onClick={onPrev} className="text-chrome -ml-1">
                 <ChevronLeft className="size-4" />
               </button>
             )}
@@ -147,7 +152,7 @@ function RangeCard({ sub, total, delta, labels, values, boldIndex, onPrev, onNex
                 aria-label="Later"
                 onClick={onNext}
                 disabled={nextDisabled}
-                className="text-zinc-400 disabled:opacity-30"
+                className="text-chrome disabled:opacity-30"
               >
                 <ChevronRight className="size-4" />
               </button>
@@ -170,7 +175,7 @@ function RangeCard({ sub, total, delta, labels, values, boldIndex, onPrev, onNex
           // (An intermediate auto-height wrapper here made every bar 0px.)
           <div
             key={i}
-            className={`flex-1 rounded-t-md ${i === boldIndex ? "bg-brand-teal" : "bg-zinc-100"}`}
+            className={`flex-1 rounded-t-md ${i === boldIndex ? "bg-brand-teal" : "bg-track"}`}
             style={{ height: `${max > 0 ? Math.max(6, (v / max) * 100) : 6}%` }}
           />
         ))}
@@ -221,7 +226,7 @@ function Donut({ categories, total }) {
     <div className="relative mx-auto" style={{ width: size, height: size }}>
       <svg width={size} height={size}>
         <g transform={`rotate(-90 ${cx} ${cy})`}>
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F4F4F5" strokeWidth={stroke} />
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--chart-track)" strokeWidth={stroke} />
           {arcs.map((arc) => (
             <circle
               key={arc.category}
@@ -246,7 +251,7 @@ function Donut({ categories, total }) {
                 y={arc.labelY}
                 textAnchor="middle"
                 dominantBaseline="central"
-                className="fill-white text-[13px] font-semibold"
+                className="fill-on-chart-label text-[13px] font-semibold"
               >
                 {Math.round(arc.percent)}%
               </text>
@@ -352,7 +357,7 @@ export default function Stats({ user }) {
   if (profileLoading || !profile) {
     return (
       <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-        <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-white relative z-10 shadow-xl shadow-brand-navy/25">
+        <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-ink-foreground relative z-10 shadow-xl shadow-brand-navy/25">
           <div className="mx-auto max-w-md px-5">
             <h1 className="text-2xl font-semibold tracking-tight">Insight</h1>
           </div>
@@ -383,7 +388,7 @@ export default function Stats({ user }) {
   const periodRows = periodReady ? needed.flatMap((d) => getMonthRows(d)) : null;
 
   const loadingCard = (
-    <section className="bg-white rounded-2xl p-5 mb-6 ring-1 ring-black/5">
+    <section className="bg-card shadow-card rounded-2xl p-5 mb-6 ring-1 ring-hairline">
       <p className="text-xs text-text-secondary">Loading…</p>
     </section>
   );
@@ -461,10 +466,10 @@ export default function Stats({ user }) {
 
   return (
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-      <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-white relative z-10 shadow-xl shadow-brand-navy/25">
+      <div className="bg-brand-navy rounded-b-3xl pt-10 pb-7 text-ink-foreground relative z-10 shadow-xl shadow-brand-navy/25">
         <div className="mx-auto max-w-md px-5">
           <h1 className="text-2xl font-semibold tracking-tight">Insight</h1>
-          <p className="text-xs text-white/60 mt-1">Track how your business spends.</p>
+          <p className="text-xs text-ink-foreground/60 mt-1">Track how your business spends.</p>
         </div>
       </div>
 
@@ -475,7 +480,7 @@ export default function Stats({ user }) {
 
         {rangeCard}
 
-        <section className="bg-white rounded-2xl p-5 mb-6 ring-1 ring-black/5">
+        <section className="bg-card shadow-card rounded-2xl p-5 mb-6 ring-1 ring-hairline">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-sm font-semibold">By Category</h2>
@@ -510,7 +515,7 @@ export default function Stats({ user }) {
             <button
               key={c}
               className={`px-4 py-2 rounded-full text-xs font-medium shrink-0 ${
-                i === 0 ? "bg-brand-navy text-white" : "bg-white ring-1 ring-black/5 text-text-secondary"
+                i === 0 ? "bg-brand-navy text-ink-foreground" : "bg-card shadow-card ring-1 ring-hairline text-text-secondary"
               }`}
             >
               {c}
@@ -521,14 +526,14 @@ export default function Stats({ user }) {
         {monthData.categories.length > 0 && (
           <section>
             <h2 className="text-sm font-semibold mb-3">Top Categories</h2>
-            <div className="space-y-4 bg-white p-5 rounded-2xl ring-1 ring-black/5">
+            <div className="space-y-4 bg-card shadow-card p-5 rounded-2xl ring-1 ring-hairline">
               {monthData.categories.map((c, i) => (
                 <div key={c.category}>
                   <div className="flex justify-between mb-1.5">
                     <span className="text-xs font-medium">{c.category}</span>
                     <span className="text-xs font-semibold">{Math.round(c.percent)}%</span>
                   </div>
-                  <div className="w-full bg-zinc-100 h-1.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-track h-1.5 rounded-full overflow-hidden">
                     <div className="h-full" style={{ width: `${c.percent}%`, background: paletteColor(i) }} />
                   </div>
                 </div>
