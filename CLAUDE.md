@@ -36,11 +36,38 @@ npm run build   # production build (also runs lint + type checking)
 npm run start   # run a production build locally
 ```
 
-No test suite exists (no test files, no test script). `npm run build` will
-fail locally at the "Collecting page data" step with a Firebase
-`auth/invalid-api-key` error unless a real `.env.local` is present — this
-is expected (see Environment variables below), not a regression signal;
-"Compiled successfully" before that point is what to check.
+```
+npm run verify  # the three redesign gates (see below) — no env needed
+```
+
+No test suite exists (no test files, no test script), and there is no
+typechecking (plain JS) and no ESLint config — `next lint` would prompt to
+create one interactively, so it is not usable here.
+
+**`npm run build` works locally with *dummy* env vars.** Earlier revisions of
+this file claimed the build always dies at "Collecting page data" with a
+Firebase `auth/invalid-api-key`. That is only true when the env vars are
+absent *entirely*: `initializeApp` validates the API key's shape, not its
+authenticity, and makes no network call at import time. With a syntactically
+valid `.env.local` (see Environment variables below) the build completes end
+to end and **static-prerenders all 9 routes** — so every page's render path
+actually executes, catching null-derefs in JSX, bad hook order and broken
+imports, and giving a First Load JS budget per route to regression-test
+against. Check for `✓ Generating static pages (9/9)`, not merely
+`✓ Compiled successfully`.
+
+`npm run verify` (`scripts/verify.mjs`) adds three gates for failure modes a
+green build does *not* catch:
+
+- **token-parity** — every custom property in `styles/tailwind.css`'s `:root`
+  has a `.dark` counterpart. A missing one means invisible text in dark mode.
+- **utility-exists** — every token-derived class name in live use appears in
+  the compiled CSS. Tailwind emits *nothing* for an unknown utility and does
+  not error, so renaming a token silently un-styles the app.
+- **frozen-strings** — the 6-column sheet header, the 12 category names (in
+  both files that hold them), the 6 legacy category aliases and the `BX - `
+  Drive folder prefix are byte-identical. These are written into real users'
+  Drive files; changing one orphans or corrupts live accounting records.
 
 ## Architecture
 
@@ -80,14 +107,23 @@ BX - {Company Name}/          <- root, found via a Drive search for
   {Year}/
     {Month name}/
       Supporting Documents/    <- compressed receipt photos
-      Expenses                <- Google Sheet: Date | Place | Total | HST | Receipt Link
+      Expenses                <- Google Sheet, 6 columns:
+                                 Date | Vendor | Category | Total | HST | Receipt Link
 ```
+
+That header (`EXPENSE_SHEET_HEADER`, `lib/google.js`) is **frozen schema** —
+column order and spelling are written into every existing user's sheet. So is
+the `BX - ` folder prefix and the `Expenses` / `Supporting Documents` names.
+Layout "v1" sheets (the older `Date | Place | Total | HST | Receipt Link
+[| Category]`) are migrated in place by `ensureHeaderRow`; `listExpenseRows`
+stamps each row with its `layout` so `updateExpenseRow` writes back in that
+row's own column order.
 
 The user's profile (company name, accountant email) is stored as custom
 Drive **file properties** on the root folder itself (`getProfile`/
 `saveProfile` in `lib/google.js`) — no separate profile file clutters the
 user's Drive. A user with no BX root folder yet is routed to
-`pages/setup.js`; finding an existing one routes straight to the Camera tab.
+`pages/setup.js`; finding an existing one routes straight to Home.
 
 `lib/google.js` also exposes read-only lookup variants (`findFolderId`,
 `findSheetId`, `findMonthExpenseSheetId`) that never create anything — used
@@ -97,7 +133,7 @@ used on the save path.
 
 ### Receipt capture pipeline
 
-`pages/index.js` (the Camera tab, and the app's home route) → user takes a
+`pages/capture.js` (reached from the bottom nav's centre FAB) → user takes a
 photo or imports one from their library → `lib/image.js` compresses it
 client-side via canvas (target ~200KB, JPEG re-encode regardless of source
 format) → POST to `pages/api/extract.js` (server-side, keeps
@@ -109,16 +145,27 @@ UI) → confirm writes through `saveExpenseToDrive`.
 ### Routes
 
 - `pages/login.js` — splash (Sign In / Sign Up copy-only distinction, both
-  reveal the same Google/Apple/Phone buttons)
+  reveal the same Google/Phone buttons; Apple sign-in was deliberately
+  removed)
 - `pages/setup.js` — one-time onboarding (company name + accountant email),
   only reached when authenticated but no BX root folder exists yet
-- `pages/index.js` — Camera tab, also the app's home/default route
+- `pages/index.js` — **Home**, the app's default route: month-total hero,
+  the swipeable `HomeCarousel` chart card, category filter pills, and the
+  recent-expenses list
+- `pages/capture.js` — the camera/import → OCR → review → save screen
+- `pages/stats.js` — **Insight**: week/month/year totals, by-category donut,
+  top categories
 - `pages/history.js` — current + previous month's receipts (two Sheet
   reads; deliberately not a full walk of every month ever, for performance)
 - `pages/settings.js` — company name, connected account, editable
-  accountant email, sign out
-- `components/BottomNav.js` — 3-tab nav, hidden on `/login` and `/setup`
-  (`pages/_app.js` decides this by route, not by re-deriving Drive state)
+  accountant email, appearance (theme), Face ID lock, sign out
+- `components/BottomNav.js` — **5-slot nav** (Home, Insight, raised centre
+  capture FAB, History, Settings), hidden on `/login` and `/setup`
+  (`pages/_app.js` decides this by route, not by re-deriving Drive state).
+  The FAB opens a popover with Scan / Import; both write the chosen file to
+  `lib/pendingCapture.js` and then `router.push("/capture")`. That hand-off
+  is a module-level singleton — replacing the `router.push` with an `<a>` or
+  `<Link>` would full-page-load and silently lose the user's photo.
 
 ### Chrome extension (`chrome-extension/`) — Phase 2, parked
 
@@ -134,10 +181,35 @@ working); don't prioritize changes here unless explicitly asked.
 
 ### Styling
 
-`styles/globals.css` defines the entire color system as CSS custom
-properties at `:root` (`--bg`, `--surface`, `--card`, `--accent`, `--text`,
-`--muted`, `--border`, `--error`) — change the palette in one place, not by
-hunting hex values. No CSS-in-JS, no Tailwind.
+**Tailwind CSS 4 is the styling system.** (An earlier revision of this file
+claimed the opposite — that `styles/globals.css` held the whole color system
+and there was no Tailwind. That was wrong. `globals.css` is ~13 lines holding
+one `.app-shell` rule.)
+
+The design system lives in `styles/tailwind.css`:
+
+```
+:root { --brand-teal: oklch(...) }                        <- the value
+  -> @theme inline { --color-brand-teal: var(--brand-teal) }   <- the name
+  -> Tailwind generates bg-brand-teal, text-brand-teal, ...
+  -> pages/*.js and components/*.js use those class names
+```
+
+Two mechanics that bite:
+
+- **`@source` scanning is limited to `../pages` and `../components`**
+  (`source(none)` disables auto-detection). A Tailwind class name written
+  anywhere else — `lib/`, `styles/`, a config file — generates **no CSS**.
+  Keep shared class-name constants under `components/`.
+- **Dark mode is class-based** (`@custom-variant dark (&:is(.dark *))`) and
+  `lib/theme.js` stamps both `.dark` and `data-theme`. Only `.dark` is wired
+  to Tailwind; `data-theme` is a vestige read by nothing. Keep stamping it,
+  but don't build new styling on it.
+
+Adding a semantic color means all three of: a `:root` value, a `.dark` value,
+and a `@theme inline` registration. Miss the `.dark` value and dark mode goes
+unreadable; miss the registration and the utility silently emits nothing.
+`npm run verify` gates both.
 
 ## Environment variables
 

@@ -18,10 +18,51 @@ Rules for all agents and contributors working in this repo.
 
 - One commit per completed fix or feature.
 - Descriptive commit messages (what changed and why, from the user's view).
-- Every commit must leave the repo building: `npm run build` must print
-  `✓ Compiled successfully`. (A later "Failed to collect page data" /
-  Firebase `auth/invalid-api-key` error is expected locally — env keys live
-  only in Vercel — and is not a failure.)
+- Every commit must leave the repo building.
+
+### Verifying a commit locally
+
+The build **does** run to completion locally, with *dummy* env vars. This
+rule previously said a local build always dies at "Collecting page data" with
+a Firebase `auth/invalid-api-key` and that `✓ Compiled successfully` was the
+most you could check. That is only true when the env vars are absent
+entirely — Firebase validates the API key's *shape*, not its authenticity,
+and makes no network call at import time.
+
+Create a gitignored `.env.local` with syntactically valid dummy values:
+
+```
+ANTHROPIC_API_KEY=sk-ant-dummy
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=000.apps.googleusercontent.com
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyDUMMYDUMMYDUMMYDUMMYDUMMYDUMMY00
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=dummy.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=dummy
+NEXT_PUBLIC_FIREBASE_APP_ID=1:000000000000:web:dummy
+```
+
+Then `npm run build` static-prerenders **all 9 routes**, so every page's
+render path executes — catching null-derefs in JSX, bad hook order and broken
+imports — and prints a First Load JS budget per route to compare against.
+Check for `✓ Generating static pages (9/9)`, not just `✓ Compiled
+successfully`.
+
+Four tiers of verification, in increasing cost:
+
+1. **Tailwind compiles standalone** (seconds, zero env):
+   `npx @tailwindcss/cli -i styles/tailwind.css -o /tmp/bx.css`
+2. **`npm run verify`** — token-parity, utility-exists and frozen-strings
+   gates (see `CLAUDE.md` → Commands). Catches the silent failures a green
+   build does not.
+3. **`npm run build`** with the dummy `.env.local`, above.
+4. **Vercel preview with real keys** — the only way to verify sign-in
+   (Google *and* phone/OTP), the full capture→Drive round trip, the
+   nav→capture photo hand-off, swipe-to-act on a real touchscreen, all three
+   `DriveFallback` states, `BiometricGate` on a Face ID device, and dark mode
+   on a real phone. **Mandatory before any merge to `main`.**
+
+There is no test suite and no typechecking (plain JS), and `next lint` is not
+usable — no ESLint config exists and it would prompt to create one
+interactively.
 
 ## Resume rule (interrupted work)
 

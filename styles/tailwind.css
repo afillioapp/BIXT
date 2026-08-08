@@ -7,7 +7,6 @@
    (bg-brand-navy, text-brand-teal, bg-background, text-text-primary, …)
    depend on these exact names existing. */
 @import "tailwindcss" source(none);
-@import "tw-animate-css";
 @source "../pages";
 @source "../components";
 
