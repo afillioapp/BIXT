@@ -136,7 +136,7 @@ export default function Login() {
               type="button"
               onClick={signInGoogle}
               disabled={!!loading}
-              className="w-full rounded-full bg-brand-teal py-4 font-semibold text-brand-navy hover:opacity-90 transition disabled:opacity-60"
+              className="w-full rounded-full bg-brand-teal py-4 font-semibold text-brand-teal-foreground hover:opacity-90 transition disabled:opacity-60"
             >
               {loading === "google" ? "Signing in…" : "Continue with Google"}
             </button>
@@ -190,7 +190,7 @@ export default function Login() {
             type="button"
             onClick={sendOTP}
             disabled={phone.length < 7 || loading === "phone"}
-            className="w-full rounded-full bg-brand-teal py-4 font-semibold text-brand-navy hover:opacity-90 transition disabled:opacity-60"
+            className="w-full rounded-full bg-brand-teal py-4 font-semibold text-brand-teal-foreground hover:opacity-90 transition disabled:opacity-60"
           >
             {loading === "phone" ? "Sending…" : "Send code"}
           </button>
@@ -227,7 +227,7 @@ export default function Login() {
             type="button"
             onClick={verifyOTP}
             disabled={otp.length < 6 || loading === "verify"}
-            className="w-full rounded-full bg-brand-teal py-4 font-semibold text-brand-navy hover:opacity-90 transition disabled:opacity-60"
+            className="w-full rounded-full bg-brand-teal py-4 font-semibold text-brand-teal-foreground hover:opacity-90 transition disabled:opacity-60"
           >
             {loading === "verify" ? "Verifying…" : "Verify"}
           </button>

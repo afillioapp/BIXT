@@ -10,9 +10,11 @@
    silently, with a green build. `npm run verify` gates this.
 
    WP1 (redesign-2026-08) completed the token system: every painted surface in
-   the app now resolves through a token here, and every token has a light AND a
-   dark value. Values are unchanged from before WP1 — this pass was plumbing
-   only. The palette re-value is WP2. */
+   the app resolves through a token here, and every token has a light AND a
+   dark value. WP2 then re-valued the whole set to the new brand — warm paper
+   and ink, with an amber/brass accent — which is why the blocks below are the
+   only place a colour decision lives. Changing the palette again should not
+   require touching a component. */
 @import "tailwindcss" source(none);
 @source "../pages";
 @source "../components";
@@ -136,83 +138,87 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(0.97 0.005 260);
-  --foreground: oklch(0.18 0.02 260);
+  --radius: 0.75rem;
+  --background: oklch(0.98 0.008 85);
+  --foreground: oklch(0.22 0.02 55);
 
-  --brand-navy: oklch(0.22 0.04 264);
-  --brand-teal: oklch(0.62 0.11 190);
-  --brand-teal-soft: oklch(0.62 0.11 190 / 0.12);
-  --brand-teal-foreground: oklch(1 0 0);
-  --brand-teal-text: oklch(0.62 0.11 190);
+  --brand-navy: oklch(0.20 0.03 255);
+  --brand-teal: oklch(0.64 0.145 68);
+  --brand-teal-soft: oklch(0.64 0.145 68 / 0.14);
+  --brand-teal-foreground: oklch(0.18 0.02 60);
+  --brand-teal-text: oklch(0.46 0.15 55);
 
-  --surface: oklch(0.99 0.002 260);
-  --text-primary: oklch(0.2 0.02 260);
-  --text-secondary: oklch(0.5 0.015 260);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.02 260);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.02 260);
+  --surface: oklch(0.995 0.003 85);
+  --text-primary: oklch(0.22 0.02 55);
+  --text-secondary: oklch(0.48 0.02 60);
+  --card: oklch(0.995 0.003 85);
+  --card-foreground: oklch(0.22 0.02 55);
+  --popover: oklch(0.995 0.003 85);
+  --popover-foreground: oklch(0.22 0.02 55);
 
-  --ink-foreground: oklch(1 0 0);
-  --on-ink-destructive: oklch(80.8% 0.114 19.571);
-  --action-foreground: oklch(1 0 0);
+  --ink-foreground: oklch(0.98 0.008 85);
+  --on-ink-destructive: oklch(0.78 0.13 25);
+  --action-foreground: oklch(0.98 0.008 85);
 
-  --hairline: oklch(0 0 0 / 0.05);
-  --input-border: oklch(0 0 0 / 0.1);
+  --hairline: oklch(0.22 0.02 55 / 0.08);
+  --input-border: oklch(0.22 0.02 55 / 0.10);
 
-  --track: oklch(96.7% 0.001 286.375);
-  --track-strong: oklch(92% 0.004 286.32);
-  --chrome: oklch(70.5% 0.015 286.067);
-  --chrome-surface: oklch(55.2% 0.016 285.938);
-  --chrome-surface-strong: oklch(44.2% 0.017 285.786);
-  --hover: oklch(98.5% 0 0);
-  --scrim: oklch(0 0 0 / 0.4);
+  --track: oklch(0.95 0.004 85);
+  --track-strong: oklch(0.90 0.008 85);
+  --chrome: oklch(0.60 0.02 60);
+  --chrome-surface: oklch(0.52 0.015 60);
+  --chrome-surface-strong: oklch(0.42 0.015 60);
+  --hover: oklch(0.96 0.006 85);
+  --scrim: oklch(0.22 0.02 55 / 0.45);
 
-  --chart-track: oklch(96.7% 0.001 286.375);
-  --on-chart-label: oklch(1 0 0);
+  --chart-track: oklch(0.95 0.004 85);
+  --on-chart-label: oklch(0.98 0.008 85);
 
-  /* Pre-WP2 values: the five --chart-* colors this app cycled across twelve
-     categories, written out per category so the mapping is explicit and the
-     rendering is byte-identical to before. WP2 replaces these with twelve
-     distinct, CVD-validated hues (brand doc §5.2) — at which point a category
-     stops changing color when it moves up or down the spend ranking. */
-  --cat-1: #d96a2a; /* Dining & Meals */
-  --cat-2: #3e9a9e; /* Coffee & Drinks */
-  --cat-3: #3a5a87; /* Travel */
-  --cat-4: #e6b742; /* Ground Transport */
-  --cat-5: #d69b3a; /* Fuel */
-  --cat-6: #d96a2a; /* Accommodation */
-  --cat-7: #3e9a9e; /* Office & Supplies */
-  --cat-8: #3a5a87; /* Software & Tech */
-  --cat-9: #e6b742; /* Marketing */
-  --cat-10: #d69b3a; /* Professional Services */
-  --cat-11: #d96a2a; /* Meetings & Events */
-  --cat-12: #3e9a9e; /* Other */
+  /* Twelve category colours, in OFFICIAL_CATEGORIES order. Validated
+     all-pairs (not just adjacent) for lightness band, chroma floor, CVD
+     separation and contrast vs. surface — all-pairs because both Home and
+     Insight sort categories by spend, so any two of the twelve can end up
+     side by side in a legend on any given month. A category keeps its hue
+     between light and dark; only the lighting changes. */
+  --cat-1: oklch(0.460 0.184 24.2);   /* Dining & Meals        #a7051d */
+  --cat-2: oklch(0.538 0.180 85.2);   /* Coffee & Drinks       #9c6000 */
+  --cat-3: oklch(0.576 0.210 260.7);  /* Travel                #2370f2 */
+  --cat-4: oklch(0.440 0.130 250.3);  /* Ground Transport      #005496 */
+  --cat-5: oklch(0.629 0.180 147.8);  /* Fuel                  #0ea442 */
+  --cat-6: oklch(0.460 0.204 337.9);  /* Accommodation         #98007e */
+  --cat-7: oklch(0.629 0.135 202.4);  /* Office & Supplies     #009fac */
+  --cat-8: oklch(0.493 0.210 295.9);  /* Software & Tech       #7036c8 */
+  --cat-9: oklch(0.680 0.210 1.2);    /* Marketing             #f95090 */
+  --cat-10: oklch(0.460 0.199 179.5); /* Professional Services #00775b */
+  --cat-11: oklch(0.666 0.149 295.7); /* Meetings & Events     #9d7fe4 */
+  --cat-12: oklch(0.669 0.201 53.1);  /* Other                 #ee6600 */
 
-  --card-shadow: 0 0 #0000;
+  /* Paper, not glass: a card is a sheet resting flat on a desk, not a
+     floating tile. The ink hero keeps its own stronger shadow — it is the
+     one surface allowed to feel lifted. */
+  --card-shadow: 0 1px 2px oklch(0.22 0.02 55 / 0.04), 0 1px 1px oklch(0.22 0.02 55 / 0.03);
 
-  --primary: oklch(0.22 0.04 264);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.96 0.005 260);
-  --secondary-foreground: oklch(0.22 0.04 264);
-  --muted: oklch(0.96 0.005 260);
-  --muted-foreground: oklch(0.5 0.015 260);
-  --accent: oklch(0.62 0.11 190);
-  --accent-foreground: oklch(0.99 0.002 260);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --primary: oklch(0.20 0.03 255);
+  --primary-foreground: oklch(0.98 0.008 85);
+  --secondary: oklch(0.95 0.006 85);
+  --secondary-foreground: oklch(0.20 0.03 255);
+  --muted: oklch(0.95 0.006 85);
+  --muted-foreground: oklch(0.48 0.02 60);
+  --accent: oklch(0.64 0.145 68);
+  --accent-foreground: oklch(0.18 0.02 60);
+  --destructive: oklch(0.55 0.20 25);
+  --destructive-foreground: oklch(0.98 0.008 85);
+  --border: oklch(0.22 0.02 55 / 0.08);
+  --input: oklch(0.22 0.02 55 / 0.10);
+  --ring: oklch(0.64 0.145 68 / 0.55);
+  --sidebar: oklch(0.995 0.003 85);
+  --sidebar-foreground: oklch(0.22 0.02 55);
+  --sidebar-primary: oklch(0.20 0.03 255);
+  --sidebar-primary-foreground: oklch(0.98 0.008 85);
+  --sidebar-accent: oklch(0.95 0.006 85);
+  --sidebar-accent-foreground: oklch(0.20 0.03 255);
+  --sidebar-border: oklch(0.22 0.02 55 / 0.08);
+  --sidebar-ring: oklch(0.64 0.145 68 / 0.55);
 }
 
 /* Dark mode. Before WP1 six tokens had no value here at all, so they inherited
@@ -221,79 +227,79 @@
    These are *provisional* values in the current hue family, chosen to make
    dark mode readable; WP2 replaces the whole set with the brand palette. */
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
+  --background: oklch(0.17 0.015 255);
+  --foreground: oklch(0.95 0.01 85);
 
-  /* Lighter than --background on purpose, so the hero still reads as a raised
-     surface rather than "more black". */
-  --brand-navy: oklch(0.26 0.04 264);
-  --brand-teal: oklch(0.72 0.11 190);
-  --brand-teal-soft: oklch(0.72 0.11 190 / 0.16);
-  --brand-teal-foreground: oklch(1 0 0);
-  --brand-teal-text: oklch(0.72 0.11 190);
+  /* Lighter than --background on purpose, so the hero still reads as a
+     raised surface rather than "more black". */
+  --brand-navy: oklch(0.28 0.03 255);
+  --brand-teal: oklch(0.74 0.15 70);
+  --brand-teal-soft: oklch(0.74 0.15 70 / 0.16);
+  --brand-teal-foreground: oklch(0.16 0.02 60);
+  --brand-teal-text: oklch(0.80 0.13 72);
 
-  --surface: oklch(0.208 0.042 265.755);
-  --text-primary: oklch(0.984 0.003 247.858);
-  --text-secondary: oklch(0.704 0.04 256.788);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
+  --surface: oklch(0.24 0.02 255);
+  --text-primary: oklch(0.95 0.01 85);
+  --text-secondary: oklch(0.72 0.02 80);
+  --card: oklch(0.24 0.02 255);
+  --card-foreground: oklch(0.95 0.01 85);
+  --popover: oklch(0.24 0.02 255);
+  --popover-foreground: oklch(0.95 0.01 85);
 
-  --ink-foreground: oklch(1 0 0);
-  --on-ink-destructive: oklch(80.8% 0.114 19.571);
-  --action-foreground: oklch(1 0 0);
+  --ink-foreground: oklch(0.95 0.01 85);
+  --on-ink-destructive: oklch(0.78 0.13 25);
+  --action-foreground: oklch(0.95 0.01 85);
 
-  --hairline: oklch(1 0 0 / 0.1);
+  --hairline: oklch(1 0 0 / 0.10);
   --input-border: oklch(1 0 0 / 0.16);
 
-  --track: oklch(0.279 0.041 260.031);
-  --track-strong: oklch(0.35 0.04 260.031);
-  --chrome: oklch(0.62 0.03 260.031);
-  --chrome-surface: oklch(0.44 0.017 285.938);
-  --chrome-surface-strong: oklch(0.36 0.017 285.786);
-  --hover: oklch(0.24 0.04 264);
-  --scrim: oklch(0 0 0 / 0.6);
+  --track: oklch(0.30 0.015 255);
+  --track-strong: oklch(0.36 0.02 255);
+  --chrome: oklch(0.60 0.02 80);
+  --chrome-surface: oklch(0.45 0.015 255);
+  --chrome-surface-strong: oklch(0.36 0.015 255);
+  --hover: oklch(0.28 0.02 255);
+  --scrim: oklch(0 0 0 / 0.60);
 
-  --chart-track: oklch(0.30 0.03 264);
-  --on-chart-label: oklch(1 0 0);
+  --chart-track: oklch(0.30 0.015 255);
+  --on-chart-label: oklch(0.98 0.008 85);
 
-  --cat-1: #6a62e6; /* Dining & Meals */
-  --cat-2: #4fc79a; /* Coffee & Drinks */
-  --cat-3: #d69b3a; /* Travel */
-  --cat-4: #a15ae0; /* Ground Transport */
-  --cat-5: #e45a76; /* Fuel */
-  --cat-6: #6a62e6; /* Accommodation */
-  --cat-7: #4fc79a; /* Office & Supplies */
-  --cat-8: #d69b3a; /* Software & Tech */
-  --cat-9: #a15ae0; /* Marketing */
-  --cat-10: #e45a76; /* Professional Services */
-  --cat-11: #6a62e6; /* Meetings & Events */
-  --cat-12: #4fc79a; /* Other */
+  --cat-1: oklch(0.670 0.153 25.7);   /* Dining & Meals        #e46a62 */
+  --cat-2: oklch(0.599 0.210 100.2);  /* Coffee & Drinks       #9e7d00 */
+  --cat-3: oklch(0.521 0.240 265.5);  /* Travel                #2552f0 */
+  --cat-4: oklch(0.670 0.147 237.8);  /* Ground Transport      #05a0e4 */
+  --cat-5: oklch(0.480 0.130 152.1);  /* Fuel                  #007136 */
+  --cat-6: oklch(0.670 0.206 338.5);  /* Accommodation         #e157bf */
+  --cat-7: oklch(0.480 0.150 217.4);  /* Office & Supplies     #006e94 */
+  --cat-8: oklch(0.516 0.213 310.3);  /* Software & Tech       #8d32c0 */
+  --cat-9: oklch(0.510 0.235 352.7);  /* Marketing             #be0072 */
+  --cat-10: oklch(0.638 0.130 172.3); /* Professional Services #00a483 */
+  --cat-11: oklch(0.662 0.236 283.8); /* Meetings & Events     #8872ff */
+  --cat-12: oklch(0.518 0.170 38.1);  /* Other                 #b43700 */
 
-  --card-shadow: 0 0 #0000;
+  --card-shadow: 0 1px 2px oklch(0 0 0 / 0.30);
 
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --primary: oklch(0.95 0.01 85);
+  --primary-foreground: oklch(0.20 0.03 255);
+  --secondary: oklch(0.28 0.02 255);
+  --secondary-foreground: oklch(0.95 0.01 85);
+  --muted: oklch(0.28 0.02 255);
+  --muted-foreground: oklch(0.72 0.02 80);
+  --accent: oklch(0.74 0.15 70);
+  --accent-foreground: oklch(0.16 0.02 60);
+  --destructive: oklch(0.70 0.19 25);
+  --destructive-foreground: oklch(0.15 0.02 60);
+  --border: oklch(1 0 0 / 0.10);
+  --input: oklch(1 0 0 / 0.16);
+  --ring: oklch(0.74 0.15 70 / 0.55);
+  --sidebar: oklch(0.24 0.02 255);
+  --sidebar-foreground: oklch(0.95 0.01 85);
+  --sidebar-primary: oklch(0.74 0.15 70);
+  --sidebar-primary-foreground: oklch(0.16 0.02 60);
+  --sidebar-accent: oklch(0.28 0.02 255);
+  --sidebar-accent-foreground: oklch(0.95 0.01 85);
+  --sidebar-border: oklch(1 0 0 / 0.10);
+  --sidebar-ring: oklch(0.74 0.15 70 / 0.55);
 }
 
 @layer base {

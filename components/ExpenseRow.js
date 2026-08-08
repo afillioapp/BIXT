@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { MoreHorizontal, ReceiptText, Pencil, Trash2 } from "lucide-react";
-import CategoryIcon from "./CategoryIcon";
+import CategoryIcon, { accentForCategory } from "./CategoryIcon";
 
 // Swipe-to-act expense row (owner request, modeled on CamScanner's
 // swipe-reveal row actions). One shared component for both Home's Recent
@@ -23,36 +23,22 @@ const MAX_OPEN = ACTION_WIDTH * 3; // 192px — three equal action slots
 const OPEN_THRESHOLD = MAX_OPEN / 2;
 const DRAG_SLOP = 4; // px of movement before a touch/click counts as a drag, not a tap
 
-// Same stable per-category tint approach both pages used inline before this
-// component existed (design's bg-*-50/text-*-600 pairs, hashed per category
-// so a category always renders the same swatch).
+// A category's swatch is a soft wash of that category's own colour behind a
+// full-opacity icon in the same colour. Before WP2 this was a separate
+// 8-entry array of Tailwind pastels, hash-assigned per category — a rival
+// colour system to accentForCategory(), so a category's row swatch and its
+// donut slice openly disagreed. Both now come from the one --cat-* ramp, so a
+// category looks the same everywhere it appears, in both themes.
 //
-// DELIBERATELY LEFT HARDCODED BY WP1 — the one painted surface in the app that
-// still is. Every other hardcoded color became a token in WP1 without changing
-// a pixel, but these eight pairs cannot: they are a *second*, rival color
-// system. A category's swatch here is a hash over 8 Tailwind palettes, while
-// the same category's donut slice and filter pill come from
-// accentForCategory(), so the two disagree today. Fixing that is a change of
-// identity, not of plumbing, and it cannot be done invisibly — so it belongs
-// with the palette flip in WP2, where the tint becomes a 14% wash of the
-// category's own --cat-* color behind a full-opacity icon in that same color,
-// and this array and its hash are deleted.
-const TINTS = [
-  "bg-brand-teal-soft text-brand-teal",
-  "bg-orange-50 text-orange-600",
-  "bg-indigo-50 text-indigo-600",
-  "bg-zinc-100 text-zinc-700",
-  "bg-amber-50 text-amber-600",
-  "bg-rose-50 text-rose-500",
-  "bg-sky-50 text-sky-600",
-  "bg-emerald-50 text-emerald-600",
-];
-
-function tintForCategory(category) {
-  const key = category || "Other";
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
-  return TINTS[hash % TINTS.length];
+// Inline styles rather than classes on purpose: the colour arrives as a
+// var(--cat-N) string from JS, and Tailwind only generates utilities it can
+// see as literal class names while scanning pages/ and components/.
+function tintStyleFor(category) {
+  const accent = accentForCategory(category);
+  return {
+    backgroundColor: `color-mix(in oklab, ${accent} 14%, transparent)`,
+    color: accent,
+  };
 }
 
 export function rowIdFor(row) {
@@ -155,7 +141,7 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
     }
   }
 
-  const tint = tintForCategory(row.category);
+  const tintStyle = tintStyleFor(row.category);
 
   return (
     <li className="relative rounded-xl overflow-hidden ring-1 ring-hairline">
@@ -197,7 +183,7 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
               e.stopPropagation();
               setConfirmingDelete(true);
             }}
-            className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive text-action-foreground text-[10px] font-medium"
+            className="flex-1 flex flex-col items-center justify-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-medium"
           >
             <Trash2 className="size-4" />
             Delete
@@ -208,7 +194,7 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
               type="button"
               onClick={handleConfirmDelete}
               disabled={deleting}
-              className="flex-1 bg-destructive text-action-foreground text-[10px] font-semibold disabled:opacity-60"
+              className="flex-1 bg-destructive text-destructive-foreground text-[10px] font-semibold disabled:opacity-60"
             >
               {deleting ? "…" : "Delete?"}
             </button>
@@ -241,7 +227,7 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
         onMouseDown={(e) => beginDrag(e.clientX)}
       >
         <div className="flex items-center gap-3 min-w-0">
-          <div className={`size-10 rounded-lg grid place-items-center shrink-0 ${tint}`}>
+          <div className="size-10 rounded-lg grid place-items-center shrink-0" style={tintStyle}>
             <CategoryIcon category={row.category} className="size-4" />
           </div>
           <div className="min-w-0">
