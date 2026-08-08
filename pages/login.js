@@ -10,7 +10,7 @@ import {
 } from "firebase/auth";
 import { ChevronLeft } from "lucide-react";
 import { auth } from "../lib/firebase";
-import Logo from "../components/Logo";
+import Mark from "../components/Mark";
 
 // Ported 1:1 from lovable-design/src/routes/signup.tsx's dark hero (this is
 // intentionally OUR main sign-in screen, not their /login — see RESUME.md /
@@ -116,9 +116,10 @@ export default function Login() {
       {step === "main" && (
         <>
           <div className="flex-1 flex flex-col items-center justify-center">
-            <div className="rounded-[36px] bg-gradient-to-br from-brand-teal/60 via-brand-teal/30 to-brand-navy p-10 shadow-2xl ring-1 ring-ink-foreground/10">
-              <Logo size={64} onDark />
-            </div>
+            {/* Flat, not glass. The gradient here read as a glossy consumer
+                app; this brand is closer to print — flat ink plus one accent.
+                Paper tone because this screen is ink all the way down. */}
+            <Mark size={88} tone="paper" />
             <h1 className="mt-12 text-3xl font-semibold text-center leading-tight max-w-xs">
               Track every expense, anywhere.
             </h1>

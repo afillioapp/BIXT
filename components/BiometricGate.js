@@ -92,7 +92,7 @@ export default function BiometricGate({ user, children }) {
           onClick={handleUnlock}
           disabled={verifying}
           aria-label="Unlock with Face ID"
-          className="relative h-44 w-44 rounded-[40px] bg-gradient-to-br from-brand-teal/40 via-brand-teal/10 to-transparent ring-1 ring-brand-teal/40 flex items-center justify-center transition active:scale-95 disabled:opacity-80"
+          className="relative h-44 w-44 rounded-[40px] bg-brand-teal-soft ring-1 ring-brand-teal/40 flex items-center justify-center transition active:scale-95 disabled:opacity-80"
         >
           <span
             className={`absolute inset-2 rounded-[32px] ring-1 ring-brand-teal/30 ${verifying ? "animate-pulse" : ""}`}
