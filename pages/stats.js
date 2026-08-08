@@ -3,7 +3,19 @@ import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-
 import { useDrive } from "../lib/useDrive";
 import { findMonthExpenseSheetId, listExpenseRows } from "../lib/google";
 import { useMonthRows } from "../lib/useMonthRows";
-import { weeklyTotals, categoryTotals, formatCurrency } from "../lib/insights";
+import {
+  weeklyTotals,
+  categoryTotals,
+  formatCurrency,
+  prevMonthDate,
+  mondayOf,
+  addDays,
+  monthKey,
+  formatWeekRange,
+  monthWeekBuckets,
+  parseAmount,
+  MONTH_LABELS,
+} from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
 import PageHero, { PageHeroTitle, PageHeroSub } from "../components/PageHero";
 
@@ -13,43 +25,6 @@ import PageHero, { PageHeroTitle, PageHeroSub } from "../components/PageHero";
 // mock doesn't wire these to anything either — kept decorative, "All"
 // always active), and a "Top Categories" progress-bar list. Every number is
 // real; only the visual chrome is ported verbatim.
-
-function prevMonthDate(d) {
-  return new Date(d.getFullYear(), d.getMonth() - 1, 1);
-}
-
-// Period navigation (owner request): every range card can slide back to
-// earlier periods. Past periods live in past months' Expenses sheets, so a
-// per-month row cache is fetched on demand (same idea the Year tab already
-// used) and views are computed from whichever months the period needs.
-function mondayOf(date) {
-  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-  return d;
-}
-
-function addDays(date, n) {
-  const d = new Date(date);
-  d.setDate(d.getDate() + n);
-  return d;
-}
-
-function monthKey(d) {
-  return `${d.getFullYear()}-${d.getMonth()}`;
-}
-
-// "Jul 13 – 19" within one month; "Jun 29 – Jul 5" across months; adds the
-// year when it isn't the current one.
-function formatWeekRange(start, end) {
-  if (!start || !end) return "This week";
-  const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
-  const startFmt = start.toLocaleString("en-US", { month: "short", day: "numeric" });
-  const endFmt = sameMonth
-    ? String(end.getDate())
-    : end.toLocaleString("en-US", { month: "short", day: "numeric" });
-  const yearSuffix = end.getFullYear() !== new Date().getFullYear() ? `, ${end.getFullYear()}` : "";
-  return `${startFmt} – ${endFmt}${yearSuffix}`;
-}
 
 // Donut/legend/progress-bar colors, indexed by a category's *rank* in this
 // period's spend — not by which category it is. So the same category can draw
@@ -64,43 +39,6 @@ const CATEGORY_PALETTE = ["var(--cat-1)", "var(--cat-2)", "var(--cat-3)", "var(-
 function paletteColor(i) {
   return CATEGORY_PALETTE[i % CATEGORY_PALETTE.length];
 }
-
-function parseAmount(v) {
-  const n = parseFloat(String(v ?? "").replace(/^'/, "").replace(/[$,\s]/g, ""));
-  return Number.isFinite(n) ? n : 0;
-}
-
-function parseRowDate(dateStr) {
-  if (!dateStr) return null;
-  const d = new Date(`${dateStr}T00:00:00`);
-  return isNaN(d.getTime()) ? null : d;
-}
-
-// Weeks-of-month bucketing (W1 = days 1-7, W2 = 8-14, …) for the Month tab,
-// matching the design's "W1..W4" bar-chart style.
-function monthWeeklyBreakdown(rows, now) {
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const weekCount = Math.ceil(daysInMonth / 7);
-  const values = new Array(weekCount).fill(0);
-  let total = 0;
-  for (const r of rows || []) {
-    const d = parseRowDate(r.date);
-    if (!d || d.getFullYear() !== year || d.getMonth() !== month) continue;
-    const amount = parseAmount(r.total);
-    const idx = Math.min(Math.floor((d.getDate() - 1) / 7), weekCount - 1);
-    values[idx] += amount;
-    total += amount;
-  }
-  return {
-    labels: values.map((_, i) => `W${i + 1}`),
-    values,
-    total,
-  };
-}
-
-const MONTH_LABELS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
 function Segmented({ range, setRange }) {
   return (
@@ -421,7 +359,7 @@ export default function Stats({ user }) {
       rangeCard = loadingCard;
     } else {
       const refMonth = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
-      const monthWeekly = monthWeeklyBreakdown(periodRows, refMonth);
+      const monthWeekly = monthWeekBuckets(periodRows, refMonth);
       const prevTotal = categoryTotals(periodRows, prevMonthDate(refMonth)).total;
       const change = prevTotal > 0 ? Math.round(((monthWeekly.total - prevTotal) / prevTotal) * 100) : null;
       const monthLabel =

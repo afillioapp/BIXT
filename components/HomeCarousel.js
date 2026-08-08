@@ -1,6 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { weeklyTotals, categoryTotals, formatCurrency } from "../lib/insights";
+import {
+  weeklyTotals,
+  categoryTotals,
+  formatCurrency,
+  mondayOf,
+  addDays,
+  monthKey,
+  formatWeekRange,
+  monthWeekBuckets,
+  MONTH_LABELS,
+} from "../lib/insights";
 import { accentForCategory } from "./CategoryIcon";
 
 // Home's chart card (owner round 7): lives on a WHITE card below the
@@ -13,62 +23,6 @@ import { accentForCategory } from "./CategoryIcon";
 // Gestures stay deliberately separate: swiping changes which PANEL shows;
 // the ‹ › buttons change that panel's PERIOD; the segmented control changes
 // the bar panel's RANGE (and scrolls back to it).
-
-function prevMonthDate(d) {
-  return new Date(d.getFullYear(), d.getMonth() - 1, 1);
-}
-
-function mondayOf(date) {
-  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-  return d;
-}
-
-function addDays(date, n) {
-  const d = new Date(date);
-  d.setDate(d.getDate() + n);
-  return d;
-}
-
-function monthKey(d) {
-  return `${d.getFullYear()}-${d.getMonth()}`;
-}
-
-// "Jul 13 – 19" within one month; "Jun 29 – Jul 5" across months; adds the
-// year when it isn't the current one. Same formatting stats.js uses.
-function formatWeekRange(start, end) {
-  if (!start || !end) return "This week";
-  const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
-  const startFmt = start.toLocaleString("en-US", { month: "short", day: "numeric" });
-  const endFmt = sameMonth
-    ? String(end.getDate())
-    : end.toLocaleString("en-US", { month: "short", day: "numeric" });
-  const yearSuffix = end.getFullYear() !== new Date().getFullYear() ? `, ${end.getFullYear()}` : "";
-  return `${startFmt} – ${endFmt}${yearSuffix}`;
-}
-
-// Weeks-of-month bucketing (W1 = days 1-7, …) — mirrors stats.js's Month
-// chart so Home and Stats always agree.
-function monthBars(rows, refMonth) {
-  const year = refMonth.getFullYear();
-  const month = refMonth.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const weekCount = Math.ceil(daysInMonth / 7);
-  const values = new Array(weekCount).fill(0);
-  let total = 0;
-  for (const r of rows || []) {
-    if (!r.date) continue;
-    const d = new Date(`${r.date}T00:00:00`);
-    if (isNaN(d.getTime()) || d.getFullYear() !== year || d.getMonth() !== month) continue;
-    const n = parseFloat(String(r.total ?? "").replace(/^'/, "").replace(/[$,\s]/g, ""));
-    const amount = Number.isFinite(n) ? n : 0;
-    values[Math.min(weekCount - 1, Math.floor((d.getDate() - 1) / 7))] += amount;
-    total += amount;
-  }
-  return { values, total, labels: values.map((_, i) => `W${i + 1}`) };
-}
-
-const MONTH_LABELS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
 // Donut/legend/progress-bar colors, indexed by a category's *rank* in this
 // period's spend — not by which category it is. So the same category can draw
@@ -316,7 +270,7 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
     };
   } else if (range === "Month") {
     const rows = rowsFor(refBarMonth);
-    const m = rows ? monthBars(rows, refBarMonth) : null;
+    const m = rows ? monthWeekBuckets(rows, refBarMonth) : null;
     bars = {
       label:
         refBarMonth.getFullYear() === now.getFullYear()
