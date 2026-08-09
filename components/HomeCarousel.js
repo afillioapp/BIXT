@@ -13,30 +13,6 @@ import {
 } from "../lib/insights";
 import { accentForCategory } from "./CategoryIcon";
 
-// Home's chart card (owner round 7): lives on a WHITE card below the
-// compact navy header (pages/index.js), light-themed to match Stats.
-// Three horizontally swipeable panels — range bar chart, by-category donut,
-// top-categories list — with the Week/Month/Year segmented control at the
-// bottom; each panel's period navigation (‹ date ›) sits in its top-right
-// corner. When Home's category filter is active, every panel narrows too.
-//
-// Gestures stay deliberately separate: swiping changes which PANEL shows;
-// the ‹ › buttons change that panel's PERIOD; the segmented control changes
-// the bar panel's RANGE (and scrolls back to it).
-
-// Donut/legend/progress-bar colors, indexed by a category's *rank* in this
-// period's spend — not by which category it is. So the same category can draw
-// in a different color month to month, and disagree with the color
-// accentForCategory() gives it on the hero and the filter pills.
-//
-// Kept as-is here (pointing at the first five category tokens, which is what
-// these five values were before WP1) so this pass stays visually empty. WP6b
-// switches this to a per-category lookup, which is the actual fix.
-const CATEGORY_PALETTE = ["var(--cat-1)", "var(--cat-2)", "var(--cat-3)", "var(--cat-4)", "var(--cat-5)"];
-function paletteColor(i) {
-  return CATEGORY_PALETTE[i % CATEGORY_PALETTE.length];
-}
-
 // Compact ‹ date › cluster for a panel's top-right corner.
 function PeriodNav({ label, onPrev, onNext, nextDisabled }) {
   return (
@@ -112,7 +88,7 @@ function BarsPanel({ nav, ready, total, values, labels, boldIndex, accent }) {
   );
 }
 
-function DarkDonut({ categories, total, colorFor = paletteColor }) {
+function DarkDonut({ categories, total, colorFor }) {
   const size = 108;
   const stroke = 18;
   const r = (size - stroke) / 2;
@@ -132,7 +108,7 @@ function DarkDonut({ categories, total, colorFor = paletteColor }) {
               cy={size / 2}
               r={r}
               fill="none"
-              stroke={colorFor(i)}
+              stroke={colorFor(cat.category)}
               strokeWidth={stroke}
               strokeDasharray={`${len} ${c - len}`}
               strokeDashoffset={-offset}
@@ -154,9 +130,9 @@ function DarkDonut({ categories, total, colorFor = paletteColor }) {
 }
 
 function CategoryPanel({ monthData, nav, accent }) {
-  // With a category filter active, everything shown IS that category —
-  // color it with the category's own accent instead of the ranked palette.
-  const colorFor = (i) => accent || paletteColor(i);
+  // A category's colour is its own, everywhere it appears. With a filter
+  // active everything shown IS that category, so it wears the filter accent.
+  const colorFor = (cat) => accent || accentForCategory(cat);
   return (
     <PanelShell title="By category" nav={nav}>
       {!monthData ? (
@@ -169,7 +145,7 @@ function CategoryPanel({ monthData, nav, accent }) {
           <ul className="flex-1 space-y-2 min-w-0">
             {monthData.categories.slice(0, 4).map((c, i) => (
               <li key={c.category} className="flex items-center gap-2">
-                <span className="size-2 rounded-full shrink-0" style={{ background: colorFor(i) }} />
+                <span className="size-2 rounded-full shrink-0" style={{ background: colorFor(c.category) }} />
                 <span className="flex-1 min-w-0 text-[11px] text-text-primary truncate">{c.category}</span>
                 <span className="text-[11px] font-semibold text-text-secondary shrink-0">{Math.round(c.percent)}%</span>
               </li>
@@ -182,7 +158,7 @@ function CategoryPanel({ monthData, nav, accent }) {
 }
 
 function TopCategoriesPanel({ monthData, nav, accent }) {
-  const colorFor = (i) => accent || paletteColor(i);
+  const colorFor = (cat) => accent || accentForCategory(cat);
   return (
     <PanelShell title="Top categories" nav={nav}>
       {!monthData ? (
@@ -198,7 +174,7 @@ function TopCategoriesPanel({ monthData, nav, accent }) {
                 <span className="text-[11px] font-semibold text-text-secondary">{Math.round(c.percent)}%</span>
               </div>
               <div className="w-full bg-track h-1.5 rounded-full overflow-hidden">
-                <div className="h-full" style={{ width: `${c.percent}%`, background: colorFor(i) }} />
+                <div className="h-full" style={{ width: `${c.percent}%`, background: colorFor(c.category) }} />
               </div>
             </div>
           ))}

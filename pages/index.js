@@ -162,7 +162,7 @@ export default function Home({ user }) {
             </h1>
             {monthData && (
               <div className="flex items-center gap-2 mt-2">
-                <span className="text-xs leading-4 font-mono font-semibold tabular-nums bg-brand-teal/20 text-brand-teal px-2 py-0.5 rounded">
+                <span className="text-xs leading-4 font-mono font-semibold tabular-nums bg-ink-foreground/15 text-ink-foreground px-2 py-0.5 rounded">
                   {pctChange !== null ? `${pctChange > 0 ? "+" : ""}${pctChange}%` : "—"}
                 </span>
                 <span className="text-[10px] text-ink-foreground/60">vs last month</span>
@@ -232,9 +232,9 @@ export default function Home({ user }) {
 
           {rows && rows.length === 0 && (
             <div className="flex flex-col items-center text-center gap-2 py-10">
-              <p className="text-sm font-semibold">No receipts yet</p>
+              <p className="text-sm font-semibold">Nothing filed yet</p>
               <p className="text-xs text-text-secondary max-w-[220px]">
-                Tap the + button below to snap your first one.
+                Tap the + button below and take a photo of your first receipt.
               </p>
             </div>
           )}

@@ -18,27 +18,7 @@ import {
 } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
 import PageHero, { PageHeroTitle, PageHeroSub } from "../components/PageHero";
-
-// Ported 1:1 from lovable-design/src/routes/stats.tsx: Week/Month/Year
-// segmented control driving a bar chart card, a separate always-monthly "By
-// Category" donut + legend, a static category-filter pill row (the source
-// mock doesn't wire these to anything either — kept decorative, "All"
-// always active), and a "Top Categories" progress-bar list. Every number is
-// real; only the visual chrome is ported verbatim.
-
-// Donut/legend/progress-bar colors, indexed by a category's *rank* in this
-// period's spend — not by which category it is. So the same category can draw
-// in a different color month to month, and disagree with the color
-// accentForCategory() gives it on the hero and the filter pills.
-//
-// Kept as-is here (pointing at the first five category tokens, which is what
-// these five values were before WP1) so this pass stays visually empty. WP6b
-// switches this to a per-category lookup, which is the actual fix.
-const CATEGORY_PALETTE = ["var(--cat-1)", "var(--cat-2)", "var(--cat-3)", "var(--cat-4)", "var(--cat-5)"];
-
-function paletteColor(i) {
-  return CATEGORY_PALETTE[i % CATEGORY_PALETTE.length];
-}
+import { accentForCategory } from "../components/CategoryIcon";
 
 function Segmented({ range, setRange }) {
   return (
@@ -154,7 +134,7 @@ function Donut({ categories, total }) {
       ...cat,
       len,
       offset: (startFrac) * c,
-      color: paletteColor(i),
+      color: accentForCategory(c.category),
       labelX: cx + r * Math.cos(midAngle),
       labelY: cy + r * Math.sin(midAngle),
       showLabel: cat.percent >= 8,
@@ -407,7 +387,7 @@ export default function Stats({ user }) {
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
       <PageHero>
         <PageHeroTitle>Insight</PageHeroTitle>
-        <PageHeroSub>Track how your business spends.</PageHeroSub>
+        <PageHeroSub>Where it went, by category.</PageHeroSub>
       </PageHero>
 
       <div className="mx-auto max-w-md px-5 pt-6">
@@ -437,7 +417,7 @@ export default function Stats({ user }) {
                   <span
                     key={c.category}
                     className="px-4 py-1.5 rounded-full text-xs font-medium border"
-                    style={{ borderColor: paletteColor(i), color: paletteColor(i) }}
+                    style={{ borderColor: accentForCategory(c.category), color: accentForCategory(c.category) }}
                   >
                     {c.category}
                   </span>
@@ -446,19 +426,6 @@ export default function Stats({ user }) {
             </div>
           )}
         </section>
-
-        <div className="flex gap-2 overflow-x-auto pb-4 -mx-5 px-5 scrollbar-none">
-          {["All", ...monthData.categories.map((c) => c.category)].slice(0, 6).map((c, i) => (
-            <button
-              key={c}
-              className={`px-4 py-2 rounded-full text-xs font-medium shrink-0 ${
-                i === 0 ? "bg-brand-navy text-ink-foreground" : "bg-card shadow-card ring-1 ring-hairline text-text-secondary"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
-        </div>
 
         {monthData.categories.length > 0 && (
           <section>
@@ -471,7 +438,7 @@ export default function Stats({ user }) {
                     <span className="text-xs font-semibold">{Math.round(c.percent)}%</span>
                   </div>
                   <div className="w-full bg-track h-1.5 rounded-full overflow-hidden">
-                    <div className="h-full" style={{ width: `${c.percent}%`, background: paletteColor(i) }} />
+                    <div className="h-full" style={{ width: `${c.percent}%`, background: accentForCategory(c.category) }} />
                   </div>
                 </div>
               ))}
