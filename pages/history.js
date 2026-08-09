@@ -5,6 +5,7 @@ import DriveFallback from "../components/DriveFallback";
 import ExpenseRow, { rowIdFor } from "../components/ExpenseRow";
 import EditExpenseSheet from "../components/EditExpenseSheet";
 import PageHero, { PageHeroTitle, PageHeroSub } from "../components/PageHero";
+import { friendlyError } from "../lib/friendlyError";
 
 // Extends the ported Lovable design language (routes/index.tsx's "Recent
 // Expenses" white rows) to the full history view: navy rounded-bottom
@@ -74,7 +75,7 @@ export default function History({ user }) {
       const combined = results.flat().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
       setRows(combined);
     } catch (err) {
-      setError(err.message);
+      setError(friendlyError(err));
     }
   }, [accessToken, rootFolderId]);
 
@@ -88,7 +89,7 @@ export default function History({ user }) {
       await deleteExpenseRow(accessToken, row.sheetId, row.rowIndex);
       await load();
     } catch (err) {
-      setActionError(err.message || "Couldn't delete — try again");
+      setActionError(friendlyError(err, "Couldn't delete — try again"));
       throw err;
     }
   }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { updateExpenseRow } from "../lib/google";
+import { friendlyError } from "../lib/friendlyError";
 import { OFFICIAL_CATEGORIES } from "./CategoryIcon";
 import { rowIdFor } from "./ExpenseRow";
 
@@ -64,7 +65,7 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved })
       });
       onSaved(row);
     } catch (err) {
-      setError(err.message || "Couldn't save — try again");
+      setError(friendlyError(err, "Couldn't save — try again"));
       setSaving(false);
     }
   }

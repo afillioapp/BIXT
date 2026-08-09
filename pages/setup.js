@@ -10,6 +10,7 @@ import {
   ensureMonthFolders,
 } from "../lib/google";
 import DriveFallback from "../components/DriveFallback";
+import { friendlyError } from "../lib/friendlyError";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -71,7 +72,7 @@ export default function Setup({ user }) {
       await ensureMonthFolders(accessToken, rootId, new Date());
       setDone(true);
     } catch (err) {
-      setError(err.message);
+      setError(friendlyError(err));
       setConfirming(false);
     } finally {
       setCreating(false);

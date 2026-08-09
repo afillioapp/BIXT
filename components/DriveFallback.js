@@ -14,8 +14,8 @@ export default function DriveFallback({ needsConnect, loadError, onConnect, onRe
         </div>
         <p className="text-base font-semibold">Connect your Google Drive</p>
         <p className="text-sm text-text-secondary leading-relaxed max-w-[270px]">
-          BX saves every receipt straight into a folder in your own Drive — you always own the
-          files.
+          Every receipt gets filed straight into a folder in your own Drive — it's yours,
+          not ours.
         </p>
         <button
           type="button"

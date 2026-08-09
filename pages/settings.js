@@ -17,6 +17,7 @@ import DriveFallback from "../components/DriveFallback";
 import { biometricAvailable, isLockEnabled, enableLock, disableLock } from "../lib/biometric";
 import { getTheme, setTheme } from "../lib/theme";
 import PageHero, { PageHeroTitle, PageHeroSub } from "../components/PageHero";
+import { friendlyError } from "../lib/friendlyError";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -185,7 +186,7 @@ export default function Settings({ user }) {
       setConfirming(false);
       reloadProfile();
     } catch (err) {
-      setStatus({ type: "error", text: err.message });
+      setStatus({ type: "error", text: friendlyError(err) });
     } finally {
       setSaving(false);
     }

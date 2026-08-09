@@ -105,7 +105,7 @@ export default function Login() {
     try {
       await confirmResult.confirm(otp);
     } catch {
-      setError("Invalid code. Check and try again.");
+      setError("That code didn't work. Check it and try again.");
     } finally {
       setLoading(null);
     }
@@ -121,10 +121,10 @@ export default function Login() {
                 Paper tone because this screen is ink all the way down. */}
             <Mark size={88} tone="paper" />
             <h1 className="mt-12 text-3xl font-semibold text-center leading-tight max-w-xs">
-              Track every expense, anywhere.
+              Your receipts, finally somewhere.
             </h1>
             <p className="mt-3 text-sm text-ink-foreground/60 text-center max-w-xs">
-              The business expense tracker built for teams on the move.
+              Snap a photo. BX files it — the folder, the sheet, your accountant's copy — done.
             </p>
           </div>
 
@@ -176,7 +176,7 @@ export default function Login() {
             <ChevronLeft className="size-6" />
           </button>
           <h1 className="text-2xl font-semibold mb-2">What's your number?</h1>
-          <p className="text-sm text-ink-foreground/50 mb-7">We'll text you a 6-digit code.</p>
+          <p className="text-sm text-ink-foreground/50 mb-7">We'll text you a code to confirm it's you.</p>
           <input
             className="w-full h-14 rounded-2xl bg-ink-foreground/5 ring-1 ring-ink-foreground/10 px-4 text-base text-ink-foreground placeholder:text-ink-foreground/40 mb-4 focus:outline-none focus:ring-brand-teal/60"
             type="tel"

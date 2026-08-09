@@ -11,6 +11,7 @@ import { accentForCategory } from "../components/CategoryIcon";
 import ExpenseRow, { rowIdFor } from "../components/ExpenseRow";
 import EditExpenseSheet from "../components/EditExpenseSheet";
 import PageHero, { PageHeroTitle, PageHeroSub } from "../components/PageHero";
+import { friendlyError } from "../lib/friendlyError";
 
 // Originally ported 1:1 from lovable-design/src/routes/index.tsx (navy
 // "Total Balance" hero + 4-tile quick-action row + "Recent Expenses" list).
@@ -76,7 +77,7 @@ export default function Home({ user }) {
       await deleteExpenseRow(accessToken, row.sheetId, row.rowIndex);
       refreshVisibleMonths();
     } catch (err) {
-      setActionError(err.message || "Couldn't delete — try again");
+      setActionError(friendlyError(err, "Couldn't delete — try again"));
       throw err;
     }
   }
