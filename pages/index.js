@@ -203,7 +203,7 @@ export default function Home({ user }) {
                   key={c}
                   type="button"
                   onClick={() => setFilterCat(c === "All" ? null : c)}
-                  className={`px-4 py-2 rounded-full text-xs font-medium shrink-0 ${
+                  className={`px-4 min-h-11 rounded-full text-xs font-medium shrink-0 ${
                     active
                       ? c === "All"
                         ? "bg-brand-navy text-ink-foreground"

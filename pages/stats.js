@@ -60,7 +60,7 @@ function RangeCard({ sub, total, delta, labels, values, boldIndex, onPrev, onNex
         <div>
           <div className="flex items-center gap-1.5">
             {onPrev && (
-              <button type="button" aria-label="Earlier" onClick={onPrev} className="text-chrome -ml-1">
+              <button type="button" aria-label="Earlier" onClick={onPrev} className="text-chrome -ml-1 p-3 -m-3 grid place-items-center">
                 <ChevronLeft className="size-4" />
               </button>
             )}
@@ -71,7 +71,7 @@ function RangeCard({ sub, total, delta, labels, values, boldIndex, onPrev, onNex
                 aria-label="Later"
                 onClick={onNext}
                 disabled={nextDisabled}
-                className="text-chrome disabled:opacity-30"
+                className="text-chrome disabled:opacity-30 p-3 -m-3 grid place-items-center"
               >
                 <ChevronRight className="size-4" />
               </button>

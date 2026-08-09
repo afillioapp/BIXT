@@ -270,18 +270,23 @@
   --chart-track: oklch(0.30 0.015 255);
   --on-chart-label: oklch(0.98 0.008 85);
 
+  /* Six of these had their lightness raised in WP10: the ramp was validated
+     against the page background, but every chart in this app sits on a CARD,
+     which is lighter in dark mode — so the real contrast was up to 14% lower
+     than validated and six colours fell under the 3:1 floor for graphical
+     objects. Hue and chroma are untouched; only L moved. */
   --cat-1: oklch(0.670 0.153 25.7);   /* Dining & Meals        #e46a62 */
   --cat-2: oklch(0.599 0.210 100.2);  /* Coffee & Drinks       #9e7d00 */
-  --cat-3: oklch(0.521 0.240 265.5);  /* Travel                #2552f0 */
+  --cat-3: oklch(0.549 0.240 265.5);  /* Travel                #2552f0 */
   --cat-4: oklch(0.670 0.147 237.8);  /* Ground Transport      #05a0e4 */
-  --cat-5: oklch(0.480 0.130 152.1);  /* Fuel                  #007136 */
+  --cat-5: oklch(0.520 0.130 152.1);  /* Fuel                  #007136 */
   --cat-6: oklch(0.670 0.206 338.5);  /* Accommodation         #e157bf */
-  --cat-7: oklch(0.480 0.150 217.4);  /* Office & Supplies     #006e94 */
-  --cat-8: oklch(0.516 0.213 310.3);  /* Software & Tech       #8d32c0 */
-  --cat-9: oklch(0.510 0.235 352.7);  /* Marketing             #be0072 */
+  --cat-7: oklch(0.504 0.150 217.4);  /* Office & Supplies     #006e94 */
+  --cat-8: oklch(0.560 0.213 310.3);  /* Software & Tech       #8d32c0 */
+  --cat-9: oklch(0.564 0.235 352.7);  /* Marketing             #be0072 */
   --cat-10: oklch(0.638 0.130 172.3); /* Professional Services #00a483 */
   --cat-11: oklch(0.662 0.236 283.8); /* Meetings & Events     #8872ff */
-  --cat-12: oklch(0.518 0.170 38.1);  /* Other                 #b43700 */
+  --cat-12: oklch(0.552 0.170 38.1);  /* Other                 #b43700 */
 
   --card-shadow: 0 1px 2px oklch(0 0 0 / 0.30);
 

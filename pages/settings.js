@@ -275,14 +275,14 @@ export default function Settings({ user }) {
                 </p>
                 <div className="flex gap-2">
                   <button
-                    className="flex-1 h-9 rounded-full ring-1 ring-input-border text-sm font-medium"
+                    className="flex-1 h-11 rounded-full ring-1 ring-input-border text-sm font-medium"
                     onClick={() => setConfirming(false)}
                     disabled={saving}
                   >
                     Cancel
                   </button>
                   <button
-                    className="flex-1 h-9 rounded-full bg-brand-teal text-brand-teal-foreground text-sm font-semibold disabled:opacity-60"
+                    className="flex-1 h-11 rounded-full bg-brand-teal text-brand-teal-foreground text-sm font-semibold disabled:opacity-60"
                     onClick={handleConfirmShare}
                     disabled={saving}
                   >
@@ -303,7 +303,7 @@ export default function Settings({ user }) {
                 />
                 <div className="flex gap-2">
                   <button
-                    className="flex-1 h-9 rounded-full ring-1 ring-input-border text-sm font-medium"
+                    className="flex-1 h-11 rounded-full ring-1 ring-input-border text-sm font-medium"
                     onClick={() => {
                       setEditing(false);
                       setConfirming(false);
@@ -314,7 +314,7 @@ export default function Settings({ user }) {
                     Cancel
                   </button>
                   <button
-                    className="flex-1 h-9 rounded-full bg-brand-teal text-brand-teal-foreground text-sm font-semibold disabled:opacity-60"
+                    className="flex-1 h-11 rounded-full bg-brand-teal text-brand-teal-foreground text-sm font-semibold disabled:opacity-60"
                     onClick={handleSaveAccountant}
                     disabled={saving || !accountantEmail.trim()}
                   >

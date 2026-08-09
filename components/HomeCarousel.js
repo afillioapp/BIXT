@@ -17,7 +17,7 @@ import { accentForCategory } from "./CategoryIcon";
 function PeriodNav({ label, onPrev, onNext, nextDisabled }) {
   return (
     <div className="flex items-center gap-1 shrink-0">
-      <button type="button" aria-label="Earlier" onClick={onPrev} className="text-chrome">
+      <button type="button" aria-label="Earlier" onClick={onPrev} className="text-chrome p-3 -m-3 grid place-items-center">
         <ChevronLeft className="size-4" />
       </button>
       <p className="text-[11px] text-text-secondary whitespace-nowrap">{label}</p>
@@ -26,7 +26,7 @@ function PeriodNav({ label, onPrev, onNext, nextDisabled }) {
         aria-label="Later"
         onClick={onNext}
         disabled={nextDisabled}
-        className="text-chrome disabled:opacity-30"
+        className="text-chrome disabled:opacity-30 p-3 -m-3 grid place-items-center"
       >
         <ChevronRight className="size-4" />
       </button>

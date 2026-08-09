@@ -93,7 +93,7 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved })
               onClick={onClose}
               disabled={saving}
               aria-label="Close"
-              className="text-text-secondary disabled:opacity-40"
+              className="text-text-secondary disabled:opacity-40 p-3 -m-3 grid place-items-center"
             >
               <X className="size-5" />
             </button>
