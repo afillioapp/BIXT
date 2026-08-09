@@ -15,3 +15,93 @@
   font-family: var(--font-sans, var(--font-inter), ui-sans-serif, system-ui, sans-serif);
   min-height: 100vh;
 }
+
+/* ── The capture moment ──────────────────────────────────────────────────
+   Three beats around the OCR round trip: the photo settles onto the desk, a
+   scan-line sweeps while Claude reads the receipt, and a stamp lands when
+   the fields come back. This is the one place in the app motion is allowed
+   to be theatrical, because it happens once per receipt and it is the
+   moment the whole product is about.
+
+   ALL THREE BEATS live inside prefers-reduced-motion: no-preference — not
+   just the haptic. A 1.4s *looping* animation is precisely what that query
+   exists for, and this audience skews older, where vestibular sensitivity
+   is more common. Under reduced motion the photo simply appears, there is
+   no scan-line at all, and the stamp is just present without landing.
+
+   Transform and opacity only, so every beat runs on the compositor.
+   Animating height, box-shadow or an SVG stroke-dashoffset here would drop
+   frames on a mid-range Android at exactly the moment the user is already
+   waiting on a network round trip — which would make this feel slower than
+   the plain spinner it replaces, the opposite of the point. */
+
+.bx-scan {
+  position: relative;
+  overflow: hidden;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Beat 1 — a physical photo being set down, not a value swap. */
+  @keyframes bx-photo-settle {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(1.02);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  .bx-photo-settle {
+    animation: bx-photo-settle 150ms ease-out both;
+  }
+
+  /* Beat 2 — a photocopier bar, not a generic spinner. Deliberately
+     explicit performance rather than real progress: /api/extract returns
+     every field in one response, so a bounded loop is the honest shape.
+     Nothing here should imply fields are arriving one at a time.
+
+     The sweeping layer is full-height with the bright band painted into a
+     gradient, so it moves by transform alone and needs no knowledge of the
+     photo's height. */
+  @keyframes bx-scan-sweep {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(100%);
+    }
+  }
+  .bx-scan[data-scanning="true"]::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 100%;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      transparent 46%,
+      color-mix(in oklab, var(--brand-teal) 85%, transparent) 50%,
+      transparent 54%
+    );
+    animation: bx-scan-sweep 1.4s ease-in-out infinite;
+    will-change: transform;
+  }
+
+  /* Beat 3 — the stamp impacts, with a slight overshoot. */
+  @keyframes bx-stamp-land {
+    from {
+      opacity: 0;
+      transform: scale(1.4);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  .bx-stamp {
+    animation: bx-stamp-land 180ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+}

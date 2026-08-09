@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
+import StampMark from "../components/StampMark";
+import { friendlyError } from "../lib/friendlyError";
 import { useRouter } from "next/router";
-import { Camera, Image as GalleryIcon } from "lucide-react";
+import { Image as GalleryIcon } from "lucide-react";
 import { useDrive } from "../lib/useDrive";
 import { compressImage } from "../lib/image";
 import { saveExpenseToDrive } from "../lib/google";
@@ -85,7 +87,10 @@ export default function Capture({ user }) {
       setImagePreview(`data:${mimeType};base64,${base64}`);
       await extractReceipt(base64, mimeType);
     } catch (err) {
-      setStatus({ type: "error", text: err.message });
+      setStatus({
+        type: "error",
+        text: friendlyError(err, "Couldn't read that photo. Try taking it again."),
+      });
     } finally {
       setCompressing(false);
     }
@@ -99,7 +104,7 @@ export default function Capture({ user }) {
 
   async function extractReceipt(base64, mediaType) {
     setExtracting(true);
-    setStatus({ type: "info", text: "Reading receipt..." });
+    setStatus({ type: "info", text: "Reading receipt…" });
     try {
       // The extract endpoint only serves signed-in users; prove who we are.
       const idToken = await user.getIdToken();
@@ -121,9 +126,13 @@ export default function Capture({ user }) {
         date: data.result.date || "",
         category: data.result.category_suggestion || "Other",
       });
-      setStatus({ type: "success", text: "Receipt read. Review and confirm." });
+      setStatus({ type: "success", text: "Filed — check the details." });
     } catch (err) {
-      setStatus({ type: "error", text: err.message });
+      // Calm on failure: no shake, no red flash. The scan-line just stops.
+      setStatus({
+        type: "error",
+        text: friendlyError(err, "Couldn't read that one — check the details below."),
+      });
     } finally {
       setExtracting(false);
     }
@@ -151,7 +160,7 @@ export default function Capture({ user }) {
       return;
     }
     setSaving(true);
-    setStatus({ type: "info", text: "Saving to Google Drive..." });
+    setStatus({ type: "info", text: "Filing it away…" });
     const doSave = (token) =>
       saveExpenseToDrive(token, {
         rootId: rootFolderId,
@@ -177,11 +186,23 @@ export default function Capture({ user }) {
       setStatus({ type: "success", text: "Saved" });
       resetForNext();
     } catch (err) {
-      setStatus({ type: "error", text: err.message });
+      setStatus({ type: "error", text: friendlyError(err) });
     } finally {
       setSaving(false);
     }
   }
+
+  // Beat 3's haptic. A single ~10ms tap as the stamp lands — small, never
+  // load-bearing. Gated on the same reduced-motion preference as the visual
+  // beats, not just on vibrate support. (navigator.vibrate is a silent no-op
+  // on iOS Safari, so iPhone users simply never get this; that's fine.)
+  const stamped = !!form && status?.type === "success";
+  useEffect(() => {
+    if (!stamped) return;
+    if (typeof window === "undefined" || !navigator.vibrate) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    navigator.vibrate(10);
+  }, [stamped]);
 
   if (profileLoading || !profile) {
     return (
@@ -237,7 +258,7 @@ export default function Capture({ user }) {
           <>
             <div className="flex-1 flex items-center justify-center min-h-[160px]">
               <div className="size-32 rounded-3xl bg-brand-teal-soft grid place-items-center" aria-hidden="true">
-                <Camera className="size-11 text-brand-teal" strokeWidth={1.4} />
+                <StampMark size={56} className="text-brand-teal" strokeWidth={2} />
               </div>
             </div>
             <div className="flex flex-col gap-2.5">
@@ -245,7 +266,7 @@ export default function Capture({ user }) {
                 htmlFor="receiptInput"
                 className="w-full rounded-full bg-brand-teal py-4 font-semibold text-brand-teal-foreground text-center cursor-pointer hover:opacity-90 transition"
               >
-                {compressing ? "Processing…" : "Take Receipt Photo"}
+                {compressing ? "Getting it ready…" : "Take Receipt Photo"}
               </label>
               <label
                 htmlFor="receiptImport"
@@ -259,20 +280,25 @@ export default function Capture({ user }) {
 
         {imagePreview && (
           <div className="flex flex-col gap-4 flex-1">
-            <img
-              src={imagePreview}
-              className="w-full max-h-72 object-cover rounded-2xl ring-1 ring-hairline"
-              alt="receipt"
-            />
+            <div
+              className="bx-scan relative w-full rounded-2xl ring-1 ring-hairline"
+              data-scanning={extracting ? "true" : "false"}
+            >
+              <img
+                src={imagePreview}
+                className="bx-photo-settle w-full max-h-72 object-cover rounded-2xl"
+                alt="receipt"
+              />
+              {stamped && (
+                <StampMark
+                  size={44}
+                  className="bx-stamp absolute bottom-3 right-3 text-brand-teal drop-shadow"
+                />
+              )}
+            </div>
 
             {!form && status && (
-              <div className="flex items-center gap-2">
-                {busy && (
-                  <span
-                    className="size-3.5 rounded-full border-2 border-track-strong border-t-brand-teal animate-spin shrink-0"
-                    aria-hidden="true"
-                  />
-                )}
+              <div className="flex items-center gap-2" aria-live="polite">
                 <span className={`text-sm ${statusColor}`}>{status.text}</span>
               </div>
             )}
@@ -339,7 +365,7 @@ export default function Capture({ user }) {
                     onClick={handleConfirm}
                     disabled={saving}
                   >
-                    {saving ? "Saving…" : "✓ Save"}
+                    {saving ? "Saving…" : "Save"}
                   </button>
                 </div>
               </>
