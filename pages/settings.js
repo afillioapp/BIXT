@@ -212,8 +212,8 @@ export default function Settings({ user }) {
 
   return (
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-      {/* Navy identity header (owner request, reference screenshot): title,
-          then a large centered avatar/name/email on brand navy, tall enough
+      {/* Identity header (owner request, reference screenshot): title,
+          then a large centered avatar/name/email on the header colour, tall enough
           that the white chevron-row cards below start noticeably lower. */}
       <PageHeader tall>
         <h1 className="text-2xl font-semibold tracking-tight text-center mb-8">Settings</h1>
