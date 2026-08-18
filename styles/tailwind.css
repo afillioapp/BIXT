@@ -134,6 +134,22 @@
 }
 
 .dark {
+  /* Dark mode is live and user-reachable (lib/theme.js stamps .dark, the
+     toggle is in Settings), but this block never redefined the brand or
+     text tokens — they kept their light values on a dark ground and card
+     titles rendered at 1.02:1, i.e. invisible. There is not a single
+     `dark:` variant in pages/ or components/: dark mode is these token
+     overrides and nothing else, so anything missing here is a bug. */
+  --brand-pine: oklch(0.255 0.042 172);
+  --brand-pine-lift: oklch(0.315 0.046 176);
+  --brand-pine-chip: oklch(0.35 0.050 178);
+  --brand-teal-on-pine: oklch(0.84 0.100 185);
+  --brand-navy: var(--brand-pine);
+  --brand-teal: oklch(0.74 0.105 190);
+  --brand-teal-soft: oklch(0.74 0.105 190 / 0.16);
+  --surface: oklch(0.205 0.028 262);
+  --text-primary: oklch(0.965 0.004 260);
+  --text-secondary: oklch(0.72 0.020 260);
   --background: oklch(0.129 0.042 264.695);
   --foreground: oklch(0.984 0.003 247.858);
   --card: oklch(0.208 0.042 265.755);
