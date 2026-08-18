@@ -14,6 +14,7 @@ import { auth } from "../lib/firebase";
 import { useDrive } from "../lib/useDrive";
 import { listSharedEmails, removeSharedEmail, shareWithEmail, saveProfile } from "../lib/google";
 import DriveFallback from "../components/DriveFallback";
+import PageHeader from "../components/PageHeader";
 import { biometricAvailable, isLockEnabled, enableLock, disableLock } from "../lib/biometric";
 import { getTheme, setTheme } from "../lib/theme";
 
@@ -214,32 +215,30 @@ export default function Settings({ user }) {
       {/* Navy identity header (owner request, reference screenshot): title,
           then a large centered avatar/name/email on brand navy, tall enough
           that the white chevron-row cards below start noticeably lower. */}
-      <div className="bg-brand-navy rounded-b-3xl pt-10 pb-12 text-white relative z-10 shadow-xl shadow-brand-navy/25">
-        <div className="mx-auto max-w-md px-5">
-          <h1 className="text-2xl font-semibold tracking-tight text-center mb-8">Settings</h1>
+      <PageHeader tall>
+        <h1 className="text-2xl font-semibold tracking-tight text-center mb-8">Settings</h1>
 
-          <div className="flex flex-col items-center gap-3">
-            {user?.photoURL ? (
-              <img
-                src={user.photoURL}
-                alt=""
-                referrerPolicy="no-referrer"
-                width={96}
-                height={96}
-                className="size-24 rounded-full object-cover ring-2 ring-white/20"
-              />
-            ) : (
-              <div className="size-24 rounded-full bg-white/15 text-white grid place-items-center text-2xl font-semibold ring-2 ring-white/20">
-                {initialsFor(user?.displayName, profile.companyName)}
-              </div>
-            )}
-            <div className="text-center">
-              <p className="font-semibold text-lg">{user?.displayName || profile.companyName}</p>
-              <p className="text-sm text-white/60">{user?.email || user?.phoneNumber || "—"}</p>
+        <div className="flex flex-col items-center gap-3">
+          {user?.photoURL ? (
+            <img
+              src={user.photoURL}
+              alt=""
+              referrerPolicy="no-referrer"
+              width={96}
+              height={96}
+              className="size-24 rounded-full object-cover ring-2 ring-white/20"
+            />
+          ) : (
+            <div className="size-24 rounded-full bg-white/15 text-white grid place-items-center text-2xl font-semibold ring-2 ring-white/20">
+              {initialsFor(user?.displayName, profile.companyName)}
             </div>
+          )}
+          <div className="text-center">
+            <p className="font-semibold text-lg">{user?.displayName || profile.companyName}</p>
+            <p className="text-sm text-white/60">{user?.email || user?.phoneNumber || "—"}</p>
           </div>
         </div>
-      </div>
+      </PageHeader>
 
       <div className="mx-auto max-w-md px-5 pt-6">
         <div className="bg-white ring-1 ring-black/5 rounded-2xl divide-y divide-black/5 overflow-hidden mb-6">
