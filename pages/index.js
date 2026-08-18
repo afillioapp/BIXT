@@ -146,7 +146,7 @@ export default function Home({ user }) {
 
   return (
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-      {/* Compact header, same scale as Settings/Stats (owner request):
+      {/* Compact navy header, same scale as Settings/Stats (owner request):
           the month total IS the headline; greeting and company are gone. */}
       <PageHeader>
         <header className="flex items-start justify-between">
@@ -162,7 +162,7 @@ export default function Home({ user }) {
             </h1>
             {monthData && (
               <div className="flex items-center gap-2 mt-2">
-                <span className="text-[10px] font-medium bg-brand-pine-chip text-brand-teal-on-pine px-2 py-0.5 rounded">
+                <span className="text-[10px] font-medium bg-brand-teal/20 text-brand-teal px-2 py-0.5 rounded">
                   {pctChange !== null ? `${pctChange > 0 ? "+" : ""}${pctChange}%` : "—"}
                 </span>
                 <span className="text-[10px] text-white/60">vs last month</span>

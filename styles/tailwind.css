@@ -37,10 +37,6 @@
   --radius-4xl: calc(var(--radius) + 16px);
   --font-sans: var(--font-inter), "Inter", ui-sans-serif, system-ui, sans-serif;
   --color-brand-navy: var(--brand-navy);
-  --color-brand-pine: var(--brand-pine);
-  --color-brand-pine-lift: var(--brand-pine-lift);
-  --color-brand-pine-chip: var(--brand-pine-chip);
-  --color-brand-teal-on-pine: var(--brand-teal-on-pine);
   --color-brand-teal: var(--brand-teal);
   --color-brand-teal-soft: var(--brand-teal-soft);
   --color-surface: var(--surface);
@@ -85,17 +81,7 @@
   --radius: 0.625rem;
   --background: oklch(0.97 0.005 260);
   --foreground: oklch(0.18 0.02 260);
-  /* "Deep Pine" (owner-approved, replaces the rejected navy header bar).
-     --brand-navy is kept as an alias of pine on purpose: every non-header
-     bg-brand-navy site (the bottom-nav FAB and Gallery button, the Home
-     "All" filter pill, an Insight pill, the login and biometric-lock
-     backgrounds, the Drive-fallback tile) picks the new colour up without
-     those files being touched. Do not "clean this up" by renaming them. */
-  --brand-pine: oklch(0.30 0.048 172);
-  --brand-pine-lift: oklch(0.36 0.052 176);
-  --brand-pine-chip: oklch(0.395 0.055 178);
-  --brand-teal-on-pine: oklch(0.82 0.105 185);
-  --brand-navy: var(--brand-pine);
+  --brand-navy: oklch(0.22 0.04 264);
   --brand-teal: oklch(0.62 0.11 190);
   --brand-teal-soft: oklch(0.62 0.11 190 / 0.12);
   --surface: oklch(0.99 0.002 260);
