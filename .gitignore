@@ -10,3 +10,5 @@ design_handoff_bxt_app/
 UI UX/
 lovable-design/
 *.zip
+graphify-out/
+.graphify_analysis.json
