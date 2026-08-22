@@ -39,6 +39,7 @@
   --color-brand-navy: var(--brand-navy);
   --color-brand-teal: var(--brand-teal);
   --color-brand-teal-soft: var(--brand-teal-soft);
+  --color-brand-teal-deep: var(--brand-teal-deep);
   --color-surface: var(--surface);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
@@ -84,6 +85,9 @@
   --brand-navy: oklch(0.22 0.04 264);
   --brand-teal: oklch(0.62 0.11 190);
   --brand-teal-soft: oklch(0.62 0.11 190 / 0.12);
+  /* Teal as text on a light ground: --brand-teal measures 3.14:1 and fails AA.
+     This is the same hue at the lightness that clears it. */
+  --brand-teal-deep: oklch(0.46 0.085 195);
   --surface: oklch(0.99 0.002 260);
   --text-primary: oklch(0.2 0.02 260);
   --text-secondary: oklch(0.5 0.015 260);

@@ -226,16 +226,16 @@ export default function Settings({ user }) {
               referrerPolicy="no-referrer"
               width={96}
               height={96}
-              className="size-24 rounded-full object-cover ring-2 ring-white/20"
+              className="size-24 rounded-full object-cover ring-2 ring-black/5"
             />
           ) : (
-            <div className="size-24 rounded-full bg-white/15 text-white grid place-items-center text-2xl font-semibold ring-2 ring-white/20">
+            <div className="size-24 rounded-full bg-brand-navy text-white grid place-items-center text-2xl font-semibold ring-2 ring-black/5">
               {initialsFor(user?.displayName, profile.companyName)}
             </div>
           )}
           <div className="text-center">
             <p className="font-semibold text-lg">{user?.displayName || profile.companyName}</p>
-            <p className="text-sm text-white/60">{user?.email || user?.phoneNumber || "—"}</p>
+            <p className="text-sm text-text-secondary">{user?.email || user?.phoneNumber || "—"}</p>
           </div>
         </div>
       </PageHeader>

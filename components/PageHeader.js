@@ -1,11 +1,15 @@
-// The rounded-bottom dark header that tops every signed-in screen (Home,
-// Insight, History, New receipt, Settings) — owner request, "the top part is
-// dark on all pages". It was pasted identically into eight places across five
-// pages; this is that exact block, extracted verbatim so the styling lives in
-// one file.
+// The top of every signed-in screen (Home, Insight, History, New receipt,
+// Settings). It used to be a navy slab with a rounded skirt and a shadow,
+// which read as a separate object sitting on top of the page rather than the
+// start of it. It is now only spacing: the title sits on the same ground as
+// the cards below it, in the same ink, and the page reads as one surface.
 //
-// `tall` is the Settings identity header only: same block with pb-12 instead
-// of pb-7, so the white chevron-row cards below it start noticeably lower.
+// Anything placed inside must be coloured for a light ground. The children
+// were all written white-on-navy (text-white/60, bg-white/15, ring-white/20),
+// and every one of those is invisible here.
+//
+// `tall` is the Settings identity header only: a little more room beneath, so
+// the chevron-row cards start lower than the avatar block.
 //
 // MUST stay under components/ — styles/tailwind.css is `source(none)` with
 // only `@source "../pages"` and `@source "../components"`, so a Tailwind class
@@ -17,11 +21,7 @@
 // there are no conflicting classes to merge.
 export default function PageHeader({ tall = false, children }) {
   return (
-    <div
-      className={`bg-brand-navy rounded-b-3xl pt-10 ${
-        tall ? "pb-12" : "pb-7"
-      } text-white relative z-10 shadow-xl shadow-brand-navy/25`}
-    >
+    <div className={`pt-10 ${tall ? "pb-8" : "pb-5"} relative z-10`}>
       <div className="mx-auto max-w-md px-5">{children}</div>
     </div>
   );

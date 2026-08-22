@@ -151,7 +151,7 @@ export default function Home({ user }) {
       <PageHeader>
         <header className="flex items-start justify-between">
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-white/60 mb-1">
+            <p className="text-[10px] uppercase tracking-widest text-text-secondary mb-1">
               {totalLabel}
             </p>
             <h1
@@ -162,10 +162,10 @@ export default function Home({ user }) {
             </h1>
             {monthData && (
               <div className="flex items-center gap-2 mt-2">
-                <span className="text-[10px] font-medium bg-brand-teal/20 text-brand-teal px-2 py-0.5 rounded">
+                <span className="text-[10px] font-medium bg-brand-teal-soft text-brand-teal-deep px-2 py-0.5 rounded">
                   {pctChange !== null ? `${pctChange > 0 ? "+" : ""}${pctChange}%` : "—"}
                 </span>
-                <span className="text-[10px] text-white/60">vs last month</span>
+                <span className="text-[10px] text-text-secondary">vs last month</span>
               </div>
             )}
           </div>
@@ -180,7 +180,7 @@ export default function Home({ user }) {
                 className="size-10 rounded-full object-cover"
               />
             ) : (
-              <div className="size-10 rounded-full bg-white/15 text-white grid place-items-center text-sm font-semibold">
+              <div className="size-10 rounded-full bg-brand-navy text-white grid place-items-center text-sm font-semibold">
                 {initialsFor(user?.displayName, profile.companyName)}
               </div>
             )}

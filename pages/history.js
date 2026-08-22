@@ -120,7 +120,7 @@ export default function History({ user }) {
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
       <PageHeader>
         <h1 className="text-2xl font-semibold tracking-tight">History</h1>
-        <p className="text-xs text-white/60 mt-1">Last two months</p>
+        <p className="text-xs text-text-secondary mt-1">Last two months</p>
       </PageHeader>
 
       <div className="mx-auto max-w-md px-5 pt-6">

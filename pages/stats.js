@@ -462,7 +462,7 @@ export default function Stats({ user }) {
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
       <PageHeader>
         <h1 className="text-2xl font-semibold tracking-tight">Insight</h1>
-        <p className="text-xs text-white/60 mt-1">Track how your business spends.</p>
+        <p className="text-xs text-text-secondary mt-1">Track how your business spends.</p>
       </PageHeader>
 
       <div className="mx-auto max-w-md px-5 pt-6">
