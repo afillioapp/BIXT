@@ -8,7 +8,7 @@ import { latestReceipts, categoryTotals, formatCurrency } from "../lib/insights"
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
 import HomeCarousel from "../components/HomeCarousel";
-import { accentForCategory } from "../components/CategoryIcon";
+import { accentForCategory, paletteColor } from "../components/CategoryIcon";
 import ExpenseRow, { rowIdFor } from "../components/ExpenseRow";
 import EditExpenseSheet from "../components/EditExpenseSheet";
 
@@ -146,6 +146,12 @@ export default function Home({ user }) {
     ? `Total ${filterCat} expenses, ${monthLabel}`
     : `Total expenses, ${monthLabel}`;
   const filterAccent = filterCat ? accentForCategory(filterCat) : null;
+  // Share-of-spend for the whole month, deliberately NOT narrowed by
+  // filterCat. The rest of the page narrows, but a breakdown whose only bar
+  // reads 100% tells you nothing — the card's entire job is the proportion
+  // between categories, which a filter destroys. The filter shows up as
+  // emphasis on its row instead.
+  const monthBreakdown = rows ? categoryTotals(rows, now) : null;
 
   return (
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
@@ -221,6 +227,35 @@ export default function Home({ user }) {
               );
             })}
           </div>
+        )}
+
+        {monthBreakdown && monthBreakdown.categories.length > 0 && (
+          <section className="mb-6">
+            <h2 className="text-sm font-semibold mb-3">Top Categories</h2>
+            <div className="space-y-4 bg-white p-5 rounded-2xl ring-1 ring-black/5">
+              {monthBreakdown.categories.slice(0, 5).map((c, i) => {
+                const active = filterCat === c.category;
+                return (
+                  <div key={c.category}>
+                    <div className="flex justify-between gap-3 mb-1.5">
+                      <span className={`text-xs min-w-0 truncate ${active ? "font-semibold" : "font-medium"}`}>
+                        {c.category}
+                      </span>
+                      <span className="text-xs font-semibold shrink-0">{Math.round(c.percent)}%</span>
+                    </div>
+                    {/* Decorative: the row already states the category and the
+                        share in text, so the bar is not the only carrier. */}
+                    <div className="w-full bg-zinc-100 h-1.5 rounded-full overflow-hidden" aria-hidden="true">
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${c.percent}%`, background: paletteColor(i) }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
         )}
 
         <section className="mb-4">

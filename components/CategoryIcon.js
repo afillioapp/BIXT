@@ -75,6 +75,16 @@ const CATEGORY_ACCENT_MAP = {
   "Fuel & Vehicle": "var(--chart-5)",
 };
 
+// The positional chart palette, cycled for however many categories a real
+// month has. Lives here beside CATEGORY_ACCENT_MAP so the two colour rules
+// stay in one file. pages/stats.js and components/HomeCarousel.js still keep
+// their own identical private copies; worth collapsing into this one day.
+const CATEGORY_PALETTE = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
+
+export function paletteColor(i) {
+  return CATEGORY_PALETTE[i % CATEGORY_PALETTE.length];
+}
+
 export function accentForCategory(category) {
   return CATEGORY_ACCENT_MAP[category] || CATEGORY_ACCENT_MAP.Other;
 }
