@@ -138,24 +138,29 @@ export default function Home({ user }) {
     monthData && prevMonthTotal > 0
       ? Math.round(((monthData.total - prevMonthTotal) / prevMonthTotal) * 100)
       : null;
-  const monthLabel = now.toLocaleString("en-US", { month: "long" }).toUpperCase();
+  const monthLabel = now.toLocaleString("en-US", { month: "long" });
+  // The eyebrow label above the total was removed at owner request. The string
+  // survives as the headline's accessible name, so a screen reader still says
+  // what the number is instead of reading a bare amount.
   const totalLabel = filterCat
-    ? `Total ${filterCat} Expenses · ${monthLabel}`.toUpperCase()
-    : `Total Expenses · ${monthLabel}`.toUpperCase();
+    ? `Total ${filterCat} expenses, ${monthLabel}`
+    : `Total expenses, ${monthLabel}`;
   const filterAccent = filterCat ? accentForCategory(filterCat) : null;
 
   return (
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-      {/* Compact navy header, same scale as Settings/Stats (owner request):
-          the month total IS the headline; greeting and company are gone. */}
+      {/* The month total IS the headline: no greeting, no company, and since
+          the owner removed the eyebrow, no label either. Just the money. */}
       <PageHeader>
         <header className="flex items-start justify-between">
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-text-secondary mb-1">
-              {totalLabel}
-            </p>
             <h1
               className="text-3xl font-semibold tracking-tight leading-none"
+              aria-label={
+                monthData
+                  ? `${totalLabel}: ${formatCurrency(monthData.total, { decimals: 2 })}`
+                  : totalLabel
+              }
               style={filterAccent ? { color: filterAccent } : undefined}
             >
               {monthData ? formatCurrency(monthData.total, { decimals: 2 }) : "—"}
