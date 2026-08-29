@@ -63,8 +63,8 @@ export default function Capture({ user }) {
     }
   }, [profileLoading, profile, accessToken, loadError, needsConnect]);
 
-  // Pick up a photo/import handed off from the bottom-nav camera popover
-  // (components/BottomNav.js), which pushes here right after stashing the
+  // Pick up a photo/import handed off from the thumb control
+  // (components/ThumbControl.js), which pushes here right after stashing the
   // File — runs the exact same pipeline as picking a file with this page's
   // own Take/Import buttons below.
   useEffect(() => {

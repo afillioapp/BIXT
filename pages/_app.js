@@ -4,7 +4,7 @@ import Head from "next/head";
 import { Inter } from "next/font/google";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../lib/firebase";
-import BottomNav from "../components/BottomNav";
+import ThumbControl from "../components/ThumbControl";
 import BiometricGate from "../components/BiometricGate";
 import { getTheme, setTheme } from "../lib/theme";
 import "../styles/tailwind.css";
@@ -77,7 +77,7 @@ export default function App({ Component, pageProps }) {
       <div className={`app-shell ${inter.variable}`}>
         <BiometricGate user={user}>
           <Component {...pageProps} user={user} />
-          {showNav && <BottomNav />}
+          {showNav && <ThumbControl />}
         </BiometricGate>
       </div>
     </>

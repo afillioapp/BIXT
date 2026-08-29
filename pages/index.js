@@ -17,9 +17,13 @@ import EditExpenseSheet from "../components/EditExpenseSheet";
 // Round 5 (owner request): the hero's inner "This week"/"Last month" tiles
 // and the quick-action row are gone, replaced by a swipeable 3-panel
 // carousel (components/HomeCarousel.js) inside the hero. Capture is reached
-// through the bottom-nav "+" popover only (components/BottomNav.js) — no
+// by tapping the thumb control only (components/ThumbControl.js) — no
 // separate capture entry point on this page. Every number on the page is
 // real (Drive-backed).
+//
+// This page now carries what used to be two more tabs: the carousel is
+// Insight and the receipt list is History, which is why neither has a nav
+// slot any more.
 
 function prevMonthDate(d) {
   return new Date(d.getFullYear(), d.getMonth() - 1, 1);
