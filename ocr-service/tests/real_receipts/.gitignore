@@ -1,0 +1,9 @@
+# Your receipt photos are real business records. Keep them, and the ground
+# truth transcribed from them, out of git by default.
+*
+!.gitignore
+!README.md
+!truth.example.json
+
+# If you decide the labels are worth versioning (they are useful, but they do
+# carry merchant names, dates and amounts):  git add -f truth.json

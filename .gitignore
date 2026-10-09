@@ -20,3 +20,10 @@ graphify-out/
 .graphify_analysis.json
 graphify-out/
 .graphify_analysis.json
+
+# Python
+__pycache__/
+*.pyc
+
+# Rendered synthetic receipt corpus (regenerate with ocr-service/tests/make_corpus.py)
+ocr-service/tests/images/

@@ -1,0 +1,29 @@
+[
+  {
+    "file": "receipt_01.jpg",
+    "date": "2026-09-15",
+    "place": "Tim Hortons",
+    "total": "12.43",
+    "hst": "1.43",
+    "currency": "CAD",
+    "category": "Coffee & Drinks"
+  },
+  {
+    "file": "receipt_02.jpg",
+    "date": "2026-09-18",
+    "place": "Esso",
+    "total": "68.40",
+    "hst": "7.87",
+    "currency": "CAD",
+    "category": "Fuel"
+  },
+  {
+    "file": "receipt_03.jpg",
+    "date": "2026-09-20",
+    "place": "Dollarama",
+    "total": "11.30",
+    "hst": "0.00",
+    "currency": "CAD",
+    "category": "Office & Supplies"
+  }
+]

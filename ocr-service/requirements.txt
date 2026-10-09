@@ -1,0 +1,16 @@
+# Local receipt OCR. Nothing here is a paid or hosted API: rapidocr-onnxruntime
+# bundles the PP-OCRv4 ONNX models and runs them on CPU via onnxruntime.
+# Pinned because an unpinned model/runtime bump changes extraction accuracy.
+rapidocr-onnxruntime==1.4.4
+onnxruntime==1.30.0
+numpy==2.5.3
+pillow==12.3.0
+
+# Transitive, pinned too: opencv drives RapidOCR's preprocessing and
+# pyclipper/shapely its box post-processing, so an unpinned bump here moves
+# extraction accuracy just as much as a model change would.
+opencv-python==5.0.0.93
+pyclipper==1.4.0
+shapely==2.1.2
+PyYAML==6.0.3
+six==1.17.0
