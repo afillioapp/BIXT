@@ -88,7 +88,11 @@ Year folders are calendar years even when the business's fiscal year isn't
 
 Type (column G) is `Expense` (the owner was invoiced, money out) or `Income`
 (the owner is invoicing, money in), asked on every capture. Older sheets get
-the header on their next save and their blank cells read as `Expense`.
+the header on their next save or row edit and their blank cells read as
+`Expense`. The Type column is found by its header, not its position, and is
+only ever added: if column G already holds anything of the owner's, a new
+column is inserted so theirs moves right (`ensureTypeColumn`). Run
+`../.claude/tools/sheet-test/test.mjs` before changing any of this.
 Income is excluded from every spending total (`spendingRows` in
 `lib/insights.js`). `ensureHeaderRow` migrates every older layout in place;
 `lib/google.js` documents each one.
