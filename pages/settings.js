@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { signOut } from "firebase/auth";
 import {
   Building2,
@@ -23,6 +23,27 @@ import { MONTH_NAMES, fiscalStartMonth } from "../lib/insights";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LAST4_RE = /^\d{4}$/;
+const SAVE_FAILED = "Couldn't save. Check your connection and try again.";
+
+// Keeps only the digits and, if more than four arrive at once (a pasted full
+// account number), the LAST four — never the first four, never the whole thing.
+function lastFourDigits(v) {
+  return v.replace(/\D/g, "").slice(-4);
+}
+
+// Always mounted, so a screen reader announces the message when it appears.
+function StatusLine({ status }) {
+  return (
+    <p
+      role="status"
+      className={
+        status ? `mt-2 text-xs ${status.type === "error" ? "text-danger" : "text-brand-teal-deep"}` : "sr-only"
+      }
+    >
+      {status?.text || ""}
+    </p>
+  );
+}
 
 // "Jane Doe" -> "JD"; a single name -> first two letters; nothing -> "?".
 function initialsFor(name, fallback) {
@@ -75,6 +96,7 @@ export default function Settings({ user }) {
     requestAccess,
     retryConnection,
     reloadProfile,
+    refreshAccessToken,
     disconnect,
   } = useDrive(user);
   const [accountantEmail, setAccountantEmail] = useState("");
@@ -91,8 +113,11 @@ export default function Settings({ user }) {
   const [theme, setThemeState] = useState("light");
 
   const [fyStart, setFyStart] = useState("1");
-  const [fySaving, setFySaving] = useState(false);
   const [fyStatus, setFyStatus] = useState(null);
+  // Fiscal-year saves run one after another, in the order the months were
+  // picked, so the last month chosen is the one Drive keeps.
+  const fySaveChain = useRef(Promise.resolve());
+  const fyPending = useRef(0);
 
   const [bankEditing, setBankEditing] = useState(false);
   const [bankName, setBankName] = useState("");
@@ -109,36 +134,71 @@ export default function Settings({ user }) {
     setThemeState(next);
   }
 
+  // Each field follows its own saved value, and never while it is being
+  // edited: every save reloads the whole profile, and re-seeding everything
+  // on each reload used to wipe whatever was being typed in another row.
+  const savedEmail = profile?.accountantEmail || "";
+  const savedFy = String(fiscalStartMonth(profile));
+  const savedBankName = profile?.bankName || "";
+  const savedBankLast4 = profile?.bankLast4 || "";
+  const savedFyRef = useRef(savedFy);
+  savedFyRef.current = savedFy;
+
   useEffect(() => {
-    if (!profile) return;
-    setAccountantEmail(profile.accountantEmail || "");
-    setFyStart(String(fiscalStartMonth(profile)));
-    setBankName(profile.bankName || "");
-    setBankLast4(profile.bankLast4 || "");
-  }, [profile]);
+    if (!editing) setAccountantEmail(savedEmail);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedEmail]);
+
+  useEffect(() => {
+    if (fyPending.current === 0) setFyStart(savedFy);
+  }, [savedFy]);
+
+  useEffect(() => {
+    if (bankEditing) return;
+    setBankName(savedBankName);
+    setBankLast4(savedBankLast4);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedBankName, savedBankLast4]);
+
+  // Settings is the page most likely to sit open past the ~1 hour Drive
+  // token. Retry once with a fresh token rather than failing the save.
+  async function withFreshToken(fn) {
+    try {
+      return await fn(accessToken);
+    } catch (err) {
+      if (!/\(401\)/.test(err.message || "")) throw err;
+      return fn(await refreshAccessToken());
+    }
+  }
 
   // Saves as soon as a month is picked — one choice, nothing to confirm.
-  async function handleFiscalChange(next) {
-    const previous = fyStart;
+  function handleFiscalChange(next) {
     setFyStart(next);
-    setFySaving(true);
     setFyStatus(null);
-    try {
-      await saveProfile(accessToken, rootFolderId, { fiscalYearStart: next });
-      setFyStatus({ type: "success", text: "Saved" });
+    fyPending.current += 1;
+    fySaveChain.current = fySaveChain.current.then(async () => {
+      let failed = false;
+      try {
+        await withFreshToken((token) => saveProfile(token, rootFolderId, { fiscalYearStart: next }));
+      } catch {
+        failed = true;
+      }
+      fyPending.current -= 1;
+      if (fyPending.current > 0) return;
+      if (failed) {
+        setFyStart(savedFyRef.current);
+        setFyStatus({ type: "error", text: SAVE_FAILED });
+      } else {
+        setFyStatus({ type: "success", text: "Saved" });
+      }
       reloadProfile();
-    } catch (err) {
-      setFyStart(previous);
-      setFyStatus({ type: "error", text: err.message });
-    } finally {
-      setFySaving(false);
-    }
+    });
   }
 
   function cancelBankEdit() {
     setBankEditing(false);
-    setBankName(profile.bankName || "");
-    setBankLast4(profile.bankLast4 || "");
+    setBankName(savedBankName);
+    setBankLast4(savedBankLast4);
     setBankStatus(null);
   }
 
@@ -150,12 +210,16 @@ export default function Settings({ user }) {
     setBankSaving(true);
     setBankStatus(null);
     try {
-      await saveProfile(accessToken, rootFolderId, { bankName: bankName.trim(), bankLast4 });
+      const name = bankName.trim();
+      await withFreshToken((token) => saveProfile(token, rootFolderId, { bankName: name, bankLast4 }));
+      // The row below shows these local values, so it reads the new account
+      // straight away instead of waiting on the profile reload.
+      setBankName(name);
       setBankStatus({ type: "success", text: "Bank account saved" });
       setBankEditing(false);
       reloadProfile();
-    } catch (err) {
-      setBankStatus({ type: "error", text: err.message });
+    } catch {
+      setBankStatus({ type: "error", text: SAVE_FAILED });
     } finally {
       setBankSaving(false);
     }
@@ -387,11 +451,7 @@ export default function Settings({ user }) {
                 <ChevronRight className="size-4 text-text-tertiary shrink-0" />
               </button>
             )}
-            {status && (
-              <p className={`mt-2 text-xs ${status.type === "error" ? "text-destructive" : "text-brand-teal"}`}>
-                {status.text}
-              </p>
-            )}
+            <StatusLine status={status} />
           </div>
 
           <div className="p-4">
@@ -404,8 +464,7 @@ export default function Settings({ user }) {
                 id="fiscal-start"
                 value={fyStart}
                 onChange={(e) => handleFiscalChange(e.target.value)}
-                disabled={fySaving}
-                className="text-sm text-text-secondary bg-transparent text-right appearance-none focus:outline-none disabled:opacity-60 cursor-pointer"
+                className="text-sm text-text-secondary bg-transparent text-right appearance-none rounded-md px-1 cursor-pointer focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-teal"
               >
                 {MONTH_NAMES.map((m, i) => (
                   <option key={m} value={String(i + 1)}>
@@ -415,11 +474,7 @@ export default function Settings({ user }) {
               </select>
               <ChevronRight className="size-4 text-text-tertiary shrink-0" />
             </div>
-            {fyStatus && (
-              <p className={`mt-2 text-xs ${fyStatus.type === "error" ? "text-destructive" : "text-brand-teal"}`}>
-                {fyStatus.text}
-              </p>
-            )}
+            <StatusLine status={fyStatus} />
           </div>
 
           <div className="p-4">
@@ -438,7 +493,7 @@ export default function Settings({ user }) {
                   <input
                     className="w-24 h-11 rounded-lg bg-card ring-1 ring-hairline-strong px-3 text-sm focus:outline-none focus:ring-brand-teal"
                     value={bankLast4}
-                    onChange={(e) => setBankLast4(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    onChange={(e) => setBankLast4(lastFourDigits(e.target.value))}
                     onKeyDown={(e) => e.key === "Enter" && handleSaveBank()}
                     placeholder="Last 4"
                     inputMode="numeric"
@@ -466,19 +521,22 @@ export default function Settings({ user }) {
               <button className="w-full flex items-center gap-3 text-left" onClick={() => setBankEditing(true)}>
                 <Landmark className="size-4 text-text-secondary shrink-0" />
                 <p className="flex-1 min-w-0 text-sm">Bank account</p>
-                <span className="text-sm text-text-secondary shrink-0 truncate max-w-[50%]">
-                  {profile.bankName || profile.bankLast4
-                    ? [profile.bankName, profile.bankLast4 && `••${profile.bankLast4}`].filter(Boolean).join(" ")
-                    : "Add"}
+                {/* Only the bank name truncates; the last 4 digits are what
+                    tell accounts apart, so they always show in full. */}
+                <span className="flex min-w-0 max-w-[60%] items-center gap-1 text-sm text-text-secondary">
+                  {bankName || bankLast4 ? (
+                    <>
+                      {bankName && <span className="min-w-0 truncate">{bankName}</span>}
+                      {bankLast4 && <span className="shrink-0">••{bankLast4}</span>}
+                    </>
+                  ) : (
+                    "Add"
+                  )}
                 </span>
                 <ChevronRight className="size-4 text-text-tertiary shrink-0" />
               </button>
             )}
-            {bankStatus && (
-              <p className={`mt-2 text-xs ${bankStatus.type === "error" ? "text-destructive" : "text-brand-teal"}`}>
-                {bankStatus.text}
-              </p>
-            )}
+            <StatusLine status={bankStatus} />
           </div>
 
           <div className="p-4">
@@ -504,11 +562,7 @@ export default function Settings({ user }) {
                 <p className="flex-1 min-w-0 text-sm">Face ID lock</p>
                 <Toggle on={bioEnabled} onClick={handleToggleLock} disabled={bioSaving} label="Require Face ID to open BX" />
               </div>
-              {bioStatus && (
-                <p className={`mt-2 text-xs ${bioStatus.type === "error" ? "text-destructive" : "text-brand-teal"}`}>
-                  {bioStatus.text}
-                </p>
-              )}
+              <StatusLine status={bioStatus} />
             </div>
           )}
 

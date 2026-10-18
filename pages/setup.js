@@ -126,7 +126,17 @@ export default function Setup({ user }) {
           onRetry={retryConnection}
         />
       ) : (
-        <>
+        // A real form, so Return submits from any field (the iPhone number
+        // pad on "Last 4" has no Return key, so a per-field handler there
+        // could never fire). noValidate keeps our own plain-language checks.
+        <form
+          className="flex flex-col flex-1"
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!confirming) handleGetStarted();
+          }}
+        >
           <div className="flex flex-col gap-3">
             <input
               className={inputClass}
@@ -184,12 +194,11 @@ export default function Setup({ user }) {
                 <input
                   className={`${inputClass} max-w-[120px]`}
                   value={bankLast4}
-                  onChange={(e) => setBankLast4(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  onChange={(e) => setBankLast4(e.target.value.replace(/\D/g, "").slice(-4))}
                   placeholder="Last 4"
                   inputMode="numeric"
                   aria-label="Last 4 digits of the account"
                   disabled={confirming}
-                  onKeyDown={(e) => e.key === "Enter" && !confirming && handleGetStarted()}
                 />
               </div>
             </div>
@@ -201,8 +210,8 @@ export default function Setup({ user }) {
 
           {!confirming ? (
             <button
+              type="submit"
               className="w-full rounded-full bg-brand-teal py-4 font-semibold text-white hover:opacity-90 transition disabled:opacity-60"
-              onClick={handleGetStarted}
               disabled={!companyName.trim() || !accountantEmail.trim()}
             >
               Get Started
@@ -213,6 +222,7 @@ export default function Setup({ user }) {
                 Give read-only access to <strong>{accountantEmail.trim()}</strong>?
               </p>
               <button
+                type="button"
                 className="w-full rounded-full bg-brand-teal py-4 font-semibold text-white hover:opacity-90 transition disabled:opacity-60"
                 onClick={handleConfirmShare}
                 disabled={creating}
@@ -220,6 +230,7 @@ export default function Setup({ user }) {
                 {creating ? "Setting up…" : "Yes, share"}
               </button>
               <button
+                type="button"
                 className="text-sm text-text-secondary underline underline-offset-4 disabled:opacity-60"
                 onClick={handleEditFromConfirm}
                 disabled={creating}
@@ -228,7 +239,7 @@ export default function Setup({ user }) {
               </button>
             </div>
           )}
-        </>
+        </form>
       )}
     </div>
   );
