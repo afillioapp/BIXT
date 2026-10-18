@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { updateExpenseRow } from "../lib/google";
 import { OFFICIAL_CATEGORIES } from "./CategoryIcon";
 import { rowIdFor } from "./ExpenseRow";
+import EntryTypePicker from "./EntryTypePicker";
 
 // Bottom-sheet edit form for a single expense row (owner request, part of
 // swipe-to-act rows). Shared by Home and History's Edit action. Writes
@@ -19,6 +20,7 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved })
   const [total, setTotal] = useState("");
   const [hst, setHst] = useState("");
   const [date, setDate] = useState("");
+  const [type, setType] = useState("Expense");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -32,6 +34,7 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved })
     setTotal(String(row.total ?? ""));
     setHst(String(row.hst ?? ""));
     setDate(row.date || "");
+    setType(row.type || "Expense");
     setError("");
     setSaving(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -50,6 +53,7 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved })
         total,
         hst,
         receiptLink: row.receiptLink,
+        type,
         hadTrailingCategory: row.hadTrailingCategory,
       });
       onSaved(row);
@@ -69,7 +73,7 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved })
       <div className="fixed inset-x-0 bottom-0 z-50 bg-card rounded-t-3xl">
         <div className="mx-auto max-w-md px-6 pt-5 pb-8">
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-base font-semibold">Edit expense</h2>
+            <h2 className="text-base font-semibold">Edit receipt</h2>
             <button
               type="button"
               onClick={onClose}
@@ -82,6 +86,11 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved })
           </div>
 
           <div className="flex flex-col gap-3">
+            {/* Old-layout (v1) sheets have no Type column to write to; their
+                rows are all expenses and stay that way. */}
+            {row.layout === "v2" && (
+              <EntryTypePicker value={type} onChange={setType} disabled={saving} />
+            )}
             <input
               className={inputClass}
               value={place}

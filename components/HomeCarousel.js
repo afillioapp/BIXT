@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { weeklyTotals, categoryTotals, formatCurrency, fiscalYear } from "../lib/insights";
+import { weeklyTotals, categoryTotals, formatCurrency, spendingRows, fiscalYear } from "../lib/insights";
 import { accentForCategory } from "./CategoryIcon";
 
 // Home's chart card (owner round 7): lives on a WHITE card below the
@@ -56,7 +56,7 @@ function monthBars(rows, refMonth) {
   const weekCount = Math.ceil(daysInMonth / 7);
   const values = new Array(weekCount).fill(0);
   let total = 0;
-  for (const r of rows || []) {
+  for (const r of spendingRows(rows)) {
     if (!r.date) continue;
     const d = new Date(`${r.date}T00:00:00`);
     if (isNaN(d.getTime()) || d.getFullYear() !== year || d.getMonth() !== month) continue;

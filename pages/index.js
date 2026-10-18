@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import { useDrive } from "../lib/useDrive";
 import { useMonthRows } from "../lib/useMonthRows";
 import { deleteExpenseRow } from "../lib/google";
-import { latestReceipts, categoryTotals, formatCurrency, fiscalStartMonth } from "../lib/insights";
+import { latestReceipts, categoryTotals, formatCurrency, spendingRows, fiscalStartMonth } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
 import HomeCarousel from "../components/HomeCarousel";
@@ -124,7 +124,7 @@ export default function Home({ user }) {
   // Filter pills: the categories present across the loaded rows, biggest
   // spend first (both months, matching what the list itself can show).
   const catSpend = new Map();
-  for (const r of rows || []) {
+  for (const r of spendingRows(rows)) {
     const c = r.category || "Other";
     const n = parseFloat(String(r.total ?? "").replace(/^'/, "").replace(/[$,\s]/g, ""));
     catSpend.set(c, (catSpend.get(c) || 0) + (Number.isFinite(n) ? n : 0));

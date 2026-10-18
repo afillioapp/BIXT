@@ -7,6 +7,7 @@ import {
   weeklyTotals,
   categoryTotals,
   formatCurrency,
+  spendingRows,
   fiscalStartMonth,
   fiscalYear,
 } from "../lib/insights";
@@ -86,7 +87,7 @@ function monthWeeklyBreakdown(rows, now) {
   const weekCount = Math.ceil(daysInMonth / 7);
   const values = new Array(weekCount).fill(0);
   let total = 0;
-  for (const r of rows || []) {
+  for (const r of spendingRows(rows)) {
     const d = parseRowDate(r.date);
     if (!d || d.getFullYear() !== year || d.getMonth() !== month) continue;
     const amount = parseAmount(r.total);
@@ -341,7 +342,7 @@ export default function Stats({ user }) {
             const sheetId = await findMonthExpenseSheetId(accessToken, rootFolderId, d);
             if (!sheetId) return;
             const monthRows = await listExpenseRows(accessToken, sheetId);
-            totals[i] = monthRows.reduce((sum, r) => sum + parseAmount(r.total), 0);
+            totals[i] = spendingRows(monthRows).reduce((sum, r) => sum + parseAmount(r.total), 0);
           } catch {
             // Skip a month Drive couldn't reach — the rest of the year still renders.
           }

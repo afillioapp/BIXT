@@ -7,6 +7,7 @@ import { saveExpenseToDrive } from "../lib/google";
 import { takePendingCapture } from "../lib/pendingCapture";
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
+import EntryTypePicker from "../components/EntryTypePicker";
 
 // Rebuilt in the ported Lovable design language (light bg-background page,
 // white ring-1 cards, teal/navy pills, design-system inputs) — the
@@ -44,7 +45,9 @@ export default function Capture({ user }) {
   const [imagePreview, setImagePreview] = useState(null);
   const [compressedBase64, setCompressedBase64] = useState(null);
   const [compressedMime, setCompressedMime] = useState(null);
-  const [form, setForm] = useState(null); // { place, total, hst, date, category }
+  const [form, setForm] = useState(null); // { place, total, hst, date, category, type }
+  // Set when Save is tapped before "money out or money in?" is answered.
+  const [typeMissing, setTypeMissing] = useState(false);
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [status, setStatus] = useState(null);
   const [compressing, setCompressing] = useState(false);
@@ -53,6 +56,7 @@ export default function Capture({ user }) {
 
   const fileInputRef = useRef(null);
   const importInputRef = useRef(null);
+  const typePickerRef = useRef(null);
 
   // Only send someone to onboarding when we positively know they have no BX
   // folder — i.e. Drive answered us. A connection problem (loadError) or a
@@ -120,6 +124,9 @@ export default function Capture({ user }) {
         hst: data.result.hst || "",
         date: data.result.date || "",
         category: data.result.category_suggestion || "Other",
+        // Deliberately unanswered: the owner must say whether they're being
+        // invoiced or invoicing — the photo can't tell us.
+        type: "",
       });
       setStatus({ type: "success", text: "Receipt read. Review and confirm." });
     } catch (err) {
@@ -131,6 +138,7 @@ export default function Capture({ user }) {
 
   function updateField(key, value) {
     setForm((f) => ({ ...f, [key]: value }));
+    if (key === "type") setTypeMissing(false);
   }
 
   function resetForNext() {
@@ -139,12 +147,20 @@ export default function Capture({ user }) {
     setCompressedMime(null);
     setForm(null);
     setCategoryOptions([]);
+    setTypeMissing(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (importInputRef.current) importInputRef.current.value = "";
   }
 
   async function handleConfirm() {
     if (!form || !compressedBase64 || !rootFolderId) return;
+    if (!form.type) {
+      // The picker turns red and says why; on a phone it can be above the
+      // fold when Save is tapped, so bring it into view.
+      setTypeMissing(true);
+      typePickerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     const parsedDate = form.date ? new Date(`${form.date}T00:00:00`) : null;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(form.date || "") || !parsedDate || isNaN(parsedDate.getTime())) {
       setStatus({ type: "error", text: "Please enter the date as YYYY-MM-DD (e.g. 2026-07-04)" });
@@ -163,6 +179,7 @@ export default function Capture({ user }) {
         hst: form.hst,
         date: form.date,
         category: form.category,
+        type: form.type,
       });
     try {
       try {
@@ -280,6 +297,15 @@ export default function Capture({ user }) {
             {form && (
               <>
                 {status && <p className={`text-sm ${statusColor}`}>{status.text}</p>}
+
+                <div ref={typePickerRef}>
+                  <EntryTypePicker
+                    value={form.type}
+                    onChange={(v) => updateField("type", v)}
+                    disabled={saving}
+                    missing={typeMissing}
+                  />
+                </div>
 
                 <div className="flex flex-col gap-2.5">
                   <input

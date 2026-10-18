@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { MoreHorizontal, ReceiptText, Pencil, Trash2 } from "lucide-react";
 import CategoryIcon from "./CategoryIcon";
+import { isIncome } from "../lib/insights";
 
 // Swipe-to-act expense row (owner request, modeled on CamScanner's
 // swipe-reveal row actions). One shared component for both Home's Recent
@@ -145,6 +146,7 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
   }
 
   const tint = tintForCategory(row.category);
+  const income = isIncome(row);
 
   return (
     <li className="relative rounded-xl overflow-hidden ring-1 ring-hairline">
@@ -235,11 +237,17 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
           </div>
           <div className="min-w-0">
             <p className="text-sm font-medium truncate">{row.place || "Untitled"}</p>
-            <p className="text-[11px] text-text-secondary truncate">{row.category || "Other"}</p>
+            <p className="text-[11px] text-text-secondary truncate">
+              {income ? `Income · ${row.category || "Other"}` : row.category || "Other"}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <p className="text-sm font-semibold text-text-primary">-{row.total}</p>
+          {/* Money in reads as +, in teal; money out keeps the plain minus. */}
+          <p className={`text-sm font-semibold ${income ? "text-brand-teal-deep" : "text-text-primary"}`}>
+            {income ? "+" : "-"}
+            {row.total}
+          </p>
           <MoreHorizontal className="size-4 text-text-tertiary" />
         </div>
       </div>
