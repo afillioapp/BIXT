@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import { useDrive } from "../lib/useDrive";
 import { useMonthRows } from "../lib/useMonthRows";
 import { deleteExpenseRow } from "../lib/google";
-import { latestReceipts, categoryTotals, formatCurrency, spendingRows, fiscalStartMonth } from "../lib/insights";
+import { latestReceipts, categoryTotals, formatCurrency, isIncome, fiscalStartMonth } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
 import HomeCarousel from "../components/HomeCarousel";
@@ -54,7 +54,7 @@ export default function Home({ user }) {
 
   const { getMonthRows, ensureMonths, invalidateMonth } = useMonthRows(accessToken, rootFolderId);
 
-  // Category filter for the Recent Expenses list (null = All).
+  // Category filter for the Recent receipts list (null = All).
   const [filterCat, setFilterCat] = useState(null);
 
   // Swipe-to-act row state: which row (if any) is swiped open, which row (if
@@ -123,13 +123,18 @@ export default function Home({ user }) {
 
   // Filter pills: the categories present across the loaded rows, biggest
   // spend first (both months, matching what the list itself can show).
+  // Income rows are in the list too, so their categories get pills as well,
+  // ranked after the spending ones (biggest income first).
   const catSpend = new Map();
-  for (const r of spendingRows(rows)) {
+  const catIncome = new Map();
+  for (const r of rows || []) {
     const c = r.category || "Other";
     const n = parseFloat(String(r.total ?? "").replace(/^'/, "").replace(/[$,\s]/g, ""));
-    catSpend.set(c, (catSpend.get(c) || 0) + (Number.isFinite(n) ? n : 0));
+    const target = isIncome(r) ? catIncome : catSpend;
+    target.set(c, (target.get(c) || 0) + (Number.isFinite(n) ? n : 0));
   }
-  const filterCats = [...catSpend.entries()].sort((a, b) => b[1] - a[1]).map(([c]) => c).slice(0, 6);
+  const byAmount = (m) => [...m.entries()].sort((a, b) => b[1] - a[1]).map(([c]) => c);
+  const filterCats = [...new Set([...byAmount(catSpend), ...byAmount(catIncome)])].slice(0, 6);
 
   // An active filter narrows the WHOLE page (owner request): the total, the
   // %-chip, the hero charts, and the list all speak about that one category.
@@ -269,7 +274,8 @@ export default function Home({ user }) {
 
         <section className="mb-4">
           <div className="flex justify-between items-center mb-3">
-            <h2 className="text-sm font-semibold">Recent Expenses</h2>
+            {/* "receipts", not "expenses": money-in rows are listed here too. */}
+            <h2 className="text-sm font-semibold">Recent receipts</h2>
             <Link href="/history" className="text-xs text-brand-teal font-medium">
               View All
             </Link>
@@ -290,7 +296,7 @@ export default function Home({ user }) {
 
           {rows && rows.length > 0 && latest.length === 0 && (
             <p className="text-xs text-text-secondary py-6 text-center">
-              No {filterCat} expenses in the last two months.
+              No {filterCat} receipts in the last two months.
             </p>
           )}
 
