@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { weeklyTotals, categoryTotals, formatCurrency } from "../lib/insights";
+import { weeklyTotals, categoryTotals, formatCurrency, fiscalYear } from "../lib/insights";
 import { accentForCategory } from "./CategoryIcon";
 
 // Home's chart card (owner round 7): lives on a WHITE card below the
@@ -67,8 +67,6 @@ function monthBars(rows, refMonth) {
   }
   return { values, total, labels: values.map((_, i) => `W${i + 1}`) };
 }
-
-const MONTH_LABELS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
 // Same exact hex palette Stats' donut/progress list uses.
 const CATEGORY_PALETTE = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
@@ -245,7 +243,9 @@ function TopCategoriesPanel({ monthData, nav, accent }) {
   );
 }
 
-export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategory = null }) {
+// fiscalStart (1-12) is the month the business's year starts; the Year view
+// shows that fiscal year rather than January–December.
+export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategory = null, fiscalStart = 1 }) {
   const now = new Date();
 
   // Home's category filter narrows every panel too (owner request). Cache
@@ -275,15 +275,15 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
     return [...seen.values()];
   })();
   const refBarMonth = new Date(now.getFullYear(), now.getMonth() - barMonthOffset, 1);
-  const targetYear = now.getFullYear() - yearOffset;
-  const yearMonthDates = MONTH_LABELS.map((_, i) => new Date(targetYear, i, 1));
+  const fy = fiscalYear(fiscalStart, yearOffset, now);
+  const yearMonthDates = fy.months;
 
   useEffect(() => {
     if (range === "Week") ensureMonths(weekNeededMonths);
     else if (range === "Month") ensureMonths([refBarMonth]);
     else ensureMonths(yearMonthDates);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range, weekOffset, barMonthOffset, yearOffset]);
+  }, [range, weekOffset, barMonthOffset, yearOffset, fiscalStart]);
 
   useEffect(() => {
     ensureMonths([new Date(now.getFullYear(), now.getMonth() - catMonthOffset, 1)]);
@@ -328,12 +328,12 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
       ? yearMonthDates.map((d) => categoryTotals(rowsFor(d), d).total)
       : [];
     bars = {
-      label: String(targetYear),
+      label: fy.label,
       ready,
       total: values.reduce((s, v) => s + v, 0),
       values,
-      labels: MONTH_LABELS,
-      boldIndex: ready ? (yearOffset === 0 ? now.getMonth() : values.indexOf(Math.max(...values))) : -1,
+      labels: fy.letters,
+      boldIndex: ready ? (yearOffset === 0 ? fy.currentIndex : values.indexOf(Math.max(...values))) : -1,
       onPrev: () => setYearOffset((o) => o + 1),
       onNext: () => setYearOffset((o) => Math.max(0, o - 1)),
       nextDisabled: yearOffset === 0,

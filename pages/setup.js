@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
-import { Check } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { useDrive } from "../lib/useDrive";
 import {
   getCompanyRootFolderId,
@@ -10,8 +10,10 @@ import {
   ensureMonthFolders,
 } from "../lib/google";
 import DriveFallback from "../components/DriveFallback";
+import { MONTH_NAMES } from "../lib/insights";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const LAST4_RE = /^\d{4}$/;
 
 const inputClass =
   "w-full h-12 rounded-xl bg-card ring-1 ring-hairline-strong px-4 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-brand-teal disabled:opacity-60";
@@ -27,6 +29,9 @@ export default function Setup({ user }) {
 
   const [companyName, setCompanyName] = useState("");
   const [accountantEmail, setAccountantEmail] = useState("");
+  const [fiscalYearStart, setFiscalYearStart] = useState("1");
+  const [bankName, setBankName] = useState("");
+  const [bankLast4, setBankLast4] = useState("");
   const [creating, setCreating] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
@@ -42,6 +47,10 @@ export default function Setup({ user }) {
     if (!companyName.trim() || !accountantEmail.trim() || !accessToken) return;
     if (!EMAIL_RE.test(accountantEmail.trim())) {
       setError("That doesn't look like an email address");
+      return;
+    }
+    if (bankLast4 && !LAST4_RE.test(bankLast4)) {
+      setError("Enter exactly the last 4 digits of the account");
       return;
     }
     setError("");
@@ -67,6 +76,9 @@ export default function Setup({ user }) {
       await saveProfile(accessToken, rootId, {
         companyName: companyName.trim(),
         accountantEmail: accountantEmail.trim(),
+        fiscalYearStart,
+        bankName: bankName.trim(),
+        bankLast4,
       });
       await ensureMonthFolders(accessToken, rootId, new Date());
       setDone(true);
@@ -131,9 +143,56 @@ export default function Setup({ user }) {
               value={accountantEmail}
               onChange={(e) => setAccountantEmail(e.target.value)}
               placeholder="Accountant's email"
-              onKeyDown={(e) => e.key === "Enter" && !confirming && handleGetStarted()}
               disabled={confirming}
             />
+
+            <label className="flex flex-col gap-1.5 mt-2">
+              <span className="text-sm text-text-secondary">Fiscal year starts in</span>
+              <div className="relative">
+                <select
+                  className={`${inputClass} appearance-none pr-10`}
+                  value={fiscalYearStart}
+                  onChange={(e) => setFiscalYearStart(e.target.value)}
+                  disabled={confirming}
+                >
+                  {MONTH_NAMES.map((m, i) => (
+                    <option key={m} value={String(i + 1)}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 size-4 text-text-secondary"
+                  aria-hidden="true"
+                />
+              </div>
+              <span className="text-xs text-text-secondary">Not sure? Most businesses use January.</span>
+            </label>
+
+            {/* For the owner's own reference only — never the full number. */}
+            <div className="flex flex-col gap-1.5 mt-2">
+              <span className="text-sm text-text-secondary">Business bank account (optional)</span>
+              <div className="flex gap-2.5">
+                <input
+                  className={inputClass}
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  placeholder="Bank name"
+                  maxLength={40}
+                  disabled={confirming}
+                />
+                <input
+                  className={`${inputClass} max-w-[120px]`}
+                  value={bankLast4}
+                  onChange={(e) => setBankLast4(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                  placeholder="Last 4"
+                  inputMode="numeric"
+                  aria-label="Last 4 digits of the account"
+                  disabled={confirming}
+                  onKeyDown={(e) => e.key === "Enter" && !confirming && handleGetStarted()}
+                />
+              </div>
+            </div>
           </div>
 
           {error && <p className="text-sm text-destructive mt-4">{error}</p>}

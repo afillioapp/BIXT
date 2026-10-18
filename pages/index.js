@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import { useDrive } from "../lib/useDrive";
 import { useMonthRows } from "../lib/useMonthRows";
 import { deleteExpenseRow } from "../lib/google";
-import { latestReceipts, categoryTotals, formatCurrency } from "../lib/insights";
+import { latestReceipts, categoryTotals, formatCurrency, fiscalStartMonth } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
 import HomeCarousel from "../components/HomeCarousel";
@@ -205,7 +205,12 @@ export default function Home({ user }) {
 
       <div className="mx-auto max-w-md px-5 pt-6">
         <div className="mb-6">
-          <HomeCarousel getMonthRows={getMonthRows} ensureMonths={ensureMonths} filterCategory={filterCat} />
+          <HomeCarousel
+            getMonthRows={getMonthRows}
+            ensureMonths={ensureMonths}
+            filterCategory={filterCat}
+            fiscalStart={fiscalStartMonth(profile)}
+          />
         </div>
 
         {rows && rows.length > 0 && (

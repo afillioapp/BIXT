@@ -4,6 +4,8 @@ import {
   Building2,
   Cloud,
   Mail,
+  CalendarRange,
+  Landmark,
   Sun,
   Moon,
   ScanFace,
@@ -17,8 +19,10 @@ import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
 import { biometricAvailable, isLockEnabled, enableLock, disableLock } from "../lib/biometric";
 import { getTheme, setTheme } from "../lib/theme";
+import { MONTH_NAMES, fiscalStartMonth } from "../lib/insights";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const LAST4_RE = /^\d{4}$/;
 
 // "Jane Doe" -> "JD"; a single name -> first two letters; nothing -> "?".
 function initialsFor(name, fallback) {
@@ -86,6 +90,16 @@ export default function Settings({ user }) {
 
   const [theme, setThemeState] = useState("light");
 
+  const [fyStart, setFyStart] = useState("1");
+  const [fySaving, setFySaving] = useState(false);
+  const [fyStatus, setFyStatus] = useState(null);
+
+  const [bankEditing, setBankEditing] = useState(false);
+  const [bankName, setBankName] = useState("");
+  const [bankLast4, setBankLast4] = useState("");
+  const [bankSaving, setBankSaving] = useState(false);
+  const [bankStatus, setBankStatus] = useState(null);
+
   useEffect(() => {
     setThemeState(getTheme());
   }, []);
@@ -96,8 +110,56 @@ export default function Settings({ user }) {
   }
 
   useEffect(() => {
-    if (profile) setAccountantEmail(profile.accountantEmail || "");
+    if (!profile) return;
+    setAccountantEmail(profile.accountantEmail || "");
+    setFyStart(String(fiscalStartMonth(profile)));
+    setBankName(profile.bankName || "");
+    setBankLast4(profile.bankLast4 || "");
   }, [profile]);
+
+  // Saves as soon as a month is picked — one choice, nothing to confirm.
+  async function handleFiscalChange(next) {
+    const previous = fyStart;
+    setFyStart(next);
+    setFySaving(true);
+    setFyStatus(null);
+    try {
+      await saveProfile(accessToken, rootFolderId, { fiscalYearStart: next });
+      setFyStatus({ type: "success", text: "Saved" });
+      reloadProfile();
+    } catch (err) {
+      setFyStart(previous);
+      setFyStatus({ type: "error", text: err.message });
+    } finally {
+      setFySaving(false);
+    }
+  }
+
+  function cancelBankEdit() {
+    setBankEditing(false);
+    setBankName(profile.bankName || "");
+    setBankLast4(profile.bankLast4 || "");
+    setBankStatus(null);
+  }
+
+  async function handleSaveBank() {
+    if (bankLast4 && !LAST4_RE.test(bankLast4)) {
+      setBankStatus({ type: "error", text: "Enter exactly the last 4 digits" });
+      return;
+    }
+    setBankSaving(true);
+    setBankStatus(null);
+    try {
+      await saveProfile(accessToken, rootFolderId, { bankName: bankName.trim(), bankLast4 });
+      setBankStatus({ type: "success", text: "Bank account saved" });
+      setBankEditing(false);
+      reloadProfile();
+    } catch (err) {
+      setBankStatus({ type: "error", text: err.message });
+    } finally {
+      setBankSaving(false);
+    }
+  }
 
   // Only show the lock toggle on devices that actually have a platform
   // authenticator (Face ID / fingerprint / Windows Hello) available.
@@ -328,6 +390,93 @@ export default function Settings({ user }) {
             {status && (
               <p className={`mt-2 text-xs ${status.type === "error" ? "text-destructive" : "text-brand-teal"}`}>
                 {status.text}
+              </p>
+            )}
+          </div>
+
+          <div className="p-4">
+            <div className="flex items-center gap-3">
+              <CalendarRange className="size-4 text-text-secondary shrink-0" />
+              <label htmlFor="fiscal-start" className="flex-1 min-w-0 text-sm">
+                Fiscal year starts
+              </label>
+              <select
+                id="fiscal-start"
+                value={fyStart}
+                onChange={(e) => handleFiscalChange(e.target.value)}
+                disabled={fySaving}
+                className="text-sm text-text-secondary bg-transparent text-right appearance-none focus:outline-none disabled:opacity-60 cursor-pointer"
+              >
+                {MONTH_NAMES.map((m, i) => (
+                  <option key={m} value={String(i + 1)}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+              <ChevronRight className="size-4 text-text-tertiary shrink-0" />
+            </div>
+            {fyStatus && (
+              <p className={`mt-2 text-xs ${fyStatus.type === "error" ? "text-destructive" : "text-brand-teal"}`}>
+                {fyStatus.text}
+              </p>
+            )}
+          </div>
+
+          <div className="p-4">
+            {bankEditing ? (
+              <div>
+                <p className="text-sm text-text-secondary mb-2">Business bank account</p>
+                <div className="flex gap-2 mb-3">
+                  <input
+                    className="flex-1 min-w-0 h-11 rounded-lg bg-card ring-1 ring-hairline-strong px-3 text-sm focus:outline-none focus:ring-brand-teal"
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                    placeholder="Bank name"
+                    maxLength={40}
+                    autoFocus
+                  />
+                  <input
+                    className="w-24 h-11 rounded-lg bg-card ring-1 ring-hairline-strong px-3 text-sm focus:outline-none focus:ring-brand-teal"
+                    value={bankLast4}
+                    onChange={(e) => setBankLast4(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    onKeyDown={(e) => e.key === "Enter" && handleSaveBank()}
+                    placeholder="Last 4"
+                    inputMode="numeric"
+                    aria-label="Last 4 digits of the account"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    className="flex-1 h-9 rounded-full ring-1 ring-hairline-strong text-sm font-medium"
+                    onClick={cancelBankEdit}
+                    disabled={bankSaving}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="flex-1 h-9 rounded-full bg-brand-teal text-white text-sm font-semibold disabled:opacity-60"
+                    onClick={handleSaveBank}
+                    disabled={bankSaving}
+                  >
+                    {bankSaving ? "Saving…" : "Save"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button className="w-full flex items-center gap-3 text-left" onClick={() => setBankEditing(true)}>
+                <Landmark className="size-4 text-text-secondary shrink-0" />
+                <p className="flex-1 min-w-0 text-sm">Bank account</p>
+                <span className="text-sm text-text-secondary shrink-0 truncate max-w-[50%]">
+                  {profile.bankName || profile.bankLast4
+                    ? [profile.bankName, profile.bankLast4 && `••${profile.bankLast4}`].filter(Boolean).join(" ")
+                    : "Add"}
+                </span>
+                <ChevronRight className="size-4 text-text-tertiary shrink-0" />
+              </button>
+            )}
+            {bankStatus && (
+              <p className={`mt-2 text-xs ${bankStatus.type === "error" ? "text-destructive" : "text-brand-teal"}`}>
+                {bankStatus.text}
               </p>
             )}
           </div>

@@ -3,7 +3,13 @@ import { ArrowDownRight, ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-
 import { useDrive } from "../lib/useDrive";
 import { findMonthExpenseSheetId, listExpenseRows } from "../lib/google";
 import { useMonthRows } from "../lib/useMonthRows";
-import { weeklyTotals, categoryTotals, formatCurrency } from "../lib/insights";
+import {
+  weeklyTotals,
+  categoryTotals,
+  formatCurrency,
+  fiscalStartMonth,
+  fiscalYear,
+} from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
 
@@ -94,8 +100,6 @@ function monthWeeklyBreakdown(rows, now) {
     total,
   };
 }
-
-const MONTH_LABELS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 
 function Segmented({ range, setRange }) {
   return (
@@ -287,7 +291,7 @@ export default function Stats({ user }) {
   // automatically; missing months are requested below as periods need them.
   const { getMonthRows, ensureMonths } = useMonthRows(accessToken, rootFolderId);
 
-  const [yearCache, setYearCache] = useState({}); // { [year]: number[12] }
+  const [yearCache, setYearCache] = useState({}); // { [fiscal year label]: number[12] }
   const [yearLoading, setYearLoading] = useState(false);
 
   // The months the currently shown period needs (its own span plus the
@@ -316,19 +320,23 @@ export default function Stats({ user }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range, weekOffset, monthOffset, accessToken, rootFolderId]);
 
-  // Year tab: walk every month of the selected year on demand, skip months
-  // with no Expenses sheet, cache per year so sliding back and forth never
-  // refetches.
+  // Year tab follows the business's fiscal year (set at onboarding, editable
+  // in Settings) — for an April start, "Apr 2026 – Mar 2027", not 2026.
+  const fiscalStart = fiscalStartMonth(profile);
+  const fy = fiscalYear(fiscalStart, yearOffset);
+
+  // Year tab: walk every month of the selected fiscal year on demand, skip
+  // months with no Expenses sheet, cache per year so sliding back and forth
+  // never refetches.
   useEffect(() => {
-    const targetYear = new Date().getFullYear() - yearOffset;
-    if (range !== "Year" || yearCache[targetYear] || yearLoading || !accessToken || !rootFolderId) return;
+    if (range !== "Year" || yearCache[fy.label] || yearLoading || !accessToken || !rootFolderId) return;
     let cancelled = false;
     setYearLoading(true);
+    const cacheKey = fy.label;
     async function loadYear() {
       const totals = new Array(12).fill(0);
       await Promise.all(
-        MONTH_LABELS.map(async (_, i) => {
-          const d = new Date(targetYear, i, 1);
+        fy.months.map(async (d, i) => {
           try {
             const sheetId = await findMonthExpenseSheetId(accessToken, rootFolderId, d);
             if (!sheetId) return;
@@ -340,7 +348,7 @@ export default function Stats({ user }) {
         })
       );
       if (!cancelled) {
-        setYearCache((c) => ({ ...c, [targetYear]: totals }));
+        setYearCache((c) => ({ ...c, [cacheKey]: totals }));
         setYearLoading(false);
       }
     }
@@ -348,7 +356,8 @@ export default function Stats({ user }) {
     return () => {
       cancelled = true;
     };
-  }, [range, yearOffset, yearCache, yearLoading, accessToken, rootFolderId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range, yearOffset, fiscalStart, yearCache, yearLoading, accessToken, rootFolderId]);
 
   if (profileLoading || !profile) {
     return (
@@ -436,20 +445,19 @@ export default function Stats({ user }) {
       );
     }
   } else if (range === "Year") {
-    const targetYear = now.getFullYear() - yearOffset;
-    const totals = yearCache[targetYear];
+    const totals = yearCache[fy.label];
     if (yearLoading || !totals) {
       rangeCard = loadingCard;
     } else {
       const yearTotal = totals.reduce((s, v) => s + v, 0);
       rangeCard = (
         <RangeCard
-          sub={yearOffset === 0 ? `${targetYear} · year to date` : String(targetYear)}
+          sub={yearOffset === 0 ? `${fy.label} · year to date` : fy.label}
           total={formatCurrency(yearTotal, { decimals: 2 })}
           delta={null}
-          labels={MONTH_LABELS}
+          labels={fy.letters}
           values={totals}
-          boldIndex={yearOffset === 0 ? now.getMonth() : totals.indexOf(Math.max(...totals))}
+          boldIndex={yearOffset === 0 ? fy.currentIndex : totals.indexOf(Math.max(...totals))}
           onPrev={() => setYearOffset((o) => o + 1)}
           onNext={() => setYearOffset((o) => Math.max(0, o - 1))}
           nextDisabled={yearOffset === 0}
