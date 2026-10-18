@@ -293,7 +293,11 @@ export default function Stats({ user }) {
   const { getMonthRows, ensureMonths } = useMonthRows(accessToken, rootFolderId);
 
   const [yearCache, setYearCache] = useState({}); // { [fiscal year label]: number[12] }
-  const [yearLoading, setYearLoading] = useState(false);
+  // Fiscal years being fetched right now. A ref, not state: a yearLoading
+  // state used to be both set by the effect below and one of its
+  // dependencies, so setting it re-ran the effect, whose cleanup cancelled the
+  // load it had just started. The Year tab then sat on "Loading…" for good.
+  const yearInFlight = useRef(new Set());
 
   // The months the currently shown period needs (its own span plus the
   // previous period, for the vs-last delta).
@@ -330,10 +334,9 @@ export default function Stats({ user }) {
   // months with no Expenses sheet, cache per year so sliding back and forth
   // never refetches.
   useEffect(() => {
-    if (range !== "Year" || yearCache[fy.label] || yearLoading || !accessToken || !rootFolderId) return;
-    let cancelled = false;
-    setYearLoading(true);
     const cacheKey = fy.label;
+    if (range !== "Year" || yearCache[cacheKey] || yearInFlight.current.has(cacheKey) || !accessToken || !rootFolderId) return;
+    yearInFlight.current.add(cacheKey);
     async function loadYear() {
       const totals = new Array(12).fill(0);
       await Promise.all(
@@ -348,17 +351,14 @@ export default function Stats({ user }) {
           }
         })
       );
-      if (!cancelled) {
-        setYearCache((c) => ({ ...c, [cacheKey]: totals }));
-        setYearLoading(false);
-      }
+      // Stored under its own fiscal year, so a load that lands after the user
+      // has moved to another year is still filed in the right place.
+      setYearCache((c) => ({ ...c, [cacheKey]: totals }));
+      yearInFlight.current.delete(cacheKey);
     }
     loadYear();
-    return () => {
-      cancelled = true;
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range, yearOffset, fiscalStart, yearCache, yearLoading, accessToken, rootFolderId]);
+  }, [range, yearOffset, fiscalStart, yearCache, accessToken, rootFolderId]);
 
   if (profileLoading || !profile) {
     return (
@@ -447,7 +447,7 @@ export default function Stats({ user }) {
     }
   } else if (range === "Year") {
     const totals = yearCache[fy.label];
-    if (yearLoading || !totals) {
+    if (!totals) {
       rangeCard = loadingCard;
     } else {
       const yearTotal = totals.reduce((s, v) => s + v, 0);
