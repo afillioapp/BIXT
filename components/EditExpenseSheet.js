@@ -70,7 +70,7 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved })
         onClick={saving ? undefined : onClose}
         aria-hidden="true"
       />
-      <div className="fixed inset-x-0 bottom-0 z-50 bg-card rounded-t-3xl">
+      <div className="fixed inset-x-0 bottom-0 z-50 bg-card rounded-t-3xl max-h-dvh overflow-y-auto overscroll-contain">
         <div className="mx-auto max-w-md px-6 pt-5 pb-8">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-base font-semibold">Edit receipt</h2>

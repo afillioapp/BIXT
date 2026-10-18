@@ -57,6 +57,7 @@ export default function Capture({ user }) {
   const fileInputRef = useRef(null);
   const importInputRef = useRef(null);
   const typePickerRef = useRef(null);
+  const typeInputRef = useRef(null);
 
   // Only send someone to onboarding when we positively know they have no BX
   // folder — i.e. Drive answered us. A connection problem (loadError) or a
@@ -155,10 +156,12 @@ export default function Capture({ user }) {
   async function handleConfirm() {
     if (!form || !compressedBase64 || !rootFolderId) return;
     if (!form.type) {
-      // The picker turns red and says why; on a phone it can be above the
-      // fold when Save is tapped, so bring it into view.
+      // The picker turns red and says why. On a phone it can be above the
+      // fold when Save is tapped, so bring it into view and move focus to it
+      // (screen readers then land on the question, not a silent Save button).
       setTypeMissing(true);
       typePickerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      typeInputRef.current?.focus({ preventScroll: true });
       return;
     }
     const parsedDate = form.date ? new Date(`${form.date}T00:00:00`) : null;
@@ -304,6 +307,7 @@ export default function Capture({ user }) {
                     onChange={(v) => updateField("type", v)}
                     disabled={saving}
                     missing={typeMissing}
+                    inputRef={typeInputRef}
                   />
                 </div>
 
