@@ -195,7 +195,7 @@ export default function Home({ user }) {
                 className="size-10 rounded-full object-cover"
               />
             ) : (
-              <div className="size-10 rounded-full bg-brand-navy text-white grid place-items-center text-sm font-semibold">
+              <div className="size-10 rounded-full bg-brand-navy text-white dark:ring-1 dark:ring-hairline-strong grid place-items-center text-sm font-semibold">
                 {initialsFor(user?.displayName, profile.companyName)}
               </div>
             )}
@@ -220,9 +220,9 @@ export default function Home({ user }) {
                   className={`px-4 py-2 rounded-full text-xs font-medium shrink-0 ${
                     active
                       ? c === "All"
-                        ? "bg-brand-navy text-white"
+                        ? "bg-brand-navy text-white dark:bg-brand-teal dark:text-brand-navy"
                         : "text-brand-navy font-semibold"
-                      : "bg-white ring-1 ring-black/5 text-text-secondary"
+                      : "bg-card ring-1 ring-hairline text-text-secondary"
                   }`}
                   style={active && c !== "All" ? { background: accentForCategory(c) } : undefined}
                 >
@@ -236,7 +236,7 @@ export default function Home({ user }) {
         {monthBreakdown && monthBreakdown.categories.length > 0 && (
           <section className="mb-6">
             <h2 className="text-sm font-semibold mb-3">Top Categories</h2>
-            <div className="space-y-4 bg-white p-5 rounded-2xl ring-1 ring-black/5">
+            <div className="space-y-4 bg-card p-5 rounded-2xl ring-1 ring-hairline">
               {monthBreakdown.categories.slice(0, 5).map((c, i) => {
                 const active = filterCat === c.category;
                 return (
@@ -249,7 +249,7 @@ export default function Home({ user }) {
                     </div>
                     {/* Decorative: the row already states the category and the
                         share in text, so the bar is not the only carrier. */}
-                    <div className="w-full bg-zinc-100 h-1.5 rounded-full overflow-hidden" aria-hidden="true">
+                    <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden" aria-hidden="true">
                       <div
                         className="h-full rounded-full"
                         style={{ width: `${c.percent}%`, background: paletteColor(i) }}

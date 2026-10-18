@@ -99,7 +99,7 @@ const MONTH_LABELS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"
 
 function Segmented({ range, setRange }) {
   return (
-    <div className="flex p-1 bg-white ring-1 ring-black/5 rounded-lg mb-6">
+    <div className="flex p-1 bg-card ring-1 ring-hairline rounded-lg mb-6">
       {["Week", "Month", "Year"].map((t) => (
         <button
           key={t}
@@ -120,7 +120,7 @@ function RangeCard({ sub, total, delta, labels, values, boldIndex, onPrev, onNex
   const touchStartX = useRef(null);
   return (
     <section
-      className="bg-white rounded-2xl p-5 mb-6 ring-1 ring-black/5"
+      className="bg-card rounded-2xl p-5 mb-6 ring-1 ring-hairline"
       onTouchStart={(e) => {
         touchStartX.current = e.touches[0]?.clientX ?? null;
       }}
@@ -137,7 +137,7 @@ function RangeCard({ sub, total, delta, labels, values, boldIndex, onPrev, onNex
         <div>
           <div className="flex items-center gap-1.5">
             {onPrev && (
-              <button type="button" aria-label="Earlier" onClick={onPrev} className="text-zinc-400 -ml-1">
+              <button type="button" aria-label="Earlier" onClick={onPrev} className="text-text-tertiary -ml-1">
                 <ChevronLeft className="size-4" />
               </button>
             )}
@@ -148,7 +148,7 @@ function RangeCard({ sub, total, delta, labels, values, boldIndex, onPrev, onNex
                 aria-label="Later"
                 onClick={onNext}
                 disabled={nextDisabled}
-                className="text-zinc-400 disabled:opacity-30"
+                className="text-text-tertiary disabled:opacity-30"
               >
                 <ChevronRight className="size-4" />
               </button>
@@ -171,7 +171,7 @@ function RangeCard({ sub, total, delta, labels, values, boldIndex, onPrev, onNex
           // (An intermediate auto-height wrapper here made every bar 0px.)
           <div
             key={i}
-            className={`flex-1 rounded-t-md ${i === boldIndex ? "bg-brand-teal" : "bg-zinc-100"}`}
+            className={`flex-1 rounded-t-md ${i === boldIndex ? "bg-brand-teal" : "bg-muted"}`}
             style={{ height: `${max > 0 ? Math.max(6, (v / max) * 100) : 6}%` }}
           />
         ))}
@@ -222,7 +222,7 @@ function Donut({ categories, total }) {
     <div className="relative mx-auto" style={{ width: size, height: size }}>
       <svg width={size} height={size}>
         <g transform={`rotate(-90 ${cx} ${cy})`}>
-          <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F4F4F5" strokeWidth={stroke} />
+          <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--muted)" strokeWidth={stroke} />
           {arcs.map((arc) => (
             <circle
               key={arc.category}
@@ -382,7 +382,7 @@ export default function Stats({ user }) {
   const periodRows = periodReady ? needed.flatMap((d) => getMonthRows(d)) : null;
 
   const loadingCard = (
-    <section className="bg-white rounded-2xl p-5 mb-6 ring-1 ring-black/5">
+    <section className="bg-card rounded-2xl p-5 mb-6 ring-1 ring-hairline">
       <p className="text-xs text-text-secondary">Loading…</p>
     </section>
   );
@@ -472,7 +472,7 @@ export default function Stats({ user }) {
 
         {rangeCard}
 
-        <section className="bg-white rounded-2xl p-5 mb-6 ring-1 ring-black/5">
+        <section className="bg-card rounded-2xl p-5 mb-6 ring-1 ring-hairline">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-sm font-semibold">By Category</h2>
@@ -507,7 +507,7 @@ export default function Stats({ user }) {
             <button
               key={c}
               className={`px-4 py-2 rounded-full text-xs font-medium shrink-0 ${
-                i === 0 ? "bg-brand-navy text-white" : "bg-white ring-1 ring-black/5 text-text-secondary"
+                i === 0 ? "bg-brand-navy text-white dark:bg-brand-teal dark:text-brand-navy" : "bg-card ring-1 ring-hairline text-text-secondary"
               }`}
             >
               {c}
@@ -518,14 +518,14 @@ export default function Stats({ user }) {
         {monthData.categories.length > 0 && (
           <section>
             <h2 className="text-sm font-semibold mb-3">Top Categories</h2>
-            <div className="space-y-4 bg-white p-5 rounded-2xl ring-1 ring-black/5">
+            <div className="space-y-4 bg-card p-5 rounded-2xl ring-1 ring-hairline">
               {monthData.categories.map((c, i) => (
                 <div key={c.category}>
                   <div className="flex justify-between mb-1.5">
                     <span className="text-xs font-medium">{c.category}</span>
                     <span className="text-xs font-semibold">{Math.round(c.percent)}%</span>
                   </div>
-                  <div className="w-full bg-zinc-100 h-1.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
                     <div className="h-full" style={{ width: `${c.percent}%`, background: paletteColor(i) }} />
                   </div>
                 </div>

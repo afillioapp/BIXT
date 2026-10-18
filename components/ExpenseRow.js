@@ -28,13 +28,13 @@ const DRAG_SLOP = 4; // px of movement before a touch/click counts as a drag, no
 // so a category always renders the same swatch).
 const TINTS = [
   "bg-brand-teal-soft text-brand-teal",
-  "bg-orange-50 text-orange-600",
-  "bg-indigo-50 text-indigo-600",
-  "bg-zinc-100 text-zinc-700",
-  "bg-amber-50 text-amber-600",
-  "bg-rose-50 text-rose-500",
-  "bg-sky-50 text-sky-600",
-  "bg-emerald-50 text-emerald-600",
+  "bg-orange-50 text-orange-600 dark:bg-orange-400/15 dark:text-orange-300",
+  "bg-indigo-50 text-indigo-600 dark:bg-indigo-400/15 dark:text-indigo-300",
+  "bg-zinc-100 text-zinc-700 dark:bg-zinc-400/15 dark:text-zinc-300",
+  "bg-amber-50 text-amber-600 dark:bg-amber-400/15 dark:text-amber-300",
+  "bg-rose-50 text-rose-500 dark:bg-rose-400/15 dark:text-rose-300",
+  "bg-sky-50 text-sky-600 dark:bg-sky-400/15 dark:text-sky-300",
+  "bg-emerald-50 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-300",
 ];
 
 function tintForCategory(category) {
@@ -147,7 +147,7 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
   const tint = tintForCategory(row.category);
 
   return (
-    <li className="relative rounded-xl overflow-hidden ring-1 ring-black/5">
+    <li className="relative rounded-xl overflow-hidden ring-1 ring-hairline">
       {/* Action layer — sharp-cornered, revealed as the content slides left.
           Clipped to the outer rounded-xl by the li's overflow-hidden. */}
       <div className="absolute inset-y-0 right-0 flex" style={{ width: MAX_OPEN }}>
@@ -218,7 +218,7 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
 
       {/* Content layer — slides left to reveal the actions behind it. */}
       <div
-        className="relative z-10 flex items-center justify-between p-3 bg-white select-none"
+        className="relative z-10 flex items-center justify-between p-3 bg-card select-none"
         style={{
           transform: `translateX(-${offset}px)`,
           transition: dragging ? "none" : "transform 200ms ease-out",
@@ -240,7 +240,7 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <p className="text-sm font-semibold text-text-primary">-{row.total}</p>
-          <MoreHorizontal className="size-4 text-zinc-400" />
+          <MoreHorizontal className="size-4 text-text-tertiary" />
         </div>
       </div>
     </li>

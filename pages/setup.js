@@ -14,7 +14,7 @@ import DriveFallback from "../components/DriveFallback";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const inputClass =
-  "w-full h-12 rounded-xl bg-white ring-1 ring-black/10 px-4 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-brand-teal disabled:opacity-60";
+  "w-full h-12 rounded-xl bg-card ring-1 ring-hairline-strong px-4 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-brand-teal disabled:opacity-60";
 
 // Rebuilt in the ported Lovable design language (light page, design-system
 // inputs, teal pills). Behavior unchanged: single-screen onboarding whose
@@ -88,7 +88,7 @@ export default function Setup({ user }) {
           </div>
           <h1 className="text-2xl font-semibold tracking-tight">You're all set</h1>
           <p className="text-sm text-text-secondary">Receipts will be saved to:</p>
-          <div className="bg-white ring-1 ring-black/5 rounded-xl px-4 py-3 text-[13px] font-mono">
+          <div className="bg-card ring-1 ring-hairline rounded-xl px-4 py-3 text-[13px] font-mono">
             BX - {companyName} / {now.getFullYear()} / {now.toLocaleString("en-US", { month: "long" })}
           </div>
           <button

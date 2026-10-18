@@ -134,7 +134,7 @@ export default function ThumbControl() {
           <div
             role="menu"
             aria-label="Receipt options"
-            className="absolute bottom-[calc(100%+12px)] right-0 w-52 origin-bottom-right rounded-2xl bg-surface p-1.5 shadow-xl ring-1 ring-black/10"
+            className="absolute bottom-[calc(100%+12px)] right-0 w-52 origin-bottom-right rounded-2xl bg-surface p-1.5 shadow-xl ring-1 ring-hairline-strong"
           >
             <label
               htmlFor="bx-thumb-import"

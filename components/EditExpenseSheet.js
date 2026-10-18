@@ -11,7 +11,7 @@ import { rowIdFor } from "./ExpenseRow";
 // surface inline instead of closing the sheet, so the user's edits aren't
 // lost on a failed save.
 const inputClass =
-  "w-full h-12 rounded-xl bg-white ring-1 ring-black/10 px-4 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-brand-teal disabled:opacity-60";
+  "w-full h-12 rounded-xl bg-card ring-1 ring-hairline-strong px-4 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-brand-teal disabled:opacity-60";
 
 export default function EditExpenseSheet({ accessToken, row, onClose, onSaved }) {
   const [place, setPlace] = useState("");
@@ -66,7 +66,7 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved })
         onClick={saving ? undefined : onClose}
         aria-hidden="true"
       />
-      <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-3xl">
+      <div className="fixed inset-x-0 bottom-0 z-50 bg-card rounded-t-3xl">
         <div className="mx-auto max-w-md px-6 pt-5 pb-8">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-base font-semibold">Edit expense</h2>

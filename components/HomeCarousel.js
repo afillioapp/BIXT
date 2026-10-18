@@ -80,7 +80,7 @@ function paletteColor(i) {
 function PeriodNav({ label, onPrev, onNext, nextDisabled }) {
   return (
     <div className="flex items-center gap-1 shrink-0">
-      <button type="button" aria-label="Earlier" onClick={onPrev} className="text-zinc-400">
+      <button type="button" aria-label="Earlier" onClick={onPrev} className="text-text-tertiary">
         <ChevronLeft className="size-4" />
       </button>
       <p className="text-[11px] text-text-secondary whitespace-nowrap">{label}</p>
@@ -89,7 +89,7 @@ function PeriodNav({ label, onPrev, onNext, nextDisabled }) {
         aria-label="Later"
         onClick={onNext}
         disabled={nextDisabled}
-        className="text-zinc-400 disabled:opacity-30"
+        className="text-text-tertiary disabled:opacity-30"
       >
         <ChevronRight className="size-4" />
       </button>
@@ -130,7 +130,7 @@ function BarsPanel({ nav, ready, total, values, labels, boldIndex, accent }) {
             {values.map((v, i) => (
               <div
                 key={i}
-                className={`flex-1 rounded-t-md ${i === boldIndex ? "bg-brand-teal" : "bg-zinc-100"}`}
+                className={`flex-1 rounded-t-md ${i === boldIndex ? "bg-brand-teal" : "bg-muted"}`}
                 style={{
                   height: `${max > 0 ? Math.max(6, (v / max) * 100) : 6}%`,
                   ...(accent && i === boldIndex ? { background: accent } : {}),
@@ -161,7 +161,7 @@ function DarkDonut({ categories, total, colorFor = paletteColor }) {
   return (
     <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#F4F4F5" strokeWidth={stroke} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--muted)" strokeWidth={stroke} />
         {categories.map((cat, i) => {
           const len = (cat.percent / sumPct) * c;
           const el = (
@@ -234,7 +234,7 @@ function TopCategoriesPanel({ monthData, nav, accent }) {
                 <span className="text-[11px] font-medium text-text-primary">{c.category}</span>
                 <span className="text-[11px] font-semibold text-text-secondary">{Math.round(c.percent)}%</span>
               </div>
-              <div className="w-full bg-zinc-100 h-1.5 rounded-full overflow-hidden">
+              <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
                 <div className="h-full" style={{ width: `${c.percent}%`, background: colorFor(i) }} />
               </div>
             </div>
@@ -387,7 +387,7 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
   return (
     <div>
       {/* Range tabs above the card, exactly like the Stats page. */}
-      <div className="flex p-1 bg-white ring-1 ring-black/5 rounded-lg mb-4">
+      <div className="flex p-1 bg-card ring-1 ring-hairline rounded-lg mb-4">
         {["Week", "Month", "Year"].map((t) => (
           <button
             key={t}
@@ -402,7 +402,7 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
         ))}
       </div>
 
-      <section className="bg-white rounded-2xl p-5 ring-1 ring-black/5">
+      <section className="bg-card rounded-2xl p-5 ring-1 ring-hairline">
         <div
           ref={scrollerRef}
           onScroll={handleScroll}
@@ -420,7 +420,7 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
           {panels.map((_, i) => (
             <span
               key={i}
-              className={`h-1.5 rounded-full transition-all ${i === active ? "w-4 bg-brand-teal" : "w-1.5 bg-zinc-200"}`}
+              className={`h-1.5 rounded-full transition-all ${i === active ? "w-4 bg-brand-teal" : "w-1.5 bg-track"}`}
             />
           ))}
         </div>

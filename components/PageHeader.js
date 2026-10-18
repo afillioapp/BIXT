@@ -3,17 +3,17 @@
 // which read as a separate object sitting on top of the page rather than the
 // start of it.
 //
-// It is now the same card as everything under it: bg-white, rounded-2xl,
-// ring-1 ring-black/5, the idiom every other card on Home and Insight uses. So
+// It is now the same card as everything under it: bg-card, rounded-2xl,
+// ring-1 ring-hairline, the idiom every other card on Home and Insight uses. So
 // the screen is one stack of cards on one ground from the top down, and the
 // header is the first of them rather than a different kind of thing.
 //
 // Its outer padding pairs with the `pt-6` the content below carries, so the
 // gap under the card matches the gap between the cards.
 //
-// Anything placed inside must be coloured for a light ground. The children
-// were all written white-on-navy (text-white/60, bg-white/15, ring-white/20),
-// and every one of those is invisible here.
+// Anything placed inside must use the theme tokens (text-text-primary,
+// text-text-secondary, …), not literal white or black: the card is white in
+// light mode and navy in dark mode.
 //
 // `tall` is the Settings identity header only: a little more room beneath, so
 // the chevron-row cards start lower than the avatar block.
@@ -31,9 +31,9 @@ export default function PageHeader({ tall = false, children }) {
     <div className="pt-6 relative z-10">
       <div className="mx-auto max-w-md px-5">
         <div
-          className={`bg-white rounded-2xl ${
+          className={`bg-card rounded-2xl ${
             tall ? "p-6" : "p-5"
-          } ring-1 ring-black/5`}
+          } ring-1 ring-hairline`}
         >
           {children}
         </div>

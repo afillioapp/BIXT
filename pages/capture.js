@@ -25,7 +25,7 @@ function formatReceiptFilename(dateStr, place) {
 }
 
 const inputClass =
-  "w-full h-12 rounded-xl bg-white ring-1 ring-black/10 px-4 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-brand-teal";
+  "w-full h-12 rounded-xl bg-card ring-1 ring-hairline-strong px-4 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-brand-teal";
 
 export default function Capture({ user }) {
   const router = useRouter();
@@ -249,7 +249,7 @@ export default function Capture({ user }) {
               </label>
               <label
                 htmlFor="receiptImport"
-                className="w-full rounded-full bg-white ring-1 ring-black/10 py-4 font-semibold text-text-primary cursor-pointer hover:bg-zinc-50 transition inline-flex items-center justify-center gap-2"
+                className="w-full rounded-full bg-card ring-1 ring-hairline-strong py-4 font-semibold text-text-primary cursor-pointer hover:bg-muted transition inline-flex items-center justify-center gap-2"
               >
                 <GalleryIcon className="size-4" /> Import from Phone
               </label>
@@ -261,7 +261,7 @@ export default function Capture({ user }) {
           <div className="flex flex-col gap-4 flex-1">
             <img
               src={imagePreview}
-              className="w-full max-h-72 object-cover rounded-2xl ring-1 ring-black/5"
+              className="w-full max-h-72 object-cover rounded-2xl ring-1 ring-hairline"
               alt="receipt"
             />
 
@@ -269,7 +269,7 @@ export default function Capture({ user }) {
               <div className="flex items-center gap-2">
                 {busy && (
                   <span
-                    className="size-3.5 rounded-full border-2 border-zinc-200 border-t-brand-teal animate-spin shrink-0"
+                    className="size-3.5 rounded-full border-2 border-track border-t-brand-teal animate-spin shrink-0"
                     aria-hidden="true"
                   />
                 )}
@@ -328,7 +328,7 @@ export default function Capture({ user }) {
 
                 <div className="flex gap-2.5 mt-auto pt-4">
                   <button
-                    className="flex-1 rounded-full bg-white ring-1 ring-black/10 py-4 font-semibold text-text-primary hover:bg-zinc-50 transition disabled:opacity-60"
+                    className="flex-1 rounded-full bg-card ring-1 ring-hairline-strong py-4 font-semibold text-text-primary hover:bg-muted transition disabled:opacity-60"
                     onClick={resetForNext}
                     disabled={saving}
                   >

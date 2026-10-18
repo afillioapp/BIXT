@@ -43,6 +43,10 @@
   --color-surface: var(--surface);
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+  --color-track: var(--track);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -91,6 +95,14 @@
   --surface: oklch(0.99 0.002 260);
   --text-primary: oklch(0.2 0.02 260);
   --text-secondary: oklch(0.5 0.015 260);
+  /* Chevrons and other quiet icons (was a literal zinc-400). */
+  --text-tertiary: oklch(0.705 0.015 286);
+  /* Card outlines and dividers (were literal black/5 and black/10 rings), and
+     the off-state of toggles, dots and spinners (was zinc-200). Tokens rather
+     than literals so dark mode can redefine them. */
+  --hairline: oklch(0 0 0 / 5%);
+  --hairline-strong: oklch(0 0 0 / 10%);
+  --track: oklch(0.92 0.004 286);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0.02 260);
   --popover: oklch(1 0 0);
@@ -123,21 +135,38 @@
   --sidebar-ring: oklch(0.704 0.04 256.788);
 }
 
+/* Dark theme (owner reference, 2026-10: a banking app's dark mode). Deep
+   navy ground, cards one step lighter so they still read as cards, light
+   text. Every card, input and divider in the app draws from these tokens —
+   none of them hardcode white or black — so this block is the whole theme.
+   brand-navy is deliberately NOT redefined: the login and lock screens are
+   navy in both themes, and teal buttons use it as their text colour. */
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
+  color-scheme: dark;
+  --background: oklch(0.165 0.03 265);
+  --foreground: oklch(0.97 0.005 260);
+  --surface: oklch(0.225 0.035 265);
+  --text-primary: oklch(0.97 0.005 260);
+  --text-secondary: oklch(0.74 0.02 260);
+  --text-tertiary: oklch(0.6 0.025 260);
+  /* Teal text needs to be lighter on a dark card to stay readable. */
+  --brand-teal-deep: oklch(0.8 0.09 190);
+  --brand-teal-soft: oklch(0.62 0.11 190 / 0.2);
+  --hairline: oklch(1 0 0 / 7%);
+  --hairline-strong: oklch(1 0 0 / 14%);
+  --track: oklch(0.36 0.03 265);
+  --card: oklch(0.235 0.035 265);
+  --card-foreground: oklch(0.97 0.005 260);
+  --popover: oklch(0.235 0.035 265);
+  --popover-foreground: oklch(0.97 0.005 260);
   --primary: oklch(0.929 0.013 255.508);
   --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
+  --secondary: oklch(0.29 0.035 265);
+  --secondary-foreground: oklch(0.97 0.005 260);
+  --muted: oklch(0.29 0.035 265);
+  --muted-foreground: oklch(0.74 0.02 260);
+  --accent: oklch(0.29 0.035 265);
+  --accent-foreground: oklch(0.97 0.005 260);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --border: oklch(1 0 0 / 10%);

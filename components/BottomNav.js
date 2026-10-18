@@ -30,7 +30,7 @@ function NavTab({ tab, active }) {
       href={tab.href}
       aria-label={tab.label}
       aria-current={active ? "page" : undefined}
-      className={`flex flex-col items-center gap-1 ${active ? "text-brand-teal" : "text-zinc-400"}`}
+      className={`flex flex-col items-center gap-1 ${active ? "text-brand-teal" : "text-text-tertiary"}`}
     >
       <Icon className="size-5" />
       <span className="text-[10px] font-medium">{tab.label}</span>
@@ -83,7 +83,7 @@ export default function BottomNav() {
         className="hidden"
       />
 
-      <nav className="fixed bottom-0 inset-x-0 z-40 h-20 bg-surface/85 backdrop-blur-md border-t border-black/5">
+      <nav className="fixed bottom-0 inset-x-0 z-40 h-20 bg-surface/85 backdrop-blur-md border-t border-hairline">
         <div className="mx-auto max-w-md h-full grid grid-cols-5 items-center px-4">
           {LEFT_TABS.map((tab) => (
             <NavTab key={tab.href} tab={tab} active={router.pathname === tab.href} />
