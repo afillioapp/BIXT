@@ -80,13 +80,25 @@ BX - {Company Name}/          <- root, found via a Drive search for
   {Year}/
     {Month name}/
       Supporting Documents/    <- compressed receipt photos
-      Expenses                <- Google Sheet: Date | Place | Total | HST | Receipt Link
+      Expenses                <- Google Sheet: Date | Vendor | Category | Total | HST | Receipt Link | Type
 ```
 
-The user's profile (company name, accountant email) is stored as custom
-Drive **file properties** on the root folder itself (`getProfile`/
-`saveProfile` in `lib/google.js`) — no separate profile file clutters the
-user's Drive. A user with no BX root folder yet is routed to
+Year folders are calendar years even when the business's fiscal year isn't
+(the fiscal year only changes how the app's Year view groups months).
+
+Type (column G) is `Expense` (the owner was invoiced, money out) or `Income`
+(the owner is invoicing, money in), asked on every capture. Older sheets get
+the header on their next save and their blank cells read as `Expense`.
+Income is excluded from every spending total (`spendingRows` in
+`lib/insights.js`). `ensureHeaderRow` migrates every older layout in place;
+`lib/google.js` documents each one.
+
+The user's profile (company name, accountant email, `fiscalYearStart` 1-12,
+optional `bankName` + `bankLast4`) is stored as custom Drive **file
+properties** on the root folder itself (`getProfile`/`saveProfile` in
+`lib/google.js`) — no separate profile file clutters the user's Drive.
+`saveProfile` writes only the keys it is given, so pass just the field being
+changed. A user with no BX root folder yet is routed to
 `pages/setup.js`; finding an existing one routes straight to the Camera tab.
 
 `lib/google.js` also exposes read-only lookup variants (`findFolderId`,
@@ -134,10 +146,14 @@ working); don't prioritize changes here unless explicitly asked.
 
 ### Styling
 
-`styles/globals.css` defines the entire color system as CSS custom
-properties at `:root` (`--bg`, `--surface`, `--card`, `--accent`, `--text`,
-`--muted`, `--border`, `--error`) — change the palette in one place, not by
-hunting hex values. No CSS-in-JS, no Tailwind.
+Tailwind 4. Every colour is a token in `styles/tailwind.css`: light values
+in `:root`, dark values in `.dark` (`lib/theme.js` toggles the class). Use
+the tokens, never literal white/black/zinc, or that element stays light in
+dark mode: `bg-card` (cards, inputs, sheets), `ring-hairline` /
+`ring-hairline-strong` (outlines), `divide-hairline`, `bg-muted` (chart
+tracks, hover), `bg-track` (toggle off, dots), `text-text-primary` /
+`-secondary` / `-tertiary`. The login and lock screens are navy in both
+themes on purpose.
 
 ## Environment variables
 
