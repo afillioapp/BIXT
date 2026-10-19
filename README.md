@@ -24,7 +24,9 @@ Snap a receipt → AI extracts date/place/total/HST/category → saved to Google
    - Authorized JavaScript origins: add your Vercel URL, e.g. `https://expense-tracker-yourname.vercel.app`
      (you'll get this URL after the first Vercel deploy — you can add it after and redeploy).
    - Copy the **Client ID** it gives you.
-5. **Anthropic API key**: https://console.anthropic.com → API Keys → create one.
+5. **OCR service**: deploy `ocr-service/` as its own Vercel project (see
+   `ocr-service/README.md`). Receipt reading runs locally on open-source
+   PP-OCRv4 models — there is no AI/LLM key and no per-scan API cost.
 
 ## 3. Environment variables in Vercel
 
@@ -32,7 +34,8 @@ Project Settings → Environment Variables, add:
 
 | Name | Value |
 |---|---|
-| `ANTHROPIC_API_KEY` | your Anthropic key |
+| `OCR_SERVICE_URL` | the OCR service endpoint, e.g. `https://bx-ocr.vercel.app/api/extract` |
+| `OCR_SHARED_SECRET` | shared secret; set the same value on the OCR project |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | your Google OAuth client ID |
 
 Redeploy after adding these.

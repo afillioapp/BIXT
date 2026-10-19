@@ -1,9 +1,13 @@
-// Server-side route: keeps your ANTHROPIC_API_KEY secret.
-// Receives a base64 receipt image, asks Claude to read it, returns structured JSON.
+// Server-side route: reads a receipt photo and returns structured fields.
 //
-// Access control: callers must present a Firebase ID token (proof of a
-// signed-in BX user) in the Authorization header. Without this, the endpoint
-// would be an open proxy to the Anthropic API on our bill.
+// Recognition runs on our own OCR service (local PP-OCRv4 ONNX inference, see
+// ocr-service/), not a paid AI API — a scan costs nothing per use. This route
+// stays in front of it because it owns the things the OCR service should not:
+// proving the caller is a signed-in BX user, and rate limiting.
+//
+// Access control: callers must present a Firebase ID token in the
+// Authorization header. Without this, the endpoint would be an open proxy to
+// our OCR compute.
 
 import { createRemoteJWKSet, jwtVerify } from "jose";
 
@@ -40,8 +44,8 @@ async function verifyCaller(req) {
 }
 
 // Per-user scan budget. In-memory, so each serverless instance counts
-// separately — coarse, but enough to keep any single account from burning
-// meaningful API spend.
+// separately — coarse, but enough to keep any single account from pinning
+// the OCR service.
 const RATE_LIMIT = 30; // scans
 const RATE_WINDOW_MS = 60 * 60 * 1000; // per hour
 const usageByUid = new Map();
@@ -62,10 +66,17 @@ function overRateLimit(uid) {
 // wildly larger than that is not a legitimate request from our app.
 const MAX_IMAGE_BASE64_CHARS = 7 * 1024 * 1024; // ~5MB of image data
 
+// Recognition is ~0.5s warm, but a cold service instance has to load the
+// models first, so allow generous headroom before giving up.
+const OCR_TIMEOUT_MS = 60 * 1000;
+
 // The official v1 category list (owner-approved 2026-07-08). These names are
 // written into users' expense sheets — treat them as a stable schema: add new
 // ones if needed, but don't rename existing ones (old rows keep old strings;
 // lib/insights.js carries legacy aliases for pre-v1 names).
+//
+// ocr-service/bx_ocr/categories.py must carry the identical list; its test
+// suite asserts the two stay in step.
 const CATEGORIES = [
   "Dining & Meals",
   "Coffee & Drinks",
@@ -102,74 +113,44 @@ export default async function handler(req, res) {
     return res.status(413).json({ error: "Image is too large." });
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: "Server missing ANTHROPIC_API_KEY" });
+  const serviceUrl = process.env.OCR_SERVICE_URL;
+  const sharedSecret = process.env.OCR_SHARED_SECRET;
+  if (!serviceUrl || !sharedSecret) {
+    return res.status(500).json({ error: "Server missing OCR_SERVICE_URL or OCR_SHARED_SECRET" });
   }
 
-  const prompt = `You are reading a business expense receipt image. Extract the following fields and respond with ONLY raw JSON, no markdown fences, no preamble:
-
-{
-  "date": "YYYY-MM-DD (best guess, use receipt date)",
-  "place": "merchant / vendor name",
-  "total": "final total amount paid, number only, no currency symbol",
-  "hst": "HST/GST/tax amount, number only, 0 if none found",
-  "currency": "3 letter currency code, guess CAD if unclear",
-  "category_suggestion": "pick the single best fit from this exact list: ${CATEGORIES.join(", ")}",
-  "notes": "1 short phrase, e.g. 3 items purchased, or client dinner - leave empty string if nothing notable"
-}
-
-If a field is unreadable, use your best reasonable guess rather than leaving it blank. Respond with ONLY the JSON object.`;
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), OCR_TIMEOUT_MS);
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch(serviceUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
+        "x-bx-ocr-secret": sharedSecret,
       },
-      body: JSON.stringify({
-        model: "claude-sonnet-5",
-        max_tokens: 500,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "image",
-                source: {
-                  type: "base64",
-                  media_type: mediaType || "image/jpeg",
-                  data: imageBase64,
-                },
-              },
-              { type: "text", text: prompt },
-            ],
-          },
-        ],
-      }),
+      body: JSON.stringify({ imageBase64, mediaType }),
+      signal: abort.signal,
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => null);
 
     if (!response.ok) {
-      return res.status(response.status).json({ error: data?.error?.message || "Anthropic API error" });
+      return res
+        .status(response.status === 401 ? 500 : response.status)
+        .json({ error: data?.error || "Could not read the receipt." });
+    }
+    if (!data?.result) {
+      return res.status(500).json({ error: "Could not read the receipt." });
     }
 
-    const textBlock = (data.content || []).find((b) => b.type === "text");
-    const rawText = textBlock ? textBlock.text : "{}";
-    const cleaned = rawText.replace(/```json|```/g, "").trim();
-
-    let parsed;
-    try {
-      parsed = JSON.parse(cleaned);
-    } catch (e) {
-      return res.status(500).json({ error: "Could not parse Claude's response", raw: rawText });
-    }
-
-    return res.status(200).json({ result: parsed, categories: CATEGORIES });
+    return res.status(200).json({ result: data.result, categories: data.categories || CATEGORIES });
   } catch (err) {
+    if (err?.name === "AbortError") {
+      return res.status(504).json({ error: "Reading the receipt took too long. Please try again." });
+    }
     return res.status(500).json({ error: err.message || "Unknown server error" });
+  } finally {
+    clearTimeout(timer);
   }
 }

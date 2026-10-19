@@ -8,6 +8,7 @@ import { takePendingCapture } from "../lib/pendingCapture";
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
 import EntryTypePicker from "../components/EntryTypePicker";
+import { OFFICIAL_CATEGORIES } from "../components/CategoryIcon";
 
 // Rebuilt in the ported Lovable design language (light bg-background page,
 // white ring-1 cards, teal/navy pills, design-system inputs) — the
@@ -23,6 +24,36 @@ function formatReceiptFilename(dateStr, place) {
   const month = d.toLocaleString("en-US", { month: "long" }).toLowerCase();
   const merchant = (place || "").trim().replace(/[\\/:*?"<>|]/g, "").trim();
   return `${day} ${month} ${d.getFullYear()} ${merchant || "Untitled"}.jpg`;
+}
+
+// The reader tells us which fields it struggled with. A confident read and a
+// rough guess used to look identical here, so a wrong number could sail
+// through unnoticed — say plainly what to look at, without the numbers.
+function readStatus(result) {
+  const warnings = result?.warnings || [];
+  const overall = result?.confidence?.overall;
+
+  if (warnings.includes("no-total")) {
+    return { type: "error", text: "Couldn't read the total — please add it below." };
+  }
+  if (typeof overall === "number" && overall < 0.6) {
+    return { type: "error", text: "This one was hard to read — please check every field." };
+  }
+  if (warnings.includes("no-date")) {
+    return { type: "error", text: "Couldn't read the date — today's is filled in, please check it." };
+  }
+  if (warnings.includes("no-tax-found")) {
+    return { type: "error", text: "No tax line found — add the HST if this receipt had any." };
+  }
+  return { type: "success", text: "Receipt read. Review and confirm." };
+}
+
+// "2026-06-02" -> "Jun 2, 2026". Spelling the month out is the whole point
+// here: the numbers are exactly what was unclear on the receipt.
+function prettyDate(iso) {
+  const d = iso ? new Date(`${iso}T00:00:00`) : null;
+  if (!d || isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 const inputClass =
@@ -48,6 +79,8 @@ export default function Capture({ user }) {
   const [form, setForm] = useState(null); // { place, total, hst, date, category, type }
   // Set when Save is tapped before "money out or money in?" is answered.
   const [typeMissing, setTypeMissing] = useState(false);
+  // The other reading of an ambiguous date like 02/06 (6 Feb vs 2 Jun).
+  const [dateAlt, setDateAlt] = useState("");
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [status, setStatus] = useState(null);
   const [compressing, setCompressing] = useState(false);
@@ -129,12 +162,28 @@ export default function Capture({ user }) {
         // invoiced or invoicing — the photo can't tell us.
         type: "",
       });
-      setStatus({ type: "success", text: "Receipt read. Review and confirm." });
+      setDateAlt(data.result.date_alternative || "");
+      setStatus(readStatus(data.result));
     } catch (err) {
-      setStatus({ type: "error", text: err.message });
+      // A photo we can't read is still a receipt the user wants to keep. Open
+      // the same review form with blank fields so they can type it in rather
+      // than being left with an error and no way to save.
+      setCategoryOptions(OFFICIAL_CATEGORIES);
+      setDateAlt("");
+      setForm({ place: "", total: "", hst: "", date: "", category: "Other", type: "" });
+      setStatus({ type: "error", text: `${err.message} — please enter the details below.` });
     } finally {
       setExtracting(false);
     }
+  }
+
+  // Swaps in the other reading and keeps the previous one on offer, so this
+  // toggles rather than being a one-way door.
+  function swapDate() {
+    if (!dateAlt || !form) return;
+    const previous = form.date;
+    setForm((f) => ({ ...f, date: dateAlt }));
+    setDateAlt(previous);
   }
 
   function updateField(key, value) {
@@ -149,6 +198,7 @@ export default function Capture({ user }) {
     setForm(null);
     setCategoryOptions([]);
     setTypeMissing(false);
+    setDateAlt("");
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (importInputRef.current) importInputRef.current.value = "";
   }
@@ -338,10 +388,26 @@ export default function Capture({ user }) {
                     className={inputClass}
                     type="date"
                     value={form.date}
-                    onChange={(e) => updateField("date", e.target.value)}
+                    onChange={(e) => {
+                      updateField("date", e.target.value);
+                      setDateAlt(""); // a hand-picked date needs no second guess
+                    }}
                     placeholder="YYYY-MM-DD"
                     onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
                   />
+
+                  {dateAlt && (
+                    <button
+                      type="button"
+                      onClick={swapDate}
+                      className="-mt-0.5 text-left text-sm rounded-xl bg-card ring-1 ring-hairline-strong px-4 py-3 hover:bg-muted transition"
+                    >
+                      <span className="text-text-secondary">
+                        The day and month weren&apos;t clear. Tap if this is{" "}
+                      </span>
+                      <span className="font-semibold text-brand-teal-deep">{prettyDate(dateAlt)}</span>
+                    </button>
+                  )}
 
                   <select
                     className={`${inputClass} appearance-none`}

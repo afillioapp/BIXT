@@ -59,7 +59,7 @@ things still need doing before submitting:
 - **Store listing assets**: promotional images, a longer description,
   screenshots of the capture flow.
 - **Privacy policy page**: a hosted URL describing what data is
-  collected/sent (the receipt image, to Anthropic's API for reading and to
+  collected/sent (the receipt image, to BX's own OCR service for reading and to
   your own Google Drive for storage) — required for the listing.
 - **Google OAuth verification**: `drive.file` and `spreadsheets` are
   "sensitive" scopes. Once this extension is publicly listed (not just

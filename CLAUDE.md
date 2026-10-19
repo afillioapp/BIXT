@@ -6,10 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 BX (branded BX in the UI; repo/folder names still say BIXT/expense-tracker
 for historical reasons — not worth renaming) is a receipt-scanning business
-expense tracker: snap or import a receipt photo → Claude reads
+expense tracker: snap or import a receipt photo → local OCR reads
 place/total/HST/date → saved to the user's own Google Drive, with an
 accountant given automatic read-only access. No traditional backend
 database — Google Drive itself is the data store.
+
+Receipt reading is **local and free per scan** — PP-OCRv4 ONNX models plus a
+deterministic parser (`ocr-service/`). No AI/LLM API is called on the scan
+path; don't reintroduce one without a deliberate decision about the cost.
 
 Deployed at `bixt.vercel.app`, on a Vercel account under
 `alireza.m@afillio.ca` (a different Vercel account/team than may be
@@ -36,7 +40,10 @@ npm run build   # production build (also runs lint + type checking)
 npm run start   # run a production build locally
 ```
 
-No test suite exists (no test files, no test script). `npm run build` will
+The Next.js app has no test suite. The OCR service does:
+`pytest ocr-service/tests -q` (65 parser tests, no OCR engine needed), plus
+`ocr-service/tests/evaluate.py` for end-to-end accuracy against rendered
+receipt images. `npm run build` will
 fail locally at the "Collecting page data" step with a Firebase
 `auth/invalid-api-key` error unless a real `.env.local` is present — this
 is expected (see Environment variables below), not a regression signal;
@@ -113,14 +120,24 @@ used on the save path.
 
 ### Receipt capture pipeline
 
-`pages/index.js` (the Camera tab, and the app's home route) → user takes a
-photo or imports one from their library → `lib/image.js` compresses it
-client-side via canvas (target ~200KB, JPEG re-encode regardless of source
-format) → POST to `pages/api/extract.js` (server-side, keeps
-`ANTHROPIC_API_KEY` off the client) → Claude vision returns structured
-fields → editable review UI shows only 4 of them (place/total/hst/date;
-the API also returns currency/category/notes, intentionally unused in the
-UI) → confirm writes through `saveExpenseToDrive`.
+`pages/capture.js` → user takes a photo or imports one from their library →
+`lib/image.js` compresses it client-side via canvas (target ~200KB, JPEG
+re-encode regardless of source format) → POST to `pages/api/extract.js`,
+which verifies the Firebase ID token and rate-limits, then forwards to the
+**OCR service** (`ocr-service/`, its own Vercel project) over a shared
+secret → RapidOCR → line grouping → deterministic parser returns structured
+fields → editable review UI shows only 4 of them (place/total/hst/date; the
+API also returns currency/category/notes/confidence/warnings, intentionally
+unused in the UI) → confirm writes through `saveExpenseToDrive`.
+
+If extraction fails or the photo is unreadable, the review form still opens
+with blank fields so the receipt can be entered by hand — an unreadable
+photo must never be a dead end.
+
+`ocr-service/` is deliberately a **separate Vercel project** (Root Directory
+`ocr-service`): Vercel routes `/api/*` to Next.js in the main project, so a
+Python function cannot live beside `pages/api/`. Its `CATEGORIES` list must
+stay identical to the one in `pages/api/extract.js`; a test asserts this.
 
 ### Routes
 
@@ -163,7 +180,8 @@ themes on purpose.
 
 Set in Vercel only — no `.env.local` exists in this repo:
 
-- `ANTHROPIC_API_KEY`
+- `OCR_SERVICE_URL`, `OCR_SHARED_SECRET` (the latter also set, to the same
+  value, on the OCR service's own Vercel project)
 - `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`,
   `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`
 - `NEXT_PUBLIC_GOOGLE_CLIENT_ID`
