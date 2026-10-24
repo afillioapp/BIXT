@@ -21,6 +21,7 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved })
   const [hst, setHst] = useState("");
   const [date, setDate] = useState("");
   const [type, setType] = useState("Expense");
+  const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -35,6 +36,7 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved })
     setHst(String(row.hst ?? ""));
     setDate(row.date || "");
     setType(row.type || "Expense");
+    setNote(row.note || "");
     setError("");
     setSaving(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -54,6 +56,7 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved })
         hst,
         receiptLink: row.receiptLink,
         type,
+        note,
         hadTrailingCategory: row.hadTrailingCategory,
       });
       onSaved(row);
@@ -135,6 +138,19 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved })
               onChange={(e) => setDate(e.target.value)}
               disabled={saving}
             />
+            {/* Old-layout (v1) sheets have no note column, like Type. */}
+            {row.layout === "v2" && (
+              <textarea
+                className="w-full rounded-xl bg-card ring-1 ring-hairline-strong px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-brand-teal resize-none disabled:opacity-60"
+                rows={2}
+                maxLength={500}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Note for your accountant (optional)"
+                aria-label="Note for your accountant"
+                disabled={saving}
+              />
+            )}
           </div>
 
           {error && <p className="text-sm text-destructive mt-3">{error}</p>}

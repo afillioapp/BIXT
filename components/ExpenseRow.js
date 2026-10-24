@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { MoreHorizontal, ReceiptText, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, ReceiptText, Pencil, Trash2, StickyNote } from "lucide-react";
 import CategoryIcon from "./CategoryIcon";
 import { isIncome } from "../lib/insights";
 
@@ -239,6 +239,9 @@ export default function ExpenseRow({ row, openId, onOpenChange, onEdit, onDelete
             <p className="text-sm font-medium truncate">{row.place || "Untitled"}</p>
             <p className="text-[11px] text-text-secondary truncate">
               {income ? `Income · ${row.category || "Other"}` : row.category || "Other"}
+              {row.note && (
+                <StickyNote className="inline size-3 ml-1.5 -mt-0.5 text-text-tertiary" aria-label="Has a note for your accountant" />
+              )}
             </p>
           </div>
         </div>

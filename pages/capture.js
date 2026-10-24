@@ -129,6 +129,7 @@ export default function Capture({ user }) {
         // Deliberately unanswered: the owner must say whether they're being
         // invoiced or invoicing — the photo can't tell us.
         type: "",
+        note: "",
       });
       setStatus({ type: "success", text: "Receipt read. Review and confirm." });
     } catch (err) {
@@ -184,6 +185,7 @@ export default function Capture({ user }) {
         date: form.date,
         category: form.category,
         type: form.type,
+        note: form.note || "",
         currency: currencyCode(profile),
       });
     try {
@@ -356,6 +358,18 @@ export default function Capture({ user }) {
                       </option>
                     ))}
                   </select>
+
+                  {/* Saved to the sheet's "Note for accountant" column. */}
+                  <textarea
+                    className="w-full rounded-xl bg-card ring-1 ring-hairline-strong px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-brand-teal resize-none disabled:opacity-60"
+                    rows={2}
+                    maxLength={500}
+                    value={form.note || ""}
+                    onChange={(e) => updateField("note", e.target.value)}
+                    placeholder="Note for your accountant (optional)"
+                    aria-label="Note for your accountant"
+                    disabled={saving}
+                  />
                 </div>
 
                 <div className="flex gap-2.5 mt-auto pt-4">
