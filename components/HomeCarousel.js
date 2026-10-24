@@ -1,18 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { weeklyTotals, categoryTotals, formatCurrency, spendingRows, fiscalYear } from "../lib/insights";
 import { accentForCategory } from "./CategoryIcon";
 
-// Home's chart card (owner round 7): lives on a WHITE card below the
-// compact navy header (pages/index.js), light-themed to match Stats.
-// Three horizontally swipeable panels — range bar chart, by-category donut,
-// top-categories list — with the Week/Month/Year segmented control at the
-// bottom; each panel's period navigation (‹ date ›) sits in its top-right
-// corner. When Home's category filter is active, every panel narrows too.
+// Home's spending chart: Week/Month/Year tabs over one bar-chart card, with
+// the period navigation (‹ date ›) in its top-right corner. When Home's
+// category filter is active, the chart narrows to that category and wears
+// its colour.
 //
-// Gestures stay deliberately separate: swiping changes which PANEL shows;
-// the ‹ › buttons change that panel's PERIOD; the segmented control changes
-// the bar panel's RANGE (and scrolls back to it).
+// It used to be a three-panel swipeable carousel (bars, a category donut, a
+// top-categories list). The owner cut it to the bars on 2026-10-24: the
+// category breakdown already has its own card further down Home.
 
 function prevMonthDate(d) {
   return new Date(d.getFullYear(), d.getMonth() - 1, 1);
@@ -68,12 +66,6 @@ function monthBars(rows, refMonth) {
   return { values, total, labels: values.map((_, i) => `W${i + 1}`) };
 }
 
-// Same exact hex palette Stats' donut/progress list uses.
-const CATEGORY_PALETTE = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
-function paletteColor(i) {
-  return CATEGORY_PALETTE[i % CATEGORY_PALETTE.length];
-}
-
 // Compact ‹ date › cluster for a panel's top-right corner.
 function PeriodNav({ label, onPrev, onNext, nextDisabled }) {
   return (
@@ -109,13 +101,13 @@ function PanelShell({ title, nav, children }) {
 
 // No panel title — the Week/Month/Year tabs above already say what this is
 // (owner request); the period total takes the title slot in teal.
-function BarsPanel({ nav, ready, total, values, labels, boldIndex, accent }) {
+function BarsPanel({ nav, ready, total, values, labels, boldIndex, accent, currency }) {
   const max = ready ? Math.max(...values, 1) : 1;
   return (
     <PanelShell
       title={
         <span className="text-base text-brand-teal" style={accent ? { color: accent } : undefined}>
-          {ready ? formatCurrency(total, { decimals: 2 }) : "…"}
+          {ready ? formatCurrency(total, { decimals: 2, currency }) : "…"}
         </span>
       }
       nav={nav}
@@ -149,103 +141,7 @@ function BarsPanel({ nav, ready, total, values, labels, boldIndex, accent }) {
   );
 }
 
-function DarkDonut({ categories, total, colorFor = paletteColor }) {
-  const size = 108;
-  const stroke = 18;
-  const r = (size - stroke) / 2;
-  const c = 2 * Math.PI * r;
-  let offset = 0;
-  const sumPct = categories.reduce((s, x) => s + x.percent, 0) || 1;
-  return (
-    <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--muted)" strokeWidth={stroke} />
-        {categories.map((cat, i) => {
-          const len = (cat.percent / sumPct) * c;
-          const el = (
-            <circle
-              key={cat.category}
-              cx={size / 2}
-              cy={size / 2}
-              r={r}
-              fill="none"
-              stroke={colorFor(i)}
-              strokeWidth={stroke}
-              strokeDasharray={`${len} ${c - len}`}
-              strokeDashoffset={-offset}
-              strokeLinecap="butt"
-            />
-          );
-          offset += len;
-          return el;
-        })}
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-[9px] text-text-secondary uppercase tracking-wider">Total</span>
-        <span className="text-sm font-semibold text-text-primary">{formatCurrency(total, { decimals: 0 })}</span>
-      </div>
-    </div>
-  );
-}
-
-function CategoryPanel({ monthData, nav, accent }) {
-  // With a category filter active, everything shown IS that category —
-  // color it with the category's own accent instead of the ranked palette.
-  const colorFor = (i) => accent || paletteColor(i);
-  return (
-    <PanelShell title="By category" nav={nav}>
-      {!monthData ? (
-        <p className="text-xs text-text-secondary py-8 text-center flex-1">Loading…</p>
-      ) : monthData.categories.length === 0 ? (
-        <p className="text-xs text-text-secondary py-8 text-center flex-1">No expenses this month.</p>
-      ) : (
-        <div className="flex-1 flex items-center gap-4">
-          <DarkDonut categories={monthData.categories} total={monthData.total} colorFor={colorFor} />
-          <ul className="flex-1 space-y-2 min-w-0">
-            {monthData.categories.slice(0, 4).map((c, i) => (
-              <li key={c.category} className="flex items-center gap-2">
-                <span className="size-2 rounded-full shrink-0" style={{ background: colorFor(i) }} />
-                <span className="flex-1 min-w-0 text-[11px] text-text-primary truncate">{c.category}</span>
-                <span className="text-[11px] font-semibold text-text-secondary shrink-0">{Math.round(c.percent)}%</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </PanelShell>
-  );
-}
-
-function TopCategoriesPanel({ monthData, nav, accent }) {
-  const colorFor = (i) => accent || paletteColor(i);
-  return (
-    <PanelShell title="Top categories" nav={nav}>
-      {!monthData ? (
-        <p className="text-xs text-text-secondary py-8 text-center flex-1">Loading…</p>
-      ) : monthData.categories.length === 0 ? (
-        <p className="text-xs text-text-secondary py-8 text-center flex-1">No expenses this month.</p>
-      ) : (
-        <div className="flex-1 space-y-3 overflow-y-auto">
-          {monthData.categories.slice(0, 4).map((c, i) => (
-            <div key={c.category}>
-              <div className="flex justify-between mb-1">
-                <span className="text-[11px] font-medium text-text-primary">{c.category}</span>
-                <span className="text-[11px] font-semibold text-text-secondary">{Math.round(c.percent)}%</span>
-              </div>
-              <div className="w-full bg-muted h-1.5 rounded-full overflow-hidden">
-                <div className="h-full" style={{ width: `${c.percent}%`, background: colorFor(i) }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </PanelShell>
-  );
-}
-
-// fiscalStart (1-12) is the month the business's year starts; the Year view
-// shows that fiscal year rather than January–December.
-export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategory = null, fiscalStart = 1 }) {
+export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategory = null, fiscalStart = 1, currency = "CAD" }) {
   const now = new Date();
 
   // Home's category filter narrows every panel too (owner request). Cache
@@ -261,10 +157,6 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
   const [weekOffset, setWeekOffset] = useState(0);
   const [barMonthOffset, setBarMonthOffset] = useState(0);
   const [yearOffset, setYearOffset] = useState(0);
-  // Shared between the "By category" and "Top categories" panels.
-  const [catMonthOffset, setCatMonthOffset] = useState(0);
-  const scrollerRef = useRef(null);
-  const [active, setActive] = useState(0);
 
   // ── Bar panel data, per selected range ──
   const refMonday = addDays(mondayOf(now), -7 * weekOffset);
@@ -285,10 +177,6 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range, weekOffset, barMonthOffset, yearOffset, fiscalStart]);
 
-  useEffect(() => {
-    ensureMonths([new Date(now.getFullYear(), now.getMonth() - catMonthOffset, 1)]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [catMonthOffset]);
 
   let bars;
   if (range === "Week") {
@@ -340,50 +228,6 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
     };
   }
 
-  // ── Category panels data (month-based, shared offset) ──
-  const refCatMonth = new Date(now.getFullYear(), now.getMonth() - catMonthOffset, 1);
-  const catRows = rowsFor(refCatMonth);
-  const monthData = catRows ? categoryTotals(catRows, refCatMonth) : null;
-  const catMonthLabel =
-    refCatMonth.getFullYear() === now.getFullYear()
-      ? refCatMonth.toLocaleString("en-US", { month: "long" })
-      : refCatMonth.toLocaleString("en-US", { month: "long", year: "numeric" });
-  const catNav = (
-    <PeriodNav
-      label={catMonthLabel}
-      onPrev={() => setCatMonthOffset((o) => o + 1)}
-      onNext={() => setCatMonthOffset((o) => Math.max(0, o - 1))}
-      nextDisabled={catMonthOffset === 0}
-    />
-  );
-
-  function handleScroll() {
-    const el = scrollerRef.current;
-    if (!el || !el.clientWidth) return;
-    setActive(Math.round(el.scrollLeft / el.clientWidth));
-  }
-
-  // Switching range snaps the carousel back to the bar panel it affects.
-  function changeRange(r) {
-    setRange(r);
-    scrollerRef.current?.scrollTo({ left: 0, behavior: "smooth" });
-  }
-
-  const panels = [
-    <BarsPanel
-      key="bars"
-      accent={accent}
-      nav={<PeriodNav label={bars.label} onPrev={bars.onPrev} onNext={bars.onNext} nextDisabled={bars.nextDisabled} />}
-      ready={bars.ready}
-      total={bars.total}
-      values={bars.values}
-      labels={bars.labels}
-      boldIndex={bars.boldIndex}
-    />,
-    <CategoryPanel key="category" monthData={monthData} nav={catNav} accent={accent} />,
-    <TopCategoriesPanel key="top" monthData={monthData} nav={catNav} accent={accent} />,
-  ];
-
   return (
     <div>
       {/* Range tabs above the card, exactly like the Stats page. */}
@@ -392,7 +236,7 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
           <button
             key={t}
             type="button"
-            onClick={() => changeRange(t)}
+            onClick={() => setRange(t)}
             className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors ${
               range === t ? "bg-brand-teal text-white" : "text-text-secondary"
             }`}
@@ -403,27 +247,16 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
       </div>
 
       <section className="bg-card rounded-2xl p-5 ring-1 ring-hairline">
-        <div
-          ref={scrollerRef}
-          onScroll={handleScroll}
-          className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none"
-          style={{ scrollbarWidth: "none" }}
-        >
-          {panels.map((panel, i) => (
-            <div key={i} className="w-full shrink-0 snap-start">
-              {panel}
-            </div>
-          ))}
-        </div>
-
-        <div className="flex justify-center gap-1.5 mt-2">
-          {panels.map((_, i) => (
-            <span
-              key={i}
-              className={`h-1.5 rounded-full transition-all ${i === active ? "w-4 bg-brand-teal" : "w-1.5 bg-track"}`}
-            />
-          ))}
-        </div>
+        <BarsPanel
+          accent={accent}
+          currency={currency}
+          nav={<PeriodNav label={bars.label} onPrev={bars.onPrev} onNext={bars.onNext} nextDisabled={bars.nextDisabled} />}
+          ready={bars.ready}
+          total={bars.total}
+          values={bars.values}
+          labels={bars.labels}
+          boldIndex={bars.boldIndex}
+        />
       </section>
     </div>
   );
