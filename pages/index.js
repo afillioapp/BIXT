@@ -4,26 +4,20 @@ import { useRouter } from "next/router";
 import { useDrive } from "../lib/useDrive";
 import { useMonthRows } from "../lib/useMonthRows";
 import { deleteExpenseRow } from "../lib/google";
-import { latestReceipts, categoryTotals, formatCurrency, isIncome, fiscalStartMonth } from "../lib/insights";
+import { latestReceipts, categoryTotals, formatCurrency, isIncome, fiscalStartMonth, currencyCode } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
 import HomeCarousel from "../components/HomeCarousel";
+import ActivityGraph from "../components/ActivityGraph";
 import { accentForCategory, paletteColor } from "../components/CategoryIcon";
 import ExpenseRow, { rowIdFor } from "../components/ExpenseRow";
 import EditExpenseSheet from "../components/EditExpenseSheet";
 
-// Originally ported 1:1 from lovable-design/src/routes/index.tsx (navy
-// "Total Balance" hero + 4-tile quick-action row + "Recent Expenses" list).
-// Round 5 (owner request): the hero's inner "This week"/"Last month" tiles
-// and the quick-action row are gone, replaced by a swipeable 3-panel
-// carousel (components/HomeCarousel.js) inside the hero. Capture is reached
-// by tapping the thumb control only (components/ThumbControl.js) — no
-// separate capture entry point on this page. Every number on the page is
-// real (Drive-backed).
-//
-// This page now carries what used to be two more tabs: the carousel is
-// Insight and the receipt list is History, which is why neither has a nav
-// slot any more.
+// Home, top to bottom: the fiscal-year activity grid
+// (components/ActivityGraph.js), the month's spending total, the spending
+// chart (components/HomeCarousel.js), category filter pills, Top Categories,
+// and the latest receipts. Capture is the camera in the bottom bar
+// (components/BottomNav.js). Every number on the page is real (Drive-backed).
 
 function prevMonthDate(d) {
   return new Date(d.getFullYear(), d.getMonth() - 1, 1);
@@ -148,6 +142,7 @@ export default function Home({ user }) {
       ? Math.round(((monthData.total - prevMonthTotal) / prevMonthTotal) * 100)
       : null;
   const monthLabel = now.toLocaleString("en-US", { month: "long" });
+  const currency = currencyCode(profile);
   // The eyebrow label above the total was removed at owner request. The string
   // survives as the headline's accessible name, so a screen reader still says
   // what the number is instead of reading a bare amount.
@@ -166,6 +161,16 @@ export default function Home({ user }) {
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
       {/* The month total IS the headline: no greeting, no company, and since
           the owner removed the eyebrow, no label either. Just the money. */}
+      {/* The activity grid is the first thing on Home (owner request). */}
+      <div className="pt-6 mx-auto max-w-md px-5">
+        <ActivityGraph
+          getMonthRows={getMonthRows}
+          ensureMonths={ensureMonths}
+          fiscalStart={fiscalStartMonth(profile)}
+          currency={currency}
+        />
+      </div>
+
       <PageHeader>
         <header className="flex items-start justify-between">
           <div>
@@ -173,12 +178,12 @@ export default function Home({ user }) {
               className="text-3xl font-semibold tracking-tight leading-none"
               aria-label={
                 monthData
-                  ? `${totalLabel}: ${formatCurrency(monthData.total, { decimals: 2 })}`
+                  ? `${totalLabel}: ${formatCurrency(monthData.total, { decimals: 2, currency })}`
                   : totalLabel
               }
               style={filterAccent ? { color: filterAccent } : undefined}
             >
-              {monthData ? formatCurrency(monthData.total, { decimals: 2 }) : "—"}
+              {monthData ? formatCurrency(monthData.total, { decimals: 2, currency }) : "—"}
             </h1>
             {monthData && (
               <div className="flex items-center gap-2 mt-2">
@@ -215,6 +220,7 @@ export default function Home({ user }) {
             ensureMonths={ensureMonths}
             filterCategory={filterCat}
             fiscalStart={fiscalStartMonth(profile)}
+            currency={currency}
           />
         </div>
 
@@ -289,7 +295,7 @@ export default function Home({ user }) {
             <div className="flex flex-col items-center text-center gap-2 py-10">
               <p className="text-sm font-semibold">No receipts yet</p>
               <p className="text-xs text-text-secondary max-w-[220px]">
-                Tap the + button below to snap your first one.
+                Tap the camera below to snap your first one.
               </p>
             </div>
           )}
