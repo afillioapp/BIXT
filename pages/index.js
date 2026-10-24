@@ -231,6 +231,7 @@ export default function Home({ user }) {
           ensureMonths={ensureMonths}
           currency={currency}
           filterCategory={filterCat}
+          onStep={(delta) => setOffsets((o) => ({ ...o, [range]: Math.max(0, o[range] + delta) }))}
         />
       </PageHeader>
 

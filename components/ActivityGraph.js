@@ -1,25 +1,24 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { dailyActivity, formatCurrency, monthsBetween } from "../lib/insights";
 
 // The activity squares inside Home's top card: one square per day, green for
 // money out, orange for money in, split corner to corner on days with both.
 // The shade shows how much money moved, ranked within the period shown.
 //
-// Follows Home's Week / Month / Year tabs and their ‹ › arrows. All three
-// views fill the SAME box (owner request 2026-10-24): the Week view's size is
-// the reference, and the squares shrink to fit more days into it.
+// Follows Home's Week / Month / Year tabs, their ‹ › arrows and the category
+// pills (owner requests 2026-10-24):
 //   Week  — 7 squares, day names underneath
-//   Month — every day in one row, a small gap between weeks, each week's
-//           start date underneath
+//   Month — a month calendar: weekday letters, a row per week
 //   Year  — the fiscal year GitHub-style (a column per week, a row per
-//           weekday), fitted to the width with no scrolling, months underneath
+//           weekday), fitted to the width, months underneath
 //
-// No title, legend or numbers: the card's total says the money. Follows the
-// category filter like the rest of Home.
+// Tap a square for a small bubble with that day's money out and in; tap it
+// again or anywhere else to close. Swipe sideways to move a period back
+// (right) or forward (left), the same as the chart's arrows.
 
 const SHADES = [0, 0.3, 0.5, 0.75, 1];
-const CELLS_H = 42; // px: the square area, shared by all three views
-const LABELS_H = 14; // px: the label line under it
+const WEEK_H = 42; // px: the Week squares' height (also the Year box)
+const SWIPE_PX = 40;
 
 function shade(color, level) {
   return `color-mix(in oklch, ${color} ${Math.round(SHADES[level] * 100)}%, transparent)`;
@@ -48,14 +47,37 @@ function Label({ children, strong = false }) {
   );
 }
 
-export default function ActivityGraph({ range, start, end, getMonthRows, ensureMonths, currency = "CAD", filterCategory = null }) {
+export default function ActivityGraph({
+  range,
+  start,
+  end,
+  getMonthRows,
+  ensureMonths,
+  currency = "CAD",
+  filterCategory = null,
+  onStep, // (delta) => void: +1 = one period back, -1 = one forward
+}) {
   const months = monthsBetween(start, end);
   const periodKey = `${range}:${start.toDateString()}`;
+  const [picked, setPicked] = useState(null);
+  const rootRef = useRef(null);
+  const touch = useRef(null);
 
   useEffect(() => {
     ensureMonths(months);
+    setPicked(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [periodKey]);
+  }, [periodKey, filterCategory]);
+
+  // Close the bubble on a tap anywhere else.
+  useEffect(() => {
+    if (picked === null) return;
+    function away(e) {
+      if (!e.target.closest?.("[data-activity-cell]")) setPicked(null);
+    }
+    document.addEventListener("pointerdown", away);
+    return () => document.removeEventListener("pointerdown", away);
+  }, [picked]);
 
   const ready = months.every((d) => getMonthRows(d));
   // Home's category pills narrow the squares too: with "Fuel" picked, only
@@ -70,108 +92,147 @@ export default function ActivityGraph({ range, start, end, getMonthRows, ensureM
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  function cell(day, i, className = "") {
+  // align: where the bubble sits over its square so it never runs off the
+  // card ("start" near the left edge, "end" near the right, else centred).
+  function cell(day, i, className = "", align = "center") {
     const future = day.date > today;
+    const open = picked === i;
+    const bubbleSide =
+      align === "start" ? "left-0" : align === "end" ? "right-0" : "left-1/2 -translate-x-1/2";
     return (
-      <span
-        key={i}
-        title={future ? undefined : day.date.toDateString()}
-        className={`block ${className} ${future ? "opacity-40" : ""} ${
-          sameDay(day.date, today) ? "ring-1 ring-text-tertiary" : ""
-        }`}
-        style={{ background: !ready || future ? "var(--muted)" : cellBackground(day) }}
-      />
+      <span key={i} className="relative block">
+        <button
+          type="button"
+          data-activity-cell
+          disabled={future}
+          aria-label={day.date.toDateString()}
+          aria-expanded={open}
+          onClick={() => setPicked(open ? null : i)}
+          className={`block ${className} ${future ? "opacity-40" : ""} ${
+            open ? "ring-2 ring-text-primary" : sameDay(day.date, today) ? "ring-1 ring-text-tertiary" : ""
+          }`}
+          style={{ background: !ready || future ? "var(--muted)" : cellBackground(day) }}
+        />
+        {open && (
+          <span
+            role="status"
+            className={`absolute bottom-full mb-2 ${bubbleSide} z-30 whitespace-nowrap rounded-lg bg-text-primary px-2.5 py-1.5 text-[11px] leading-tight text-background shadow-lg pointer-events-none`}
+          >
+            <span className="font-semibold">
+              {day.date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+            </span>
+            <br />
+            {day.out || day.in
+              ? [
+                  day.out ? `${formatCurrency(day.out, { decimals: 2, currency })} out` : null,
+                  day.in ? `${formatCurrency(day.in, { decimals: 2, currency })} in` : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")
+              : "Nothing recorded"}
+          </span>
+        )}
+      </span>
     );
   }
 
-  let cells;
-  let labels;
+  const alignForColumn = (col, cols) => (col < cols * 0.25 ? "start" : col >= cols * 0.75 ? "end" : "center");
 
+  let body;
   if (range === "Week") {
-    cells = <div className="grid grid-cols-7 gap-2 h-full">{days.map((d, i) => cell(d, i, "h-full rounded-[5px]"))}</div>;
-    labels = (
-      <div className="grid grid-cols-7 gap-2 text-center">
-        {days.map((d, i) => (
-          <Label key={i} strong={sameDay(d.date, today)}>
-            {d.date.toLocaleDateString("en-US", { weekday: "short" })}
-          </Label>
-        ))}
-      </div>
+    body = (
+      <>
+        <div className="grid grid-cols-7 gap-2" style={{ height: WEEK_H }}>
+          {days.map((d, i) => cell(d, i, "w-full h-[42px] rounded-[5px]", alignForColumn(i, 7)))}
+        </div>
+        <div className="grid grid-cols-7 gap-2 text-center mt-1.5">
+          {days.map((d, i) => (
+            <Label key={i} strong={sameDay(d.date, today)}>
+              {d.date.toLocaleDateString("en-US", { weekday: "short" })}
+            </Label>
+          ))}
+        </div>
+      </>
     );
   } else if (range === "Month") {
-    // Monday-first weeks, each a group of squares with a gap between groups.
-    const weeks = [];
-    days.forEach((d, i) => {
-      if (i === 0 || d.date.getDay() === 1) weeks.push([]);
-      weeks[weeks.length - 1].push({ d, i });
-    });
-    cells = (
-      <div className="flex items-center gap-1.5 h-full">
-        {weeks.map((w, wi) => (
-          <div key={wi} className="flex gap-0.5 min-w-0" style={{ flex: w.length }}>
-            {w.map(({ d, i }) => cell(d, i, "flex-1 min-w-0 aspect-square rounded-[2px]"))}
-          </div>
-        ))}
-      </div>
-    );
-    labels = (
-      <div className="flex gap-1.5">
-        {weeks.map((w, wi) => (
-          <div key={wi} className="min-w-0" style={{ flex: w.length }}>
-            <Label>{w[0].d.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}</Label>
-          </div>
-        ))}
-      </div>
-    );
-  } else {
-    const lead = (start.getDay() + 6) % 7; // blank squares before a Monday-first week
-    const columns = Math.ceil((lead + days.length) / 7);
-    cells = (
-      <div className="h-full flex items-center">
-        <div
-          className="grid grid-flow-col w-full"
-          style={{
-            gridTemplateRows: "repeat(7, auto)",
-            gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-            gap: 1,
-          }}
-        >
+    const lead = (start.getDay() + 6) % 7;
+    body = (
+      <>
+        <div className="grid grid-cols-7 gap-1.5 mb-1.5 text-center">
+          {["M", "T", "W", "T", "F", "S", "S"].map((l, i) => (
+            <Label key={i}>{l}</Label>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-1.5 justify-items-center">
           {Array.from({ length: lead }, (_, i) => (
             <span key={`lead-${i}`} />
           ))}
-          {days.map((d, i) => cell(d, i, "aspect-square rounded-[1px]"))}
+          {days.map((d, i) => cell(d, i, "size-[26px] rounded-[5px]", alignForColumn((lead + i) % 7, 7)))}
         </div>
-      </div>
+      </>
     );
-    labels = (
-      <div className="relative h-full">
-        {days.map((d, i) =>
-          d.date.getDate() === 1 ? (
-            <span key={i} className="absolute top-0" style={{ left: `${(Math.floor((lead + i) / 7) / columns) * 100}%` }}>
-              <Label>{d.date.toLocaleString("en-US", { month: "short" })}</Label>
-            </span>
-          ) : null
-        )}
-      </div>
+  } else {
+    const lead = (start.getDay() + 6) % 7;
+    const columns = Math.ceil((lead + days.length) / 7);
+    body = (
+      <>
+        <div className="flex items-center" style={{ height: WEEK_H }}>
+          <div
+            className="grid grid-flow-col w-full"
+            style={{
+              gridTemplateRows: "repeat(7, auto)",
+              gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+              gap: 1,
+            }}
+          >
+            {Array.from({ length: lead }, (_, i) => (
+              <span key={`lead-${i}`} />
+            ))}
+            {days.map((d, i) => cell(d, i, "w-full aspect-square rounded-[1px]", alignForColumn(Math.floor((lead + i) / 7), columns)))}
+          </div>
+        </div>
+        <div className="relative mt-1.5 h-[14px]">
+          {days.map((d, i) =>
+            d.date.getDate() === 1 ? (
+              <span key={i} className="absolute top-0" style={{ left: `${(Math.floor((lead + i) / 7) / columns) * 100}%` }}>
+                <Label>{d.date.toLocaleString("en-US", { month: "short" })}</Label>
+              </span>
+            ) : null
+          )}
+        </div>
+      </>
     );
   }
 
   return (
     <div
-      role="img"
+      ref={rootRef}
+      role="group"
       aria-label={
         ready
-          ? `${formatCurrency(totals.out, { decimals: 2, currency })} out and ${formatCurrency(totals.in, {
+          ? `Activity: ${formatCurrency(totals.out, { decimals: 2, currency })} out and ${formatCurrency(totals.in, {
               decimals: 2,
               currency,
-            })} in this ${range.toLowerCase()}.`
+            })} in this ${range.toLowerCase()}. Swipe for the previous or next ${range.toLowerCase()}.`
           : "Loading activity"
       }
+      className="touch-pan-y select-none"
+      onTouchStart={(e) => {
+        const t = e.touches[0];
+        touch.current = t ? { x: t.clientX, y: t.clientY } : null;
+      }}
+      onTouchEnd={(e) => {
+        const s = touch.current;
+        touch.current = null;
+        const t = e.changedTouches[0];
+        if (!s || !t || !onStep) return;
+        const dx = t.clientX - s.x;
+        const dy = t.clientY - s.y;
+        if (Math.abs(dx) < SWIPE_PX || Math.abs(dx) < Math.abs(dy)) return;
+        onStep(dx > 0 ? 1 : -1);
+      }}
     >
-      <div style={{ height: CELLS_H }}>{cells}</div>
-      <div className="mt-1.5 overflow-hidden text-[10px] leading-none" style={{ height: LABELS_H }}>
-        {labels}
-      </div>
+      {body}
     </div>
   );
 }
