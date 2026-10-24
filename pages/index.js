@@ -230,6 +230,7 @@ export default function Home({ user }) {
           getMonthRows={getMonthRows}
           ensureMonths={ensureMonths}
           currency={currency}
+          filterCategory={filterCat}
         />
       </PageHeader>
 

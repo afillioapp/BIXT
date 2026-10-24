@@ -68,9 +68,20 @@ function monthBars(rows, refMonth) {
 }
 
 // Compact ‹ date › cluster for a panel's top-right corner.
-function PeriodNav({ label, onPrev, onNext, nextDisabled }) {
+// onToday is passed only when the user has stepped back in time; it shows a
+// "Today" pill that jumps straight back to the current period.
+function PeriodNav({ label, onPrev, onNext, nextDisabled, onToday }) {
   return (
     <div className="flex items-center gap-1 shrink-0">
+      {onToday && (
+        <button
+          type="button"
+          onClick={onToday}
+          className="mr-1 rounded-full bg-brand-teal-soft px-2.5 py-1 text-[11px] font-semibold text-brand-teal-deep"
+        >
+          Today
+        </button>
+      )}
       <button type="button" aria-label="Earlier" onClick={onPrev} className="text-text-tertiary">
         <ChevronLeft className="size-4" />
       </button>
@@ -246,7 +257,15 @@ export default function HomeCarousel({
       <BarsPanel
         accent={accent}
         currency={currency}
-        nav={<PeriodNav label={bars.label} onPrev={bars.onPrev} onNext={bars.onNext} nextDisabled={bars.nextDisabled} />}
+        nav={
+          <PeriodNav
+            label={bars.label}
+            onPrev={bars.onPrev}
+            onNext={bars.onNext}
+            nextDisabled={bars.nextDisabled}
+            onToday={offsets[range] > 0 ? () => onOffsetChange(range, 0) : undefined}
+          />
+        }
         ready={bars.ready}
         total={bars.total}
         values={bars.values}

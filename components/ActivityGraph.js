@@ -1,29 +1,25 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { dailyActivity, formatCurrency, monthsBetween } from "../lib/insights";
 
-// The activity squares inside Home's top card (owner request 2026-10-24,
-// reworked the same day): one square per day, green for money out, orange
-// for money in, split corner to corner on days with both. The shade shows how
-// much money moved, ranked within the period shown.
+// The activity squares inside Home's top card: one square per day, green for
+// money out, orange for money in, split corner to corner on days with both.
+// The shade shows how much money moved, ranked within the period shown.
 //
-// It follows Home's Week / Month / Year tabs and their ‹ › arrows:
-//   Week  — the 7 days in a row
-//   Month — a calendar: a row per week, a column per weekday
-//   Year  — the fiscal year GitHub-style (a column per week), scrolling
-//           sideways and opening on the current week
+// Follows Home's Week / Month / Year tabs and their ‹ › arrows. All three
+// views fill the SAME box (owner request 2026-10-24): the Week view's size is
+// the reference, and the squares shrink to fit more days into it.
+//   Week  — 7 squares, day names underneath
+//   Month — every day in one row, a small gap between weeks, each week's
+//           start date underneath
+//   Year  — the fiscal year GitHub-style (a column per week, a row per
+//           weekday), fitted to the width with no scrolling, months underneath
 //
-// No title or legend. The line underneath carries the period's money out and
-// in (in their colours, which doubles as the key) and, after a tap, that day.
+// No title, legend or numbers: the card's total says the money. Follows the
+// category filter like the rest of Home.
 
 const SHADES = [0, 0.3, 0.5, 0.75, 1];
-const DAY_LETTERS = ["M", "T", "W", "T", "F", "S", "S"];
-const YEAR_CELL = 12;
-const YEAR_GAP = 3;
-const YEAR_PITCH = YEAR_CELL + YEAR_GAP;
-// The square colours are too light for small text on a white card; mixing in
-// the text colour keeps the hue and clears contrast in both themes.
-const TEXT_OUT = "color-mix(in srgb, var(--activity-out) 70%, var(--text-primary))";
-const TEXT_IN = "color-mix(in srgb, var(--activity-in) 70%, var(--text-primary))";
+const CELLS_H = 42; // px: the square area, shared by all three views
+const LABELS_H = 14; // px: the label line under it
 
 function shade(color, level) {
   return `color-mix(in oklch, ${color} ${Math.round(SHADES[level] * 100)}%, transparent)`;
@@ -40,146 +36,142 @@ function sameDay(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-export default function ActivityGraph({ range, start, end, getMonthRows, ensureMonths, currency = "CAD" }) {
+function Label({ children, strong = false }) {
+  return (
+    <span
+      className={`block text-[10px] leading-[14px] whitespace-nowrap ${
+        strong ? "font-semibold text-text-primary" : "text-text-tertiary"
+      }`}
+    >
+      {children}
+    </span>
+  );
+}
+
+export default function ActivityGraph({ range, start, end, getMonthRows, ensureMonths, currency = "CAD", filterCategory = null }) {
   const months = monthsBetween(start, end);
   const periodKey = `${range}:${start.toDateString()}`;
-  const [picked, setPicked] = useState(null);
-  const scrollerRef = useRef(null);
 
   useEffect(() => {
     ensureMonths(months);
-    setPicked(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [periodKey]);
 
   const ready = months.every((d) => getMonthRows(d));
-  const rows = ready ? months.flatMap((d) => getMonthRows(d)) : [];
+  // Home's category pills narrow the squares too: with "Fuel" picked, only
+  // Fuel receipts count, and shades rank among Fuel days.
+  const rows = ready
+    ? months
+        .flatMap((d) => getMonthRows(d))
+        .filter((r) => !filterCategory || (r.category || "Other") === filterCategory)
+    : [];
   const { days, totals } = dailyActivity(rows, start, end);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const isFuture = (d) => d.date > today;
-  const lead = (start.getDay() + 6) % 7; // blank squares before a Monday-first week
 
   function cell(day, i, className = "") {
-    const future = isFuture(day);
-    const isToday = sameDay(day.date, today);
+    const future = day.date > today;
     return (
-      <button
+      <span
         key={i}
-        type="button"
-        disabled={future}
-        aria-label={day.date.toDateString()}
-        aria-pressed={picked === i}
-        onClick={() => setPicked(picked === i ? null : i)}
-        className={`rounded-[4px] ${className} ${future ? "opacity-40" : ""} ${
-          picked === i ? "ring-2 ring-text-primary" : isToday ? "ring-1 ring-text-tertiary" : ""
+        title={future ? undefined : day.date.toDateString()}
+        className={`block ${className} ${future ? "opacity-40" : ""} ${
+          sameDay(day.date, today) ? "ring-1 ring-text-tertiary" : ""
         }`}
         style={{ background: !ready || future ? "var(--muted)" : cellBackground(day) }}
       />
     );
   }
 
-  // Year: open on the current week.
-  const todayIndex = days.findIndex((d) => sameDay(d.date, today));
-  const todayColumn = todayIndex === -1 ? 0 : Math.floor((lead + todayIndex) / 7);
-  useEffect(() => {
-    const el = scrollerRef.current;
-    if (range !== "Year" || !el) return;
-    el.scrollLeft = Math.max(0, (todayColumn + 2) * YEAR_PITCH - el.clientWidth);
-  }, [range, todayColumn, ready]);
+  let cells;
+  let labels;
 
-  let grid;
   if (range === "Week") {
-    grid = (
-      <div className="grid grid-cols-7 gap-2">
+    cells = <div className="grid grid-cols-7 gap-2 h-full">{days.map((d, i) => cell(d, i, "h-full rounded-[5px]"))}</div>;
+    labels = (
+      <div className="grid grid-cols-7 gap-2 text-center">
         {days.map((d, i) => (
-          <div key={i} className="flex flex-col items-center gap-1.5">
-            {cell(d, i, "w-full aspect-square max-h-11")}
-            <span className={`text-[10px] ${sameDay(d.date, today) ? "font-semibold text-text-primary" : "text-text-tertiary"}`}>
-              {d.date.toLocaleDateString("en-US", { weekday: "short" })}
-            </span>
-          </div>
+          <Label key={i} strong={sameDay(d.date, today)}>
+            {d.date.toLocaleDateString("en-US", { weekday: "short" })}
+          </Label>
         ))}
       </div>
     );
   } else if (range === "Month") {
-    grid = (
-      <div>
-        <div className="grid grid-cols-7 gap-1.5 mb-1.5" aria-hidden="true">
-          {DAY_LETTERS.map((l, i) => (
-            <span key={i} className="text-center text-[10px] text-text-tertiary">
-              {l}
-            </span>
-          ))}
-        </div>
-        <div className="grid grid-cols-7 gap-1.5">
-          {Array.from({ length: lead }, (_, i) => (
-            <span key={`lead-${i}`} />
-          ))}
-          {days.map((d, i) => cell(d, i, "w-full h-6"))}
-        </div>
+    // Monday-first weeks, each a group of squares with a gap between groups.
+    const weeks = [];
+    days.forEach((d, i) => {
+      if (i === 0 || d.date.getDay() === 1) weeks.push([]);
+      weeks[weeks.length - 1].push({ d, i });
+    });
+    cells = (
+      <div className="flex items-center gap-1.5 h-full">
+        {weeks.map((w, wi) => (
+          <div key={wi} className="flex gap-0.5 min-w-0" style={{ flex: w.length }}>
+            {w.map(({ d, i }) => cell(d, i, "flex-1 min-w-0 aspect-square rounded-[2px]"))}
+          </div>
+        ))}
+      </div>
+    );
+    labels = (
+      <div className="flex gap-1.5">
+        {weeks.map((w, wi) => (
+          <div key={wi} className="min-w-0" style={{ flex: w.length }}>
+            <Label>{w[0].d.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}</Label>
+          </div>
+        ))}
       </div>
     );
   } else {
+    const lead = (start.getDay() + 6) % 7; // blank squares before a Monday-first week
     const columns = Math.ceil((lead + days.length) / 7);
-    const monthLabels = days
-      .map((d, i) =>
-        d.date.getDate() === 1 ? { col: Math.floor((lead + i) / 7), text: d.date.toLocaleString("en-US", { month: "short" }) } : null
-      )
-      .filter(Boolean);
-    grid = (
-      <div ref={scrollerRef} className="overflow-x-auto scrollbar-none" style={{ scrollbarWidth: "none" }}>
-        <div style={{ width: columns * YEAR_PITCH }}>
-          <div className="relative h-4 text-[9px] text-text-tertiary" aria-hidden="true">
-            {monthLabels.map((m) => (
-              <span key={`${m.col}-${m.text}`} className="absolute top-0" style={{ left: m.col * YEAR_PITCH }}>
-                {m.text}
-              </span>
-            ))}
-          </div>
-          <div
-            className="grid grid-flow-col"
-            style={{ gridTemplateRows: `repeat(7, ${YEAR_CELL}px)`, gridAutoColumns: `${YEAR_CELL}px`, gap: YEAR_GAP }}
-          >
-            {Array.from({ length: lead }, (_, i) => (
-              <span key={`lead-${i}`} />
-            ))}
-            {days.map((d, i) => cell(d, i, "!rounded-[3px]"))}
-          </div>
+    cells = (
+      <div className="h-full flex items-center">
+        <div
+          className="grid grid-flow-col w-full"
+          style={{
+            gridTemplateRows: "repeat(7, auto)",
+            gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+            gap: 1,
+          }}
+        >
+          {Array.from({ length: lead }, (_, i) => (
+            <span key={`lead-${i}`} />
+          ))}
+          {days.map((d, i) => cell(d, i, "aspect-square rounded-[1px]"))}
         </div>
+      </div>
+    );
+    labels = (
+      <div className="relative h-full">
+        {days.map((d, i) =>
+          d.date.getDate() === 1 ? (
+            <span key={i} className="absolute top-0" style={{ left: `${(Math.floor((lead + i) / 7) / columns) * 100}%` }}>
+              <Label>{d.date.toLocaleString("en-US", { month: "short" })}</Label>
+            </span>
+          ) : null
+        )}
       </div>
     );
   }
 
-  const shown = picked !== null ? days[picked] : null;
-  const amounts = shown || totals;
-
   return (
-    <div>
-      {grid}
-      <p className="mt-3 text-[11px] text-text-secondary" role="status">
-        {!ready ? (
-          "Loading…"
-        ) : (
-          <>
-            {shown && (
-              <span className="text-text-primary font-medium">
-                {shown.date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}:{" "}
-              </span>
-            )}
-            <span className="font-semibold" style={{ color: TEXT_OUT }}>
-              {formatCurrency(amounts.out, { decimals: 2, currency })}
-            </span>{" "}
-            out
-            {" · "}
-            <span className="font-semibold" style={{ color: TEXT_IN }}>
-              {formatCurrency(amounts.in, { decimals: 2, currency })}
-            </span>{" "}
-            in
-          </>
-        )}
-      </p>
+    <div
+      role="img"
+      aria-label={
+        ready
+          ? `${formatCurrency(totals.out, { decimals: 2, currency })} out and ${formatCurrency(totals.in, {
+              decimals: 2,
+              currency,
+            })} in this ${range.toLowerCase()}.`
+          : "Loading activity"
+      }
+    >
+      <div style={{ height: CELLS_H }}>{cells}</div>
+      <div className="mt-1.5 overflow-hidden text-[10px] leading-none" style={{ height: LABELS_H }}>
+        {labels}
+      </div>
     </div>
   );
 }
