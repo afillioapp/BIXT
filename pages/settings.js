@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { signOut } from "firebase/auth";
 import {
   Building2,
+  Coins,
   Cloud,
   Mail,
   CalendarRange,
@@ -14,12 +15,12 @@ import {
 } from "lucide-react";
 import { auth } from "../lib/firebase";
 import { useDrive } from "../lib/useDrive";
-import { listSharedEmails, removeSharedEmail, shareWithEmail, saveProfile } from "../lib/google";
+import { listSharedEmails, removeSharedEmail, shareWithEmail, saveProfile, renameCompanyRootFolder } from "../lib/google";
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
 import { biometricAvailable, isLockEnabled, enableLock, disableLock } from "../lib/biometric";
 import { getTheme, setTheme } from "../lib/theme";
-import { MONTH_NAMES, fiscalStartMonth } from "../lib/insights";
+import { MONTH_NAMES, fiscalStartMonth, CURRENCIES, currencyCode, currencySymbol } from "../lib/insights";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LAST4_RE = /^\d{4}$/;
@@ -125,6 +126,16 @@ export default function Settings({ user }) {
   const [bankSaving, setBankSaving] = useState(false);
   const [bankStatus, setBankStatus] = useState(null);
 
+  const [currency, setCurrency] = useState("CAD");
+  const [currencyStatus, setCurrencyStatus] = useState(null);
+  const currencySaveChain = useRef(Promise.resolve());
+  const currencyPending = useRef(0);
+
+  const [companyEditing, setCompanyEditing] = useState(false);
+  const [companyName, setCompanyName] = useState("");
+  const [companySaving, setCompanySaving] = useState(false);
+  const [companyStatus, setCompanyStatus] = useState(null);
+
   useEffect(() => {
     setThemeState(getTheme());
   }, []);
@@ -143,6 +154,19 @@ export default function Settings({ user }) {
   const savedBankLast4 = profile?.bankLast4 || "";
   const savedFyRef = useRef(savedFy);
   savedFyRef.current = savedFy;
+  const savedCurrency = currencyCode(profile);
+  const savedCurrencyRef = useRef(savedCurrency);
+  savedCurrencyRef.current = savedCurrency;
+  const savedCompany = profile?.companyName || "";
+
+  useEffect(() => {
+    if (currencyPending.current === 0) setCurrency(savedCurrency);
+  }, [savedCurrency]);
+
+  useEffect(() => {
+    if (!companyEditing) setCompanyName(savedCompany);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedCompany]);
 
   useEffect(() => {
     if (!editing) setAccountantEmail(savedEmail);
@@ -171,28 +195,74 @@ export default function Settings({ user }) {
     }
   }
 
-  // Saves as soon as a month is picked — one choice, nothing to confirm.
-  function handleFiscalChange(next) {
-    setFyStart(next);
-    setFyStatus(null);
-    fyPending.current += 1;
-    fySaveChain.current = fySaveChain.current.then(async () => {
+  // A one-choice setting (a select) that saves as soon as it changes. Saves
+  // run one after another in the order picked, so the last choice is the one
+  // Drive keeps; on failure the select goes back to what is saved.
+  function autoSave({ key, value, setLocal, setStatus, pending, chain, savedRef }) {
+    setLocal(value);
+    setStatus(null);
+    pending.current += 1;
+    chain.current = chain.current.then(async () => {
       let failed = false;
       try {
-        await withFreshToken((token) => saveProfile(token, rootFolderId, { fiscalYearStart: next }));
+        await withFreshToken((token) => saveProfile(token, rootFolderId, { [key]: value }));
       } catch {
         failed = true;
       }
-      fyPending.current -= 1;
-      if (fyPending.current > 0) return;
+      pending.current -= 1;
+      if (pending.current > 0) return;
       if (failed) {
-        setFyStart(savedFyRef.current);
-        setFyStatus({ type: "error", text: SAVE_FAILED });
+        setLocal(savedRef.current);
+        setStatus({ type: "error", text: SAVE_FAILED });
       } else {
-        setFyStatus({ type: "success", text: "Saved" });
+        setStatus({ type: "success", text: "Saved" });
       }
       reloadProfile();
     });
+  }
+
+  function handleFiscalChange(next) {
+    autoSave({ key: "fiscalYearStart", value: next, setLocal: setFyStart, setStatus: setFyStatus, pending: fyPending, chain: fySaveChain, savedRef: savedFyRef });
+  }
+
+  function handleCurrencyChange(next) {
+    autoSave({ key: "currency", value: next, setLocal: setCurrency, setStatus: setCurrencyStatus, pending: currencyPending, chain: currencySaveChain, savedRef: savedCurrencyRef });
+  }
+
+  function cancelCompanyEdit() {
+    setCompanyEditing(false);
+    setCompanyName(savedCompany);
+    setCompanyStatus(null);
+  }
+
+  // Renames the Drive folder first ("BX - New Name"), then the profile, so a
+  // failure leaves both as they were rather than half-renamed.
+  async function handleSaveCompany() {
+    const name = companyName.trim();
+    if (!name) {
+      setCompanyStatus({ type: "error", text: "Enter your company's name" });
+      return;
+    }
+    if (name === savedCompany) {
+      cancelCompanyEdit();
+      return;
+    }
+    setCompanySaving(true);
+    setCompanyStatus(null);
+    try {
+      await withFreshToken(async (token) => {
+        await renameCompanyRootFolder(token, rootFolderId, name);
+        await saveProfile(token, rootFolderId, { companyName: name });
+      });
+      setCompanyName(name);
+      setCompanyEditing(false);
+      setCompanyStatus({ type: "success", text: `Saved. Your Drive folder is now "BX - ${name}".` });
+      reloadProfile();
+    } catch {
+      setCompanyStatus({ type: "error", text: SAVE_FAILED });
+    } finally {
+      setCompanySaving(false);
+    }
   }
 
   function cancelBankEdit() {
@@ -368,12 +438,45 @@ export default function Settings({ user }) {
 
       <div className="mx-auto max-w-md px-5 pt-6">
         <div className="bg-card ring-1 ring-hairline rounded-2xl divide-y divide-hairline overflow-hidden mb-6">
-          <div className="flex items-center gap-3 p-4">
-            <Building2 className="size-4 text-text-secondary shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm">Company</p>
-            </div>
-            <span className="text-sm text-text-secondary shrink-0">{profile.companyName}</span>
+          <div className="p-4">
+            {companyEditing ? (
+              <div>
+                <p className="text-sm text-text-secondary mb-2">Company name</p>
+                <input
+                  className="w-full h-11 rounded-lg bg-card ring-1 ring-hairline-strong px-3 text-sm mb-3 focus:outline-none focus:ring-brand-teal"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSaveCompany()}
+                  maxLength={60}
+                  aria-label="Company name"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button
+                    className="flex-1 h-9 rounded-full ring-1 ring-hairline-strong text-sm font-medium"
+                    onClick={cancelCompanyEdit}
+                    disabled={companySaving}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="flex-1 h-9 rounded-full bg-brand-teal text-white text-sm font-semibold disabled:opacity-60"
+                    onClick={handleSaveCompany}
+                    disabled={companySaving || !companyName.trim()}
+                  >
+                    {companySaving ? "Saving…" : "Save"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button className="w-full flex items-center gap-3 text-left" onClick={() => setCompanyEditing(true)}>
+                <Building2 className="size-4 text-text-secondary shrink-0" />
+                <p className="flex-1 min-w-0 text-sm">Company</p>
+                <span className="min-w-0 max-w-[55%] truncate text-sm text-text-secondary">{companyName}</span>
+                <ChevronRight className="size-4 text-text-tertiary shrink-0" />
+              </button>
+            )}
+            <StatusLine status={companyStatus} />
           </div>
 
           <div className="p-4">
@@ -475,6 +578,29 @@ export default function Settings({ user }) {
               <ChevronRight className="size-4 text-text-tertiary shrink-0" />
             </div>
             <StatusLine status={fyStatus} />
+          </div>
+
+          <div className="p-4">
+            <div className="flex items-center gap-3">
+              <Coins className="size-4 text-text-secondary shrink-0" />
+              <label htmlFor="currency" className="flex-1 min-w-0 text-sm">
+                Currency
+              </label>
+              <select
+                id="currency"
+                value={currency}
+                onChange={(e) => handleCurrencyChange(e.target.value)}
+                className="text-sm text-text-secondary bg-transparent text-right appearance-none rounded-md px-1 cursor-pointer focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-teal"
+              >
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.code} {currencySymbol(c.code)} · {c.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronRight className="size-4 text-text-tertiary shrink-0" />
+            </div>
+            <StatusLine status={currencyStatus} />
           </div>
 
           <div className="p-4">

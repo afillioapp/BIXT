@@ -98,11 +98,15 @@ Income is excluded from every spending total (`spendingRows` in
 `lib/google.js` documents each one.
 
 The user's profile (company name, accountant email, `fiscalYearStart` 1-12,
-optional `bankName` + `bankLast4`) is stored as custom Drive **file
+`currency` code (default CAD), optional `bankName` + `bankLast4`) is stored as custom Drive **file
 properties** on the root folder itself (`getProfile`/`saveProfile` in
 `lib/google.js`) — no separate profile file clutters the user's Drive.
 `saveProfile` writes only the keys it is given, so pass just the field being
-changed. A user with no BX root folder yet is routed to
+changed. Renaming the company in Settings also renames the folder to
+`BX - {name}` (`renameCompanyRootFolder`); the folder is found by its hidden
+`bxRoot` marker, so renames are safe. `currency` drives every amount in the
+app (`formatCurrency(n, { currency })`) and the Total/HST format of month
+sheets created after it is set. A user with no BX root folder yet is routed to
 `pages/setup.js`; finding an existing one routes straight to the Camera tab.
 
 `lib/google.js` also exposes read-only lookup variants (`findFolderId`,
@@ -128,12 +132,16 @@ UI) → confirm writes through `saveExpenseToDrive`.
   reveal the same Google/Apple/Phone buttons)
 - `pages/setup.js` — one-time onboarding (company name + accountant email),
   only reached when authenticated but no BX root folder exists yet
-- `pages/index.js` — Camera tab, also the app's home/default route
+- `pages/index.js` — Home: fiscal-year activity grid
+  (`components/ActivityGraph.js`, money out vs in, shade = amount), month
+  total, spending bar chart (`components/HomeCarousel.js`), Top Categories,
+  recent receipts
 - `pages/history.js` — current + previous month's receipts (two Sheet
   reads; deliberately not a full walk of every month ever, for performance)
 - `pages/settings.js` — company name, connected account, editable
   accountant email, sign out
-- `components/BottomNav.js` — 3-tab nav, hidden on `/login` and `/setup`
+- `components/BottomNav.js` — Home | Camera (raised, teal, opens Take
+  photo / Choose a photo) | Settings, hidden on `/login` and `/setup`
   (`pages/_app.js` decides this by route, not by re-deriving Drive state)
 
 ### Chrome extension (`chrome-extension/`) — Phase 2, parked

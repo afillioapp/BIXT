@@ -7,6 +7,7 @@ import {
   weeklyTotals,
   categoryTotals,
   formatCurrency,
+  currencyCode,
   spendingRows,
   fiscalStartMonth,
   fiscalYear,
@@ -195,7 +196,7 @@ function RangeCard({ sub, total, delta, labels, values, boldIndex, onPrev, onNex
 // Large centered donut per the owner's reference: % labels sit ON the ring
 // (only for slices big enough to fit one), the total lives in the hole, and
 // the legend is a wrap of color-outlined chips below (rendered by the card).
-function Donut({ categories, total }) {
+function Donut({ categories, total, currency }) {
   const size = 250;
   const stroke = 30;
   const r = (size - stroke) / 2 - 6;
@@ -261,7 +262,7 @@ function Donut({ categories, total }) {
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-xs text-text-secondary">Total</span>
-        <span className="text-2xl font-semibold">{formatCurrency(total, { decimals: 2 })}</span>
+        <span className="text-2xl font-semibold">{formatCurrency(total, { decimals: 2, currency })}</span>
       </div>
     </div>
   );
@@ -379,6 +380,7 @@ export default function Stats({ user }) {
   }
 
   const now = new Date();
+  const currency = currencyCode(profile);
   const monthTag = now.toLocaleString("en-US", { month: "long" });
   const currentMonthRows = getMonthRows(now);
   const prevMonthRows = getMonthRows(prevMonthDate(now));
@@ -408,7 +410,7 @@ export default function Stats({ user }) {
       rangeCard = (
         <RangeCard
           sub={formatWeekRange(weekly.weekStart, weekly.weekEnd)}
-          total={formatCurrency(weekly.total, { decimals: 2 })}
+          total={formatCurrency(weekly.total, { decimals: 2, currency })}
           delta={rounded !== null ? { up: weekly.percentChange > 0, text: `${rounded}% vs prior week` } : null}
           labels={weekly.days.map((d) => d.label.slice(0, 3))}
           values={weekly.days.map((d) => d.amount)}
@@ -434,7 +436,7 @@ export default function Stats({ user }) {
       rangeCard = (
         <RangeCard
           sub={monthLabel}
-          total={formatCurrency(monthWeekly.total, { decimals: 2 })}
+          total={formatCurrency(monthWeekly.total, { decimals: 2, currency })}
           delta={change !== null ? { up: change > 0, text: `${Math.abs(change)}% vs prior month` } : null}
           labels={monthWeekly.labels}
           values={monthWeekly.values}
@@ -454,7 +456,7 @@ export default function Stats({ user }) {
       rangeCard = (
         <RangeCard
           sub={yearOffset === 0 ? `${fy.label} · year to date` : fy.label}
-          total={formatCurrency(yearTotal, { decimals: 2 })}
+          total={formatCurrency(yearTotal, { decimals: 2, currency })}
           delta={null}
           labels={fy.letters}
           values={totals}
@@ -493,7 +495,7 @@ export default function Stats({ user }) {
             <p className="text-xs text-text-secondary py-6 text-center">No expenses yet this month.</p>
           ) : (
             <div>
-              <Donut categories={monthData.categories} total={monthData.total} />
+              <Donut categories={monthData.categories} total={monthData.total} currency={currency} />
               {/* Legend: color-outlined chips wrapping below the donut,
                   per the owner's reference. */}
               <div className="flex flex-wrap justify-center gap-2 mt-5">

@@ -8,6 +8,7 @@ import { takePendingCapture } from "../lib/pendingCapture";
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
 import EntryTypePicker from "../components/EntryTypePicker";
+import { currencyCode } from "../lib/insights";
 
 // Rebuilt in the ported Lovable design language (light bg-background page,
 // white ring-1 cards, teal/navy pills, design-system inputs) — the
@@ -183,6 +184,7 @@ export default function Capture({ user }) {
         date: form.date,
         category: form.category,
         type: form.type,
+        currency: currencyCode(profile),
       });
     try {
       try {
