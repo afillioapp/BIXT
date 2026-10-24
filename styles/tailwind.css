@@ -104,10 +104,10 @@
   --hairline: oklch(0 0 0 / 5%);
   --hairline-strong: oklch(0 0 0 / 10%);
   --track: oklch(0.92 0.004 286);
-  /* Activity grid on Home: money out (orange) vs money in (green, GitHub's
-     contribution green). Shades are this colour at 30-100% opacity. */
-  --activity-out: oklch(0.66 0.17 45);
-  --activity-in: oklch(0.6 0.16 150);
+  /* Activity grid on Home: money out (green, GitHub's contribution green)
+     vs money in (orange). Shades are this colour at 30-100% opacity. */
+  --activity-out: oklch(0.6 0.16 150);
+  --activity-in: oklch(0.66 0.17 45);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0.02 260);
   --popover: oklch(1 0 0);
@@ -165,8 +165,8 @@
   --hairline: oklch(1 0 0 / 7%);
   --hairline-strong: oklch(1 0 0 / 14%);
   --track: oklch(0.37 0.05 268);
-  --activity-out: oklch(0.74 0.16 50);
-  --activity-in: oklch(0.74 0.17 150);
+  --activity-out: oklch(0.74 0.17 150);
+  --activity-in: oklch(0.74 0.16 50);
   --card: oklch(0.235 0.068 268.7);
   --card-foreground: oklch(0.97 0.005 260);
   --popover: oklch(0.235 0.068 268.7);

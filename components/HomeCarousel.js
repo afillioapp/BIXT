@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { weeklyTotals, categoryTotals, formatCurrency, spendingRows, fiscalYear } from "../lib/insights";
 import { accentForCategory } from "./CategoryIcon";
 
-// Home's spending chart: Week/Month/Year tabs over one bar-chart card, with
-// the period navigation (‹ date ›) in its top-right corner. When Home's
+// Home's spending chart: one bar-chart card for the period picked by Home's
+// Week/Month/Year tabs (which live in the top card), with the period
+// navigation (‹ date ›) in its top-right corner. When Home's
 // category filter is active, the chart narrows to that category and wears
 // its colour.
 //
@@ -141,7 +142,19 @@ function BarsPanel({ nav, ready, total, values, labels, boldIndex, accent, curre
   );
 }
 
-export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategory = null, fiscalStart = 1, currency = "CAD" }) {
+// range ("Week" | "Month" | "Year") and offsets ({ Week, Month, Year }, how
+// many periods back each tab is) are owned by Home, so the activity squares in
+// the top card and this chart always show the same period.
+export default function HomeCarousel({
+  getMonthRows,
+  ensureMonths,
+  filterCategory = null,
+  fiscalStart = 1,
+  currency = "CAD",
+  range,
+  offsets,
+  onOffsetChange,
+}) {
   const now = new Date();
 
   // Home's category filter narrows every panel too (owner request). Cache
@@ -153,10 +166,10 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
   };
   // …and every chart wears the filtered category's own color (owner request).
   const accent = filterCategory ? accentForCategory(filterCategory) : null;
-  const [range, setRange] = useState("Week");
-  const [weekOffset, setWeekOffset] = useState(0);
-  const [barMonthOffset, setBarMonthOffset] = useState(0);
-  const [yearOffset, setYearOffset] = useState(0);
+  const weekOffset = offsets.Week;
+  const barMonthOffset = offsets.Month;
+  const yearOffset = offsets.Year;
+  const step = (tab, delta) => onOffsetChange(tab, Math.max(0, offsets[tab] + delta));
 
   // ── Bar panel data, per selected range ──
   const refMonday = addDays(mondayOf(now), -7 * weekOffset);
@@ -189,8 +202,8 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
       values: weekly ? weekly.days.map((d) => d.amount) : [],
       labels: weekly ? weekly.days.map((d) => d.label.slice(0, 3)) : [],
       boldIndex: weekly ? weekly.days.findIndex((d) => d.isToday) : -1,
-      onPrev: () => setWeekOffset((o) => o + 1),
-      onNext: () => setWeekOffset((o) => Math.max(0, o - 1)),
+      onPrev: () => step("Week", 1),
+      onNext: () => step("Week", -1),
       nextDisabled: weekOffset === 0,
     };
   } else if (range === "Month") {
@@ -206,8 +219,8 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
       values: m ? m.values : [],
       labels: m ? m.labels : [],
       boldIndex: m ? m.values.indexOf(Math.max(...m.values)) : -1,
-      onPrev: () => setBarMonthOffset((o) => o + 1),
-      onNext: () => setBarMonthOffset((o) => Math.max(0, o - 1)),
+      onPrev: () => step("Month", 1),
+      onNext: () => step("Month", -1),
       nextDisabled: barMonthOffset === 0,
     };
   } else {
@@ -222,42 +235,24 @@ export default function HomeCarousel({ getMonthRows, ensureMonths, filterCategor
       values,
       labels: fy.letters,
       boldIndex: ready ? (yearOffset === 0 ? fy.currentIndex : values.indexOf(Math.max(...values))) : -1,
-      onPrev: () => setYearOffset((o) => o + 1),
-      onNext: () => setYearOffset((o) => Math.max(0, o - 1)),
+      onPrev: () => step("Year", 1),
+      onNext: () => step("Year", -1),
       nextDisabled: yearOffset === 0,
     };
   }
 
   return (
-    <div>
-      {/* Range tabs above the card, exactly like the Stats page. */}
-      <div className="flex p-1 bg-card ring-1 ring-hairline rounded-lg mb-4">
-        {["Week", "Month", "Year"].map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setRange(t)}
-            className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors ${
-              range === t ? "bg-brand-teal text-white" : "text-text-secondary"
-            }`}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
-
-      <section className="bg-card rounded-2xl p-5 ring-1 ring-hairline">
-        <BarsPanel
-          accent={accent}
-          currency={currency}
-          nav={<PeriodNav label={bars.label} onPrev={bars.onPrev} onNext={bars.onNext} nextDisabled={bars.nextDisabled} />}
-          ready={bars.ready}
-          total={bars.total}
-          values={bars.values}
-          labels={bars.labels}
-          boldIndex={bars.boldIndex}
-        />
-      </section>
-    </div>
+    <section className="bg-card rounded-2xl p-5 ring-1 ring-hairline">
+      <BarsPanel
+        accent={accent}
+        currency={currency}
+        nav={<PeriodNav label={bars.label} onPrev={bars.onPrev} onNext={bars.onNext} nextDisabled={bars.nextDisabled} />}
+        ready={bars.ready}
+        total={bars.total}
+        values={bars.values}
+        labels={bars.labels}
+        boldIndex={bars.boldIndex}
+      />
+    </section>
   );
 }

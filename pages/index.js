@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import { useDrive } from "../lib/useDrive";
 import { useMonthRows } from "../lib/useMonthRows";
 import { deleteExpenseRow } from "../lib/google";
-import { latestReceipts, categoryTotals, formatCurrency, isIncome, fiscalStartMonth, currencyCode } from "../lib/insights";
+import { latestReceipts, categoryTotals, formatCurrency, isIncome, fiscalStartMonth, currencyCode, periodBounds } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
 import HomeCarousel from "../components/HomeCarousel";
@@ -13,9 +13,9 @@ import { accentForCategory, paletteColor } from "../components/CategoryIcon";
 import ExpenseRow, { rowIdFor } from "../components/ExpenseRow";
 import EditExpenseSheet from "../components/EditExpenseSheet";
 
-// Home, top to bottom: the fiscal-year activity grid
-// (components/ActivityGraph.js), the month's spending total, the spending
-// chart (components/HomeCarousel.js), category filter pills, Top Categories,
+// Home, top to bottom: one card with the month's total, the Week / Month /
+// Year tabs and that period's activity squares (components/ActivityGraph.js);
+// the spending chart for the same period (components/HomeCarousel.js); category filter pills, Top Categories,
 // and the latest receipts. Capture is the camera in the bottom bar
 // (components/BottomNav.js). Every number on the page is real (Drive-backed).
 
@@ -47,6 +47,11 @@ export default function Home({ user }) {
   } = useDrive(user);
 
   const { getMonthRows, ensureMonths, invalidateMonth } = useMonthRows(accessToken, rootFolderId);
+
+  // Week / Month / Year, shared by the activity squares in the top card and
+  // the bar chart below, with how many periods back each tab has been moved.
+  const [range, setRange] = useState("Week");
+  const [offsets, setOffsets] = useState({ Week: 0, Month: 0, Year: 0 });
 
   // Category filter for the Recent receipts list (null = All).
   const [filterCat, setFilterCat] = useState(null);
@@ -159,18 +164,8 @@ export default function Home({ user }) {
 
   return (
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
-      {/* The month total IS the headline: no greeting, no company, and since
-          the owner removed the eyebrow, no label either. Just the money. */}
-      {/* The activity grid is the first thing on Home (owner request). */}
-      <div className="pt-6 mx-auto max-w-md px-5">
-        <ActivityGraph
-          getMonthRows={getMonthRows}
-          ensureMonths={ensureMonths}
-          fiscalStart={fiscalStartMonth(profile)}
-          currency={currency}
-        />
-      </div>
-
+      {/* One top card (owner request 2026-10-24): the month total and avatar,
+          the Week / Month / Year tabs, then that period's activity squares. */}
       <PageHeader>
         <header className="flex items-start justify-between">
           <div>
@@ -211,6 +206,31 @@ export default function Home({ user }) {
             )}
           </Link>
         </header>
+
+        <div className="flex p-1 bg-muted rounded-lg mt-5 mb-4" role="tablist" aria-label="Period">
+          {["Week", "Month", "Year"].map((t) => (
+            <button
+              key={t}
+              type="button"
+              role="tab"
+              aria-selected={range === t}
+              onClick={() => setRange(t)}
+              className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                range === t ? "bg-brand-teal text-white" : "text-text-secondary"
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+
+        <ActivityGraph
+          range={range}
+          {...periodBounds(range, offsets[range], fiscalStartMonth(profile))}
+          getMonthRows={getMonthRows}
+          ensureMonths={ensureMonths}
+          currency={currency}
+        />
       </PageHeader>
 
       <div className="mx-auto max-w-md px-5 pt-6">
@@ -221,6 +241,9 @@ export default function Home({ user }) {
             filterCategory={filterCat}
             fiscalStart={fiscalStartMonth(profile)}
             currency={currency}
+            range={range}
+            offsets={offsets}
+            onOffsetChange={(tab, value) => setOffsets((o) => ({ ...o, [tab]: value }))}
           />
         </div>
 
