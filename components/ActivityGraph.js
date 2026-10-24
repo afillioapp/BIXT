@@ -8,7 +8,7 @@ import { dailyActivity, formatCurrency, monthsBetween } from "../lib/insights";
 // Follows Home's Week / Month / Year tabs, their ‹ › arrows and the category
 // pills (owner requests 2026-10-24):
 //   Week  — 7 squares, day names underneath
-//   Month — a month calendar: weekday letters, a row per week
+//   Month — a calendar (a row per week) in the same box, small squares
 //   Year  — the fiscal year GitHub-style (a column per week, a row per
 //           weekday), fitted to the width, months underneath
 //
@@ -18,6 +18,9 @@ import { dailyActivity, formatCurrency, monthsBetween } from "../lib/insights";
 
 const SHADES = [0, 0.3, 0.5, 0.75, 1];
 const WEEK_H = 42; // px: the Week squares' height (also the Year box)
+// The whole box every view fills: squares + the 6px gap + the 14px label line.
+const BOX_H = WEEK_H + 6 + 14;
+const ROW_GAP = 3;
 const SWIPE_PX = 40;
 
 function shade(color, level) {
@@ -94,7 +97,7 @@ export default function ActivityGraph({
 
   // align: where the bubble sits over its square so it never runs off the
   // card ("start" near the left edge, "end" near the right, else centred).
-  function cell(day, i, className = "", align = "center") {
+  function cell(day, i, className = "", align = "center", sizeStyle = null) {
     const future = day.date > today;
     const open = picked === i;
     const bubbleSide =
@@ -111,7 +114,7 @@ export default function ActivityGraph({
           className={`block ${className} ${future ? "opacity-40" : ""} ${
             open ? "ring-2 ring-text-primary" : sameDay(day.date, today) ? "ring-1 ring-text-tertiary" : ""
           }`}
-          style={{ background: !ready || future ? "var(--muted)" : cellBackground(day) }}
+          style={{ background: !ready || future ? "var(--muted)" : cellBackground(day), ...sizeStyle }}
         />
         {open && (
           <span
@@ -155,21 +158,23 @@ export default function ActivityGraph({
       </>
     );
   } else if (range === "Month") {
+    // A calendar (a row per week, a column per weekday) squeezed into the same
+    // box as Week and Year: the squares shrink until every week fits its height.
     const lead = (start.getDay() + 6) % 7;
+    const rowCount = Math.ceil((lead + days.length) / 7);
+    const size = Math.min(12, Math.floor((BOX_H - (rowCount - 1) * ROW_GAP) / rowCount));
     body = (
-      <>
-        <div className="grid grid-cols-7 gap-1.5 mb-1.5 text-center">
-          {["M", "T", "W", "T", "F", "S", "S"].map((l, i) => (
-            <Label key={i}>{l}</Label>
-          ))}
-        </div>
-        <div className="grid grid-cols-7 gap-1.5 justify-items-center">
+      <div className="flex items-center" style={{ height: BOX_H }}>
+        <div
+          className="grid grid-cols-7 w-full justify-items-center"
+          style={{ rowGap: ROW_GAP, gridAutoRows: `${size}px` }}
+        >
           {Array.from({ length: lead }, (_, i) => (
             <span key={`lead-${i}`} />
           ))}
-          {days.map((d, i) => cell(d, i, "size-[26px] rounded-[5px]", alignForColumn((lead + i) % 7, 7)))}
+          {days.map((d, i) => cell(d, i, "rounded-[2px]", alignForColumn((lead + i) % 7, 7), { width: size, height: size }))}
         </div>
-      </>
+      </div>
     );
   } else {
     const lead = (start.getDay() + 6) % 7;
