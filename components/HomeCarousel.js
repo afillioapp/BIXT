@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { weeklyTotals, categoryTotals, formatCurrency, spendingRows, fiscalYear } from "../lib/insights";
 import { accentForCategory } from "./CategoryIcon";
+import SwipeSlide from "./SwipeSlide";
 
 // Home's spending chart: one bar-chart card for the period picked by Home's
 // Week/Month/Year tabs (which live in the top card), with the period
@@ -113,7 +114,7 @@ function PanelShell({ title, nav, children }) {
 
 // No panel title — the Week/Month/Year tabs above already say what this is
 // (owner request); the period total takes the title slot in teal.
-function BarsPanel({ nav, ready, total, values, labels, boldIndex, accent, currency }) {
+function BarsPanel({ nav, ready, total, values, labels, boldIndex, accent, currency, onStep, canForward }) {
   const max = ready ? Math.max(...values, 1) : 1;
   return (
     <PanelShell
@@ -127,7 +128,7 @@ function BarsPanel({ nav, ready, total, values, labels, boldIndex, accent, curre
       {!ready ? (
         <p className="text-xs text-text-secondary py-8 text-center flex-1">Loading…</p>
       ) : (
-        <div className="flex-1 flex flex-col">
+        <SwipeSlide onStep={onStep} canForward={canForward} className="flex-1 flex flex-col min-h-0" innerClassName="flex-1 flex flex-col h-full">
           <div className="flex-1 flex items-end justify-between gap-1.5">
             {values.map((v, i) => (
               <div
@@ -147,7 +148,7 @@ function BarsPanel({ nav, ready, total, values, labels, boldIndex, accent, curre
               </span>
             ))}
           </div>
-        </div>
+        </SwipeSlide>
       )}
     </PanelShell>
   );
@@ -271,6 +272,8 @@ export default function HomeCarousel({
         values={bars.values}
         labels={bars.labels}
         boldIndex={bars.boldIndex}
+        onStep={(delta) => step(range, delta)}
+        canForward={offsets[range] > 0}
       />
     </section>
   );

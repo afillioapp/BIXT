@@ -4,10 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import { Home, Settings as SettingsIcon, Camera, Image as GalleryIcon } from "lucide-react";
 import { setPendingCapture } from "../lib/pendingCapture";
 
-// The bottom bar (owner request 2026-10-24, replacing the press-and-hold
-// ThumbControl, which the owner found impractical): Home | Camera | Settings.
-// The camera sits raised in the middle in the brand accent; tapping it offers
-// "Take photo" or "Choose a photo" just above it. Either way the File is
+// The bottom menu: Home | Camera | Settings as a small floating pill, icons
+// only (owner requests 2026-10-24 and -25; it replaced the press-and-hold
+// ThumbControl). Tapping the teal camera offers "Take photo" or "Choose a
+// photo" just above it. Either way the File is
 // handed to /capture through lib/pendingCapture.js, as before.
 //
 // Hidden on /login and /setup (pages/_app.js decides by route). Pages carry
@@ -20,11 +20,13 @@ function NavTab({ href, icon: Icon, label, active }) {
   return (
     <Link
       href={href}
+      aria-label={label}
       aria-current={active ? "page" : undefined}
-      className={`flex flex-col items-center justify-center gap-1 h-full ${active ? "text-brand-teal-deep" : "text-text-tertiary"}`}
+      className={`grid place-items-center size-11 rounded-full transition-colors ${
+        active ? "text-brand-teal-deep bg-brand-teal-soft" : "text-text-tertiary hover:text-text-secondary"
+      }`}
     >
-      <Icon className="size-5" />
-      <span className="text-[11px] font-medium">{label}</span>
+      <Icon className="size-[22px]" strokeWidth={1.8} />
     </Link>
   );
 }
@@ -77,54 +79,55 @@ export default function BottomNav() {
 
       {open && <div className="fixed inset-0 z-40 bg-black/25" aria-hidden="true" />}
 
+      {/* A small pill floating above the bottom edge (owner pick
+          2026-10-25): icons only, the camera in the middle. */}
       <nav
         aria-label="Main"
-        className="fixed bottom-0 inset-x-0 z-40 bg-surface/90 backdrop-blur-md border-t border-hairline pb-[env(safe-area-inset-bottom)]"
+        className="fixed left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-full bg-surface/95 backdrop-blur-md p-1.5 shadow-lg shadow-black/10 ring-1 ring-hairline"
+        style={{ bottom: "calc(env(safe-area-inset-bottom) + 16px)" }}
       >
-        <div className="mx-auto max-w-md h-16 grid grid-cols-3 items-center px-6">
-          <NavTab href="/" icon={Home} label="Home" active={router.pathname === "/"} />
+        <NavTab href="/" icon={Home} label="Home" active={router.pathname === "/"} />
 
-          <div className="relative flex justify-center" ref={wrapRef}>
-            {open && (
-              <div
-                role="menu"
-                aria-label="Add a receipt"
-                className="absolute bottom-[calc(100%+40px)] left-1/2 -translate-x-1/2 w-56 rounded-2xl bg-surface p-1.5 shadow-xl ring-1 ring-hairline-strong z-50"
-              >
-                <label
-                  htmlFor="bx-nav-take-photo"
-                  role="menuitem"
-                  className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium text-text-primary active:bg-brand-teal-soft hover:bg-muted"
-                >
-                  <Camera className="size-[18px] text-brand-teal-deep" />
-                  Take photo
-                </label>
-                <label
-                  htmlFor="bx-nav-import"
-                  role="menuitem"
-                  className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium text-text-primary active:bg-brand-teal-soft hover:bg-muted"
-                >
-                  <GalleryIcon className="size-[18px] text-brand-teal-deep" />
-                  Choose a photo
-                </label>
-              </div>
-            )}
-            <button
-              type="button"
+        <div className="relative" ref={wrapRef}>
+          {open && (
+            <div
+              role="menu"
               aria-label="Add a receipt"
-              aria-haspopup="menu"
-              aria-expanded={open}
-              onClick={() => setOpen((o) => !o)}
-              className={`-mt-9 size-16 rounded-full bg-brand-teal text-white shadow-xl shadow-brand-teal/30 ring-4 ring-background flex items-center justify-center transition-transform active:scale-95 ${
-                open ? "scale-105" : ""
-              }`}
+              className="absolute bottom-[calc(100%+14px)] left-1/2 -translate-x-1/2 w-56 rounded-2xl bg-surface p-1.5 shadow-xl ring-1 ring-hairline-strong z-50"
             >
-              <Camera className="size-7" />
-            </button>
-          </div>
-
-          <NavTab href="/settings" icon={SettingsIcon} label="Settings" active={router.pathname === "/settings"} />
+              <label
+                htmlFor="bx-nav-take-photo"
+                role="menuitem"
+                className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium text-text-primary active:bg-brand-teal-soft hover:bg-muted"
+              >
+                <Camera className="size-[18px] text-brand-teal-deep" />
+                Take photo
+              </label>
+              <label
+                htmlFor="bx-nav-import"
+                role="menuitem"
+                className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium text-text-primary active:bg-brand-teal-soft hover:bg-muted"
+              >
+                <GalleryIcon className="size-[18px] text-brand-teal-deep" />
+                Choose a photo
+              </label>
+            </div>
+          )}
+          <button
+            type="button"
+            aria-label="Add a receipt"
+            aria-haspopup="menu"
+            aria-expanded={open}
+            onClick={() => setOpen((o) => !o)}
+            className={`grid place-items-center size-12 rounded-full bg-brand-teal text-white shadow-md shadow-brand-teal/30 transition-transform active:scale-95 ${
+              open ? "scale-105" : ""
+            }`}
+          >
+            <Camera className="size-[22px]" />
+          </button>
         </div>
+
+        <NavTab href="/settings" icon={SettingsIcon} label="Settings" active={router.pathname === "/settings"} />
       </nav>
     </>
   );

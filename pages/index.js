@@ -4,11 +4,22 @@ import { useRouter } from "next/router";
 import { useDrive } from "../lib/useDrive";
 import { useMonthRows } from "../lib/useMonthRows";
 import { deleteExpenseRow } from "../lib/google";
-import { latestReceipts, categoryTotals, formatCurrency, isIncome, fiscalStartMonth, currencyCode, periodBounds } from "../lib/insights";
+import {
+  latestReceipts,
+  categoryTotals,
+  formatCurrency,
+  isIncome,
+  fiscalStartMonth,
+  currencyCode,
+  periodBounds,
+  monthsBetween,
+  spendBetween,
+} from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
 import HomeCarousel from "../components/HomeCarousel";
 import ActivityGraph from "../components/ActivityGraph";
+import SwipeSlide from "../components/SwipeSlide";
 import { accentForCategory, paletteColor } from "../components/CategoryIcon";
 import ExpenseRow, { rowIdFor } from "../components/ExpenseRow";
 import EditExpenseSheet from "../components/EditExpenseSheet";
@@ -52,6 +63,7 @@ export default function Home({ user }) {
   // the bar chart below, with how many periods back each tab has been moved.
   const [range, setRange] = useState("Week");
   const [offsets, setOffsets] = useState({ Week: 0, Month: 0, Year: 0 });
+  const stepPeriod = (delta) => setOffsets((o) => ({ ...o, [range]: Math.max(0, o[range] + delta) }));
 
   // Category filter for the Recent receipts list (null = All).
   const [filterCat, setFilterCat] = useState(null);
@@ -88,6 +100,16 @@ export default function Home({ user }) {
     setEditingRow(null);
     refreshVisibleMonths();
   }
+
+  // The headline total compares the period shown with the one before it, so
+  // both periods' months must be loaded (Year needs the previous fiscal year).
+  useEffect(() => {
+    if (!profile) return;
+    const fs = fiscalStartMonth(profile);
+    const prev = periodBounds(range, offsets[range] + 1, fs);
+    const cur = periodBounds(range, offsets[range], fs);
+    ensureMonths(monthsBetween(prev.start, cur.end));
+  }, [range, offsets, profile, ensureMonths]);
 
   // Only send someone to onboarding when we positively know they have no BX
   // folder — i.e. Drive answered us. A connection problem (loadError) or a
@@ -140,20 +162,30 @@ export default function Home({ user }) {
   const visibleRows =
     rows && filterCat ? rows.filter((r) => (r.category || "Other") === filterCat) : rows;
   const latest = visibleRows ? latestReceipts(visibleRows, 5) : [];
-  const monthData = visibleRows ? categoryTotals(visibleRows, now) : null;
-  const prevMonthTotal = visibleRows ? categoryTotals(visibleRows, prevMonthDate(now)).total : 0;
-  const pctChange =
-    monthData && prevMonthTotal > 0
-      ? Math.round(((monthData.total - prevMonthTotal) / prevMonthTotal) * 100)
-      : null;
-  const monthLabel = now.toLocaleString("en-US", { month: "long" });
   const currency = currencyCode(profile);
-  // The eyebrow label above the total was removed at owner request. The string
-  // survives as the headline's accessible name, so a screen reader still says
-  // what the number is instead of reading a bare amount.
-  const totalLabel = filterCat
-    ? `Total ${filterCat} expenses, ${monthLabel}`
-    : `Total expenses, ${monthLabel}`;
+
+  // Headline total and % follow the Week / Month / Year tab and its arrows
+  // (owner request 2026-10-25): money out in the period shown, compared with
+  // the period just before it. The category filter narrows it like the rest.
+  const fiscalStart = fiscalStartMonth(profile);
+  const cur = periodBounds(range, offsets[range], fiscalStart, now);
+  const prev = periodBounds(range, offsets[range] + 1, fiscalStart, now);
+  const headMonths = monthsBetween(prev.start, cur.end);
+  const headRows = headMonths.every((d) => getMonthRows(d))
+    ? headMonths
+        .flatMap((d) => getMonthRows(d))
+        .filter((r) => !filterCat || (r.category || "Other") === filterCat)
+    : null;
+  const headTotal = headRows ? spendBetween(headRows, cur.start, cur.end) : null;
+  const prevTotal = headRows ? spendBetween(headRows, prev.start, prev.end) : 0;
+  const pctChange = headTotal !== null && prevTotal > 0 ? Math.round(((headTotal - prevTotal) / prevTotal) * 100) : null;
+  const unit = range.toLowerCase();
+  const compareLabel = offsets[range] === 0 ? `vs last ${unit}` : `vs the ${unit} before`;
+  // The headline's accessible name says what the number is.
+  const totalLabel = `${filterCat ? `${filterCat} spending` : "Spending"}, ${unit} of ${cur.start.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+  })}`;
   const filterAccent = filterCat ? accentForCategory(filterCat) : null;
   // Share-of-spend for the whole month, deliberately NOT narrowed by
   // filterCat. The rest of the page narrows, but a breakdown whose only bar
@@ -172,20 +204,20 @@ export default function Home({ user }) {
             <h1
               className="text-3xl font-semibold tracking-tight leading-none"
               aria-label={
-                monthData
-                  ? `${totalLabel}: ${formatCurrency(monthData.total, { decimals: 2, currency })}`
+                headTotal !== null
+                  ? `${totalLabel}: ${formatCurrency(headTotal, { decimals: 2, currency })}`
                   : totalLabel
               }
               style={filterAccent ? { color: filterAccent } : undefined}
             >
-              {monthData ? formatCurrency(monthData.total, { decimals: 2, currency }) : "—"}
+              {headTotal !== null ? formatCurrency(headTotal, { decimals: 2, currency }) : "—"}
             </h1>
-            {monthData && (
+            {headTotal !== null && (
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-[10px] font-medium bg-brand-teal-soft text-brand-teal-deep px-2 py-0.5 rounded">
                   {pctChange !== null ? `${pctChange > 0 ? "+" : ""}${pctChange}%` : "—"}
                 </span>
-                <span className="text-[10px] text-text-secondary">vs last month</span>
+                <span className="text-[10px] text-text-secondary">{compareLabel}</span>
               </div>
             )}
           </div>
@@ -224,31 +256,22 @@ export default function Home({ user }) {
           ))}
         </div>
 
-        <ActivityGraph
-          range={range}
-          {...periodBounds(range, offsets[range], fiscalStartMonth(profile))}
-          getMonthRows={getMonthRows}
-          ensureMonths={ensureMonths}
-          currency={currency}
-          filterCategory={filterCat}
-          onStep={(delta) => setOffsets((o) => ({ ...o, [range]: Math.max(0, o[range] + delta) }))}
-        />
+        {/* Drag sideways to slide to the previous / next period. */}
+        <SwipeSlide onStep={stepPeriod} canForward={offsets[range] > 0}>
+          <ActivityGraph
+            range={range}
+            {...periodBounds(range, offsets[range], fiscalStart)}
+            getMonthRows={getMonthRows}
+            ensureMonths={ensureMonths}
+            currency={currency}
+            filterCategory={filterCat}
+          />
+        </SwipeSlide>
       </PageHeader>
 
       <div className="mx-auto max-w-md px-5 pt-6">
-        <div className="mb-6">
-          <HomeCarousel
-            getMonthRows={getMonthRows}
-            ensureMonths={ensureMonths}
-            filterCategory={filterCat}
-            fiscalStart={fiscalStartMonth(profile)}
-            currency={currency}
-            range={range}
-            offsets={offsets}
-            onOffsetChange={(tab, value) => setOffsets((o) => ({ ...o, [tab]: value }))}
-          />
-        </div>
-
+        {/* Category pills sit between the top card and the chart (owner
+            request 2026-10-25); they narrow everything on the page. */}
         {rows && rows.length > 0 && (
           <div className="flex gap-2 overflow-x-auto pb-4 -mx-5 px-5 scrollbar-none">
             {["All", ...filterCats].map((c) => {
@@ -273,6 +296,19 @@ export default function Home({ user }) {
             })}
           </div>
         )}
+        <div className="mb-6">
+          <HomeCarousel
+            getMonthRows={getMonthRows}
+            ensureMonths={ensureMonths}
+            filterCategory={filterCat}
+            fiscalStart={fiscalStartMonth(profile)}
+            currency={currency}
+            range={range}
+            offsets={offsets}
+            onOffsetChange={(tab, value) => setOffsets((o) => ({ ...o, [tab]: value }))}
+          />
+        </div>
+
 
         {monthBreakdown && monthBreakdown.categories.length > 0 && (
           <section className="mb-6">

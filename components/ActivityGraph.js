@@ -14,13 +14,12 @@ import { dailyActivity, formatCurrency, monthsBetween } from "../lib/insights";
 //           weekday), fitted to the width, months underneath
 //
 // Tap a square for a small bubble with that day's money out and in; tap it
-// again or anywhere else to close. Swipe sideways to move a period back
-// (right) or forward (left), the same as the chart's arrows.
+// again or anywhere else to close. Home wraps this in SwipeSlide, so dragging
+// sideways slides to the previous or next period.
 
 const SHADES = [0, 0.3, 0.5, 0.75, 1];
 const WEEK_H = 42; // px: the Week squares' height (also the Year box)
 const MONTH_GAP = 2;
-const SWIPE_PX = 40;
 
 function shade(color, level) {
   return `color-mix(in oklch, ${color} ${Math.round(SHADES[level] * 100)}%, transparent)`;
@@ -57,13 +56,11 @@ export default function ActivityGraph({
   ensureMonths,
   currency = "CAD",
   filterCategory = null,
-  onStep, // (delta) => void: +1 = one period back, -1 = one forward
 }) {
   const months = monthsBetween(start, end);
   const periodKey = `${range}:${start.toDateString()}`;
   const [picked, setPicked] = useState(null);
   const rootRef = useRef(null);
-  const touch = useRef(null);
 
   useEffect(() => {
     ensureMonths(months);
@@ -241,24 +238,10 @@ export default function ActivityGraph({
           ? `Activity: ${formatCurrency(totals.out, { decimals: 2, currency })} out and ${formatCurrency(totals.in, {
               decimals: 2,
               currency,
-            })} in this ${range.toLowerCase()}. Swipe for the previous or next ${range.toLowerCase()}.`
+            })} in this ${range.toLowerCase()}.`
           : "Loading activity"
       }
-      className="touch-pan-y select-none"
-      onTouchStart={(e) => {
-        const t = e.touches[0];
-        touch.current = t ? { x: t.clientX, y: t.clientY } : null;
-      }}
-      onTouchEnd={(e) => {
-        const s = touch.current;
-        touch.current = null;
-        const t = e.changedTouches[0];
-        if (!s || !t || !onStep) return;
-        const dx = t.clientX - s.x;
-        const dy = t.clientY - s.y;
-        if (Math.abs(dx) < SWIPE_PX || Math.abs(dx) < Math.abs(dy)) return;
-        onStep(dx > 0 ? 1 : -1);
-      }}
+      className="select-none"
     >
       {body}
     </div>
