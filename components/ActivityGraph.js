@@ -8,7 +8,8 @@ import { dailyActivity, formatCurrency, monthsBetween } from "../lib/insights";
 // Follows Home's Week / Month / Year tabs, their ‹ › arrows and the category
 // pills (owner requests 2026-10-24):
 //   Week  — 7 squares, day names underneath
-//   Month — like Year: a column of 7 day squares per week, week dates under
+//   Month — a small block per week (Monday on top, then Tue-Thu and Fri-Sun),
+//           side by side, week dates underneath
 //   Year  — the fiscal year GitHub-style (a column per week, a row per
 //           weekday), fitted to the width, months underneath
 //
@@ -18,7 +19,7 @@ import { dailyActivity, formatCurrency, monthsBetween } from "../lib/insights";
 
 const SHADES = [0, 0.3, 0.5, 0.75, 1];
 const WEEK_H = 42; // px: the Week squares' height (also the Year box)
-const MONTH_GAP = 1;
+const MONTH_GAP = 2;
 const SWIPE_PX = 40;
 
 function shade(color, level) {
@@ -156,27 +157,40 @@ export default function ActivityGraph({
       </>
     );
   } else if (range === "Month") {
-    // Like Year, one column per week (Monday at the top), 4 to 6 columns
-    // spread across the same box, each week's first date underneath.
-    const lead = (start.getDay() + 6) % 7;
+    // One small block per week, side by side across the same box, each
+    // week's first date underneath. Inside a block (owner's pick 2026-10-25):
+    // Monday alone on top, then Tue-Thu and Fri-Sun underneath. Each day sits
+    // in its weekday's spot, so a month starting mid-week leaves earlier
+    // spots empty.
     const weeks = [];
     days.forEach((d, i) => {
       if (i === 0 || d.date.getDay() === 1) weeks.push([]);
       weeks[weeks.length - 1].push({ d, i });
     });
-    const size = Math.floor((WEEK_H - 6 * MONTH_GAP) / 7);
+    const size = Math.floor((WEEK_H - 2 * MONTH_GAP) / 3);
+    const spot = (d) => {
+      const k = (d.date.getDay() + 6) % 7; // Mon 0 .. Sun 6
+      return k === 0 ? { gridRow: 1, gridColumn: 2 } : { gridRow: 2 + Math.floor((k - 1) / 3), gridColumn: 1 + ((k - 1) % 3) };
+    };
     body = (
       <div className="flex justify-between">
         {weeks.map((w, wi) => (
           <div key={wi} className="flex flex-col items-center">
             <div
               className="grid"
-              style={{ height: WEEK_H, gridTemplateRows: `repeat(7, ${size}px)`, gridTemplateColumns: `${size}px`, rowGap: MONTH_GAP, alignContent: "center" }}
+              style={{
+                height: WEEK_H,
+                gridTemplateRows: `repeat(3, ${size}px)`,
+                gridTemplateColumns: `repeat(3, ${size}px)`,
+                gap: MONTH_GAP,
+                alignContent: "center",
+              }}
             >
-              {wi === 0 && Array.from({ length: lead }, (_, k) => <span key={`lead-${k}`} />)}
-              {w.map(({ d, i }) =>
-                cell(d, i, "rounded-[1px]", alignForColumn(wi, weeks.length), { width: size, height: size })
-              )}
+              {w.map(({ d, i }) => (
+                <span key={i} style={spot(d)}>
+                  {cell(d, i, "rounded-[3px]", alignForColumn(wi, weeks.length), { width: size, height: size })}
+                </span>
+              ))}
             </div>
             <div className="mt-1.5">
               <Label>{w[0].d.date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}</Label>
