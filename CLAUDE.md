@@ -118,8 +118,10 @@ used on the save path.
 
 ### Receipt capture pipeline
 
-`pages/index.js` (the Camera tab, and the app's home route) → user takes a
-photo or imports one from their library → `lib/image.js` compresses it
+`pages/capture.js` (reached from the camera in the bottom menu) → user takes
+photos or picks several from their library — a batch; each is read in the
+background, one after another, then reviewed one at a time ("Receipt 2 of
+5", Save & next / Skip for now) → `lib/image.js` compresses it
 client-side via canvas (target ~200KB, JPEG re-encode regardless of source
 format) → POST to `pages/api/extract.js` (server-side, keeps
 `ANTHROPIC_API_KEY` off the client) → Claude vision returns structured

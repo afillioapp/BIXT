@@ -6,8 +6,8 @@ import { setPendingCapture } from "../lib/pendingCapture";
 
 // The bottom menu: Home | Camera | Settings as a small floating pill, icons
 // only (owner requests 2026-10-24 and -25; it replaced the press-and-hold
-// ThumbControl). Tapping the teal camera offers "Take photo" or "Choose a
-// photo" just above it. Either way the File is
+// ThumbControl). Tapping the teal camera offers "Take photo" or "Choose
+// photos" (several at once) just above it. Either way the File is
 // handed to /capture through lib/pendingCapture.js, as before.
 //
 // Hidden on /login and /setup (pages/_app.js decides by route). Pages carry
@@ -56,11 +56,12 @@ export default function BottomNav() {
     };
   }, [open]);
 
+  // One photo from the camera, or several from the gallery (batch capture).
   function handleFileChosen(e) {
-    const file = e.target.files[0];
+    const files = Array.from(e.target.files || []);
     e.target.value = "";
-    if (!file) return;
-    setPendingCapture(file);
+    if (!files.length) return;
+    setPendingCapture(files);
     setOpen(false);
     router.push("/capture");
   }
@@ -75,7 +76,7 @@ export default function BottomNav() {
         onChange={handleFileChosen}
         className="hidden"
       />
-      <input id="bx-nav-import" type="file" accept="image/*" onChange={handleFileChosen} className="hidden" />
+      <input id="bx-nav-import" type="file" accept="image/*" multiple onChange={handleFileChosen} className="hidden" />
 
       {open && <div className="fixed inset-0 z-40 bg-black/25" aria-hidden="true" />}
 
@@ -109,7 +110,7 @@ export default function BottomNav() {
                 className="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium text-text-primary active:bg-brand-teal-soft hover:bg-muted"
               >
                 <GalleryIcon className="size-[18px] text-brand-teal-deep" />
-                Choose a photo
+                Choose photos
               </label>
             </div>
           )}
