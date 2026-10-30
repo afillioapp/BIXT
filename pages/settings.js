@@ -362,13 +362,21 @@ export default function Settings({ user }) {
 
   // Google's own short reason from a driveFetch error ("Google API error
   // (403): {json}"), for the end of a plain-language message.
+  // (Google's error body ends with a newline, which an end-anchored match
+  // used to miss — so the reason never showed.)
   function googleReason(err) {
-    const m = /\{[\s\S]*\}$/.exec(err?.message || "");
-    try {
-      return m ? JSON.parse(m[0])?.error?.message || "" : "";
-    } catch {
-      return "";
+    const text = String(err?.message || "").trim();
+    const start = text.indexOf("{");
+    if (start !== -1) {
+      try {
+        const msg = JSON.parse(text.slice(start))?.error?.message;
+        if (msg) return msg;
+      } catch {
+        // not JSON; fall through
+      }
     }
+    const status = /\((\d{3})\)/.exec(text);
+    return status ? `error ${status[1]}` : "";
   }
 
   async function handleConfirmShare() {
@@ -376,6 +384,7 @@ export default function Settings({ user }) {
     setSaving(true);
     setStatus(null);
     let step = "check who can see your folder";
+    let notified = true;
     try {
       // Same as the other Settings saves: if the Drive connection has expired
       // (Settings often sits open past the hour), renew it once and retry.
@@ -393,7 +402,7 @@ export default function Settings({ user }) {
         );
         if (!alreadyShared) {
           step = `share your folder with ${newEmail}`;
-          await shareWithEmail(token, rootFolderId, newEmail, "reader");
+          ({ notified } = await shareWithEmail(token, rootFolderId, newEmail, "reader"));
         }
         const staleReaders = current.filter(
           (p) => p.role === "reader" && (p.emailAddress || "").toLowerCase() !== newEmail.toLowerCase()
@@ -405,7 +414,12 @@ export default function Settings({ user }) {
         step = "save the new accountant";
         await saveProfile(token, rootFolderId, { accountantEmail: newEmail });
       });
-      setStatus({ type: "success", text: "Accountant updated" });
+      setStatus({
+        type: "success",
+        text: notified
+          ? "Accountant updated"
+          : `Accountant updated. Google didn't email ${newEmail}, so let them know they can now see your BX folder.`,
+      });
       setEditing(false);
       setConfirming(false);
       reloadProfile();
