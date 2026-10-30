@@ -344,44 +344,63 @@ export default function Settings({ user }) {
     setConfirming(true);
   }
 
+  // Google's own short reason from a driveFetch error ("Google API error
+  // (403): {json}"), for the end of a plain-language message.
+  function googleReason(err) {
+    const m = /\{[\s\S]*\}$/.exec(err?.message || "");
+    try {
+      return m ? JSON.parse(m[0])?.error?.message || "" : "";
+    } catch {
+      return "";
+    }
+  }
+
   async function handleConfirmShare() {
     const newEmail = accountantEmail.trim();
     setSaving(true);
     setStatus(null);
+    let step = "check who can see your folder";
     try {
-      // BX manages all read access on this folder, so any reader other than
-      // the new accountant is stale and must go. Compare case-insensitively —
-      // Google normalizes email casing, and an exact-string match used to let
-      // the old accountant silently keep access forever.
-      const current = await listSharedEmails(accessToken, rootFolderId);
-      const staleReaders = current.filter(
-        (p) => p.role === "reader" && (p.emailAddress || "").toLowerCase() !== newEmail.toLowerCase()
-      );
-      for (const perm of staleReaders) {
-        try {
-          await removeSharedEmail(accessToken, rootFolderId, perm.id);
-        } catch {
-          throw new Error(
-            `We couldn't remove ${perm.emailAddress}'s access — they may still be able to view your files. Please try again.`
-          );
+      // Same as the other Settings saves: if the Drive connection has expired
+      // (Settings often sits open past the hour), renew it once and retry.
+      await withFreshToken(async (token) => {
+        // BX manages all read access on this folder, so any reader other than
+        // the new accountant is stale and must go. Compare case-insensitively —
+        // Google normalizes email casing, and an exact-string match used to let
+        // the old accountant silently keep access forever.
+        step = "check who can see your folder";
+        const current = await listSharedEmails(token, rootFolderId);
+        // Add the new accountant FIRST, then remove the old one: if anything
+        // fails part-way, the folder is never left with no accountant.
+        const alreadyShared = current.some(
+          (p) => (p.emailAddress || "").toLowerCase() === newEmail.toLowerCase()
+        );
+        if (!alreadyShared) {
+          step = `share your folder with ${newEmail}`;
+          await shareWithEmail(token, rootFolderId, newEmail, "reader");
         }
-      }
-      const alreadyShared = current.some(
-        (p) => (p.emailAddress || "").toLowerCase() === newEmail.toLowerCase()
-      );
-      if (!alreadyShared) {
-        await shareWithEmail(accessToken, rootFolderId, newEmail, "reader");
-      }
-      await saveProfile(accessToken, rootFolderId, {
-        companyName: profile.companyName,
-        accountantEmail: newEmail,
+        const staleReaders = current.filter(
+          (p) => p.role === "reader" && (p.emailAddress || "").toLowerCase() !== newEmail.toLowerCase()
+        );
+        for (const perm of staleReaders) {
+          step = `remove ${perm.emailAddress}'s access`;
+          await removeSharedEmail(token, rootFolderId, perm.id);
+        }
+        step = "save the new accountant";
+        await saveProfile(token, rootFolderId, { accountantEmail: newEmail });
       });
       setStatus({ type: "success", text: "Accountant updated" });
       setEditing(false);
       setConfirming(false);
       reloadProfile();
     } catch (err) {
-      setStatus({ type: "error", text: err.message });
+      const reason = googleReason(err);
+      setStatus({
+        type: "error",
+        text: `Couldn't ${step}. Check your connection and try again.${reason ? ` (Google said: ${reason})` : ""}`,
+      });
+      // Back to the editor so "Save" can be tapped again.
+      setConfirming(false);
     } finally {
       setSaving(false);
     }
