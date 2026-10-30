@@ -6,6 +6,7 @@
 // would be an open proxy to the Anthropic API on our bill.
 
 import { createRemoteJWKSet, jwtVerify } from "jose";
+import { suggestCategory } from "../../lib/categories";
 
 export const config = {
   api: {
@@ -78,6 +79,10 @@ const CATEGORIES = [
   "Marketing",
   "Professional Services",
   "Meetings & Events",
+  "Groceries",
+  "Rent & Utilities",
+  "Bank Transfers & Payments",
+  "Cash Withdrawal",
   "Other",
 ];
 
@@ -115,7 +120,7 @@ export default async function handler(req, res) {
   "total": "final total amount paid, number only, no currency symbol",
   "hst": "HST/GST/tax amount, number only, 0 if none found",
   "currency": "3 letter currency code, guess CAD if unclear",
-  "category_suggestion": "pick the single best fit from this exact list: ${CATEGORIES.join(", ")}",
+  "category_suggestion": "pick the single best fit from this exact list: ${CATEGORIES.join(", ")}. Grocery stores are Groceries; rent, hydro, gas, phone and internet bills are Rent & Utilities; bank slips for transfers, e-Transfers, bill or loan payments and deposits are Bank Transfers & Payments; ATM slips are Cash Withdrawal. Use Other only when nothing fits.",
   "notes": "1 short phrase, e.g. 3 items purchased, or client dinner - leave empty string if nothing notable"
 }
 
@@ -166,6 +171,12 @@ If a field is unreadable, use your best reasonable guess rather than leaving it 
       parsed = JSON.parse(cleaned);
     } catch (e) {
       return res.status(500).json({ error: "Could not parse Claude's response", raw: rawText });
+    }
+
+    // Safety net: if the reader still says Other (or something off-list),
+    // file clear bank slips, ATM slips, grocers and utility bills by name.
+    if (!CATEGORIES.includes(parsed.category_suggestion) || parsed.category_suggestion === "Other") {
+      parsed.category_suggestion = suggestCategory(parsed.place) || "Other";
     }
 
     return res.status(200).json({ result: parsed, categories: CATEGORIES });

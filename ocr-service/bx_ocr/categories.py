@@ -20,12 +20,29 @@ CATEGORIES = [
     "Marketing",
     "Professional Services",
     "Meetings & Events",
+    "Groceries",
+    "Rent & Utilities",
+    "Bank Transfers & Payments",
+    "Cash Withdrawal",
     "Other",
 ]
 
 # Ordered most-specific first: a gas station that also sells coffee is Fuel,
 # and a hotel restaurant charge is Accommodation.
 _RULES: list[tuple[str, re.Pattern]] = [
+    # Added 2026-10-30, mirroring lib/categories.js. Bank slips first: an ATM
+    # slip is a cash withdrawal, any other bank slip a transfer or payment.
+    ("Cash Withdrawal", re.compile(r"\batm\b|\bwithdrawal\b|\bcash (?:back|advance)\b|\babm\b", re.I)),
+    ("Bank Transfers & Payments", re.compile(
+        r"\btd canada trust\b|\bcibc\b|\brbc\b|\broyal bank\b|\bbmo\b|\bscotiabank\b|\btangerine\b"
+        r"|\bdesjardins\b|\bnational bank\b|\be-?transfer\b|\binterac e-?transfer\b|\bbill payment\b"
+        r"|\btransfer (?:to|from)\b|\bdeposit\b", re.I)),
+    ("Rent & Utilities", re.compile(
+        r"\brent\b|\bhydro\b|\benbridge\b|\butilit(?:y|ies)\b|\brogers\b|\bbell canada\b|\btelus\b"
+        r"|\bfido\b|\bkoodo\b|\bfreedom mobile\b|\binternet\b", re.I)),
+    ("Groceries", re.compile(
+        r"\bgrocer(?:y|ies)\b|\bsupermarket\b|\bpars food\b|\bwhole foods\b|\bloblaws?\b|\bno frills\b"
+        r"|\bfood basics\b|\bsobeys\b|\bfreshco\b|\bfarm boy\b|\blongo'?s\b|\bfortinos\b|\bsuperstore\b", re.I)),
     ("Fuel", re.compile(
         r"\besso\b|\bshell\b|petro[-\s]?can|\bultramar\b|\bhusky\b|\bchevron\b|\bmobil\b"
         r"|\bpioneer\b|\bcanadian tire gas\b|\bcostco gas\b|\bgas bar\b|\bfuel\b"

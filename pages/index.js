@@ -9,6 +9,7 @@ import {
   categoryTotals,
   formatCurrency,
   isIncome,
+  isMoneyMovement,
   fiscalStartMonth,
   currencyCode,
   periodBounds,
@@ -151,7 +152,9 @@ export default function Home({ user }) {
   for (const r of rows || []) {
     const c = r.category || "Other";
     const n = parseFloat(String(r.total ?? "").replace(/^'/, "").replace(/[$,\s]/g, ""));
-    const target = isIncome(r) ? catIncome : catSpend;
+    // Income and money-moving rows (transfers, cash withdrawals) rank after
+    // spending categories.
+    const target = isIncome(r) || isMoneyMovement(r) ? catIncome : catSpend;
     target.set(c, (target.get(c) || 0) + (Number.isFinite(n) ? n : 0));
   }
   const byAmount = (m) => [...m.entries()].sort((a, b) => b[1] - a[1]).map(([c]) => c);

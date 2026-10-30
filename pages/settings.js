@@ -3,6 +3,7 @@ import { signOut } from "firebase/auth";
 import {
   Building2,
   Coins,
+  Tags,
   Cloud,
   Mail,
   CalendarRange,
@@ -15,12 +16,22 @@ import {
 } from "lucide-react";
 import { auth } from "../lib/firebase";
 import { useDrive } from "../lib/useDrive";
-import { listSharedEmails, removeSharedEmail, shareWithEmail, saveProfile, renameCompanyRootFolder } from "../lib/google";
+import {
+  listSharedEmails,
+  removeSharedEmail,
+  shareWithEmail,
+  saveProfile,
+  renameCompanyRootFolder,
+  findMonthExpenseSheetId,
+  listExpenseRows,
+  updateExpenseRow,
+} from "../lib/google";
+import { suggestCategory } from "../lib/categories";
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
 import { biometricAvailable, isLockEnabled, enableLock, disableLock } from "../lib/biometric";
 import { getTheme, setTheme } from "../lib/theme";
-import { MONTH_NAMES, fiscalStartMonth, CURRENCIES, currencyCode, currencySymbol } from "../lib/insights";
+import { MONTH_NAMES, fiscalStartMonth, CURRENCIES, currencyCode, currencySymbol, formatCurrency } from "../lib/insights";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LAST4_RE = /^\d{4}$/;
@@ -135,6 +146,11 @@ export default function Settings({ user }) {
   const [companyName, setCompanyName] = useState("");
   const [companySaving, setCompanySaving] = useState(false);
   const [companyStatus, setCompanyStatus] = useState(null);
+
+  // One-tap re-sort of receipts filed as "Other" (owner request 2026-10-30).
+  // phase: idle | scanning | preview | applying
+  const [resort, setResort] = useState({ phase: "idle", items: [] });
+  const [resortStatus, setResortStatus] = useState(null);
 
   useEffect(() => {
     setThemeState(getTheme());
@@ -406,6 +422,64 @@ export default function Settings({ user }) {
     }
   }
 
+  // Looks through the last 12 months for receipts filed as Other whose vendor
+  // clearly fits a category added later (bank slips, ATM slips, grocers,
+  // utility bills), and lists them. Nothing changes until "Re-sort" is tapped.
+  async function scanForResort() {
+    setResortStatus(null);
+    setResort({ phase: "scanning", items: [] });
+    try {
+      const found = [];
+      const now = new Date();
+      await withFreshToken(async (token) => {
+        for (let k = 0; k < 12; k++) {
+          const month = new Date(now.getFullYear(), now.getMonth() - k, 1);
+          const sheetId = await findMonthExpenseSheetId(token, rootFolderId, month);
+          if (!sheetId) continue;
+          const rows = await listExpenseRows(token, sheetId);
+          for (const row of rows) {
+            if ((row.category || "Other") !== "Other") continue;
+            // Old-layout rows with no category column have nowhere to write it.
+            if (row.layout === "v1" && !row.hadTrailingCategory) continue;
+            const to = suggestCategory(row.place);
+            if (to) found.push({ row, to });
+          }
+        }
+      });
+      if (!found.length) {
+        setResort({ phase: "idle", items: [] });
+        setResortStatus({ type: "success", text: "Nothing to re-sort — no receipts in Other match a new category." });
+        return;
+      }
+      setResort({ phase: "preview", items: found });
+    } catch {
+      setResort({ phase: "idle", items: [] });
+      setResortStatus({ type: "error", text: SAVE_FAILED });
+    }
+  }
+
+  async function applyResort() {
+    const items = resort.items;
+    setResort({ phase: "applying", items });
+    let done = 0;
+    try {
+      for (const { row, to } of items) {
+        await withFreshToken((token) =>
+          updateExpenseRow(token, row.sheetId, row.rowIndex, row.layout, { ...row, category: to })
+        );
+        done += 1;
+      }
+      setResort({ phase: "idle", items: [] });
+      setResortStatus({ type: "success", text: `Re-sorted ${done} receipt${done === 1 ? "" : "s"}.` });
+    } catch {
+      setResort({ phase: "idle", items: [] });
+      setResortStatus({
+        type: "error",
+        text: `Re-sorted ${done} of ${items.length}. ${SAVE_FAILED}`,
+      });
+    }
+  }
+
   if (profileLoading || !profile) {
     return (
       <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
@@ -620,6 +694,57 @@ export default function Settings({ user }) {
               <ChevronRight className="size-4 text-text-tertiary shrink-0" />
             </div>
             <StatusLine status={currencyStatus} />
+          </div>
+
+          <div className="p-4">
+            {resort.phase === "preview" || resort.phase === "applying" ? (
+              <div>
+                <p className="text-sm mb-1">
+                  {resort.items.length} receipt{resort.items.length === 1 ? "" : "s"} in Other can be re-sorted:
+                </p>
+                <ul className="mb-3 max-h-56 overflow-y-auto divide-y divide-hairline">
+                  {resort.items.map(({ row, to }, i) => (
+                    <li key={i} className="py-2 flex items-baseline justify-between gap-3 text-xs">
+                      <span className="min-w-0 truncate">
+                        {row.place || "Untitled"} · {row.date}
+                        {row.total ? ` · ${formatCurrency(String(row.total).replace(/[$,\s]/g, ""), { decimals: 2, currency: currencyCode(profile) })}` : ""}
+                      </span>
+                      <span className="shrink-0 font-semibold text-brand-teal-deep">→ {to}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex gap-2">
+                  <button
+                    className="flex-1 h-9 rounded-full ring-1 ring-hairline-strong text-sm font-medium disabled:opacity-60"
+                    onClick={() => setResort({ phase: "idle", items: [] })}
+                    disabled={resort.phase === "applying"}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="flex-1 h-9 rounded-full bg-brand-teal text-white text-sm font-semibold disabled:opacity-60"
+                    onClick={applyResort}
+                    disabled={resort.phase === "applying"}
+                  >
+                    {resort.phase === "applying" ? "Re-sorting…" : "Re-sort"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                className="w-full flex items-center gap-3 text-left disabled:opacity-60"
+                onClick={scanForResort}
+                disabled={resort.phase === "scanning"}
+              >
+                <Tags className="size-4 text-text-secondary shrink-0" />
+                <p className="flex-1 min-w-0 text-sm">Re-sort receipts in "Other"</p>
+                <span className="text-xs text-text-secondary shrink-0">
+                  {resort.phase === "scanning" ? "Checking…" : ""}
+                </span>
+                <ChevronRight className="size-4 text-text-tertiary shrink-0" />
+              </button>
+            )}
+            <StatusLine status={resortStatus} />
           </div>
 
           <div className="p-4">

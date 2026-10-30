@@ -11,6 +11,10 @@ import {
   Briefcase,
   Ticket,
   ReceiptText,
+  ShoppingBasket,
+  Zap,
+  ArrowLeftRight,
+  Banknote,
 } from "lucide-react";
 
 // Single shared category -> icon mapping (owner request: replace the
@@ -32,6 +36,10 @@ const CATEGORY_ICON_MAP = {
   Marketing: Megaphone,
   "Professional Services": Briefcase,
   "Meetings & Events": Ticket,
+  Groceries: ShoppingBasket,
+  "Rent & Utilities": Zap,
+  "Bank Transfers & Payments": ArrowLeftRight,
+  "Cash Withdrawal": Banknote,
   Other: ReceiptText,
   // Legacy aliases (pre-v1 rows) -> successor category's icon
   "Meals & Entertainment": Utensils, // -> Dining & Meals
@@ -65,6 +73,10 @@ const CATEGORY_ACCENT_MAP = {
   Marketing: "var(--chart-4)",
   "Professional Services": "var(--chart-5)",
   "Meetings & Events": "var(--chart-1)",
+  Groceries: "var(--chart-2)",
+  "Rent & Utilities": "var(--chart-3)",
+  "Bank Transfers & Payments": "var(--chart-4)",
+  "Cash Withdrawal": "var(--chart-5)",
   Other: "var(--chart-2)",
   // Legacy aliases (pre-v1 rows) -> successor category's color
   "Meals & Entertainment": "var(--chart-1)",
@@ -105,6 +117,10 @@ export const OFFICIAL_CATEGORIES = [
   "Marketing",
   "Professional Services",
   "Meetings & Events",
+  "Groceries",
+  "Rent & Utilities",
+  "Bank Transfers & Payments",
+  "Cash Withdrawal",
   "Other",
 ];
 
