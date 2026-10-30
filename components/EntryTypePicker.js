@@ -31,12 +31,19 @@ const OPTIONS = [
   },
 ];
 
-export default function EntryTypePicker({ value, onChange, disabled = false, missing = false, inputRef }) {
+export default function EntryTypePicker({
+  value,
+  onChange,
+  disabled = false,
+  missing = false,
+  inputRef,
+  legend = "Money out or money in?",
+}) {
   const name = useId();
   const errorId = `${name}-error`;
   return (
     <fieldset disabled={disabled} className="min-w-0">
-      <legend className="text-sm mb-2 text-text-secondary">Money out or money in?</legend>
+      <legend className="text-sm mb-2 text-text-secondary">{legend}</legend>
       <div className="grid grid-cols-2 gap-2.5">
         {OPTIONS.map(({ value: v, title, sub, Icon }, i) => {
           const selected = value === v;

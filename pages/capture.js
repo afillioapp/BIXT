@@ -74,6 +74,12 @@ export default function Capture({ user }) {
   // Photos are read one after another, never all at once: gentler on the
   // phone and on the hourly reading limit.
   const readChain = useRef(Promise.resolve());
+  // A batch is usually all one kind — all bills you're paying, or all
+  // invoices you've sent (owner request 2026-10-30). Asked once for the
+  // whole batch; each receipt starts with this answer and can still be
+  // switched on its own. "" until answered.
+  const [batchType, setBatchType] = useState("");
+  const batchTypeRef = useRef("");
 
   // Only send someone to onboarding when we positively know they have no BX
   // folder — i.e. Drive answered us. A connection problem (loadError) or a
@@ -136,9 +142,9 @@ export default function Capture({ user }) {
           hst: data.result.hst || "",
           date: data.result.date || "",
           category: data.result.category_suggestion || "Other",
-          // Deliberately unanswered: the owner must say whether they're being
-          // invoiced or invoicing — the photo can't tell us.
-          type: "",
+          // The batch answer if there is one; otherwise deliberately
+          // unanswered — the photo can't tell money in from money out.
+          type: batchTypeRef.current,
           note: "",
         },
         message: { type: "success", text: "Receipt read. Review and confirm." },
@@ -147,7 +153,7 @@ export default function Capture({ user }) {
       patch(it.id, {
         status: "ready",
         categories: OFFICIAL_CATEGORIES,
-        form: { ...BLANK_FORM },
+        form: { ...BLANK_FORM, type: batchTypeRef.current },
         message: { type: "error", text: `${err.message} — please enter the details below.` },
       });
     }
@@ -175,6 +181,22 @@ export default function Capture({ user }) {
     const idx = items.findIndex((it) => it.id === id);
     const after = [...items.slice(idx + 1), ...items.slice(0, idx)];
     return after.find((it) => it.status !== "saved")?.id ?? null;
+  }
+
+  // Applies the batch answer to every receipt not saved yet, except ones the
+  // owner deliberately set to the other answer.
+  function answerBatch(value) {
+    const previous = batchTypeRef.current;
+    batchTypeRef.current = value;
+    setBatchType(value);
+    setTypeMissing(false);
+    setItems((list) =>
+      list.map((it) =>
+        it.status !== "saved" && it.form && (it.form.type === "" || it.form.type === previous)
+          ? { ...it, form: { ...it.form, type: value } }
+          : it
+      )
+    );
   }
 
   function updateField(key, value) {
@@ -330,6 +352,21 @@ export default function Capture({ user }) {
 
         {items.length > 0 && (
           <>
+            {/* Asked once for the whole batch (2 or more receipts). */}
+            {items.length > 1 && (
+              <div className="mb-4 rounded-2xl bg-card ring-1 ring-hairline p-4">
+                <EntryTypePicker
+                  legend={`What are these ${items.length} receipts?`}
+                  value={batchType}
+                  onChange={answerBatch}
+                  disabled={saving}
+                />
+                <p className="mt-2 text-[11px] text-text-secondary">
+                  {batchType ? "Applied to every receipt. You can still change one below." : "Answer once for the whole batch."}
+                </p>
+              </div>
+            )}
+
             {/* The batch strip */}
             <div className="flex gap-2 overflow-x-auto pb-1 -mx-5 px-5 scrollbar-none mb-4" aria-label="Receipts in this batch">
               {items.map((it, i) => {
