@@ -8,7 +8,8 @@ import { takePendingCapture } from "../lib/pendingCapture";
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
 import EntryTypePicker from "../components/EntryTypePicker";
-import { OFFICIAL_CATEGORIES } from "../components/CategoryIcon";
+import CategoryPicker from "../components/CategoryPicker";
+import { customCategories, hiddenCategories } from "../lib/categories";
 import { currencyCode } from "../lib/insights";
 
 // Receipt capture, in batches (owner request 2026-10-29): shoot or pick as
@@ -57,10 +58,11 @@ export default function Capture({ user }) {
     requestAccess,
     refreshAccessToken,
     retryConnection,
+    reloadProfile,
   } = useDrive(user);
 
   // The batch. status: "reading" | "ready" | "saved"
-  // ready items carry { base64, mime, preview, form, categories, message }.
+  // ready items carry { base64, mime, preview, form, message }.
   const [items, setItems] = useState([]);
   const [currentId, setCurrentId] = useState(null);
   const [typeMissing, setTypeMissing] = useState(false);
@@ -91,11 +93,13 @@ export default function Capture({ user }) {
   }, [profileLoading, profile, accessToken, loadError, needsConnect]);
 
   // Pick up photos handed off from the bottom menu (components/BottomNav.js).
+  // Waits for the profile, so the reader knows this business's own categories.
   useEffect(() => {
+    if (!profile) return;
     const files = takePendingCapture();
     if (files.length) addFiles(files);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [profile]);
 
   function patch(id, changes) {
     setItems((list) => list.map((it) => (it.id === id ? { ...it, ...changes } : it)));
@@ -118,7 +122,7 @@ export default function Capture({ user }) {
     try {
       ({ base64, mimeType: mime } = await compressImage(it.file));
     } catch (err) {
-      patch(it.id, { status: "ready", form: { ...BLANK_FORM }, categories: OFFICIAL_CATEGORIES, message: { type: "error", text: "Couldn't open this photo — please retake it." }, unusable: true });
+      patch(it.id, { status: "ready", form: { ...BLANK_FORM }, message: { type: "error", text: "Couldn't open this photo — please retake it." }, unusable: true });
       return;
     }
     const preview = `data:${mime};base64,${base64}`;
@@ -129,13 +133,17 @@ export default function Capture({ user }) {
       const res = await fetch("/api/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({ imageBase64: base64, mediaType: mime }),
+        body: JSON.stringify({
+          imageBase64: base64,
+          mediaType: mime,
+          customCategories: customCategories(profile).map((c) => c.name),
+          hiddenCategories: hiddenCategories(profile),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Couldn't read this receipt");
       patch(it.id, {
         status: "ready",
-        categories: data.categories || OFFICIAL_CATEGORIES,
         form: {
           place: data.result.place || "",
           total: data.result.total || "",
@@ -152,7 +160,6 @@ export default function Capture({ user }) {
     } catch (err) {
       patch(it.id, {
         status: "ready",
-        categories: OFFICIAL_CATEGORIES,
         form: { ...BLANK_FORM, type: batchTypeRef.current },
         message: { type: "error", text: `${err.message} — please enter the details below.` },
       });
@@ -498,13 +505,12 @@ export default function Capture({ user }) {
                         placeholder="YYYY-MM-DD"
                         onKeyDown={(e) => e.key === "Enter" && handleConfirm()}
                       />
-                      <select className={`${inputClass} appearance-none`} value={form.category} onChange={(e) => updateField("category", e.target.value)}>
-                        {(current.categories?.length ? current.categories : [form.category]).map((c) => (
-                          <option key={c} value={c}>
-                            {c}
-                          </option>
-                        ))}
-                      </select>
+                      <CategoryPicker
+                        value={form.category}
+                        onChange={(v) => updateField("category", v)}
+                        drive={{ accessToken, refreshAccessToken, rootFolderId, profile, reloadProfile }}
+                        disabled={saving}
+                      />
                       {/* Saved to the sheet's "Note for accountant" column. */}
                       <textarea
                         className="w-full rounded-xl bg-card ring-1 ring-hairline-strong px-4 py-3 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-brand-teal resize-none disabled:opacity-60"

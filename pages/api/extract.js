@@ -112,6 +112,21 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Server missing ANTHROPIC_API_KEY" });
   }
 
+  // The owner's own categories, and built-ins they've hidden (owner request
+  // 2026-11-02). Cleaned before they reach the prompt: short plain names only.
+  const cleanNames = (v) =>
+    (Array.isArray(v) ? v : [])
+      .filter((n) => typeof n === "string")
+      .map((n) => n.replace(/[^\p{L}\p{N} &'./()-]/gu, "").trim().slice(0, 40))
+      .filter(Boolean)
+      .slice(0, 20);
+  const customNames = cleanNames(req.body?.customCategories);
+  const hiddenNames = new Set(cleanNames(req.body?.hiddenCategories));
+  const allowedCategories = [...customNames, ...CATEGORIES.filter((c) => !hiddenNames.has(c))];
+  const customHint = customNames.length
+    ? ` The business created these categories itself, so prefer one of them when it clearly fits: ${customNames.join(", ")}.`
+    : "";
+
   const prompt = `You are reading a business expense receipt image. Extract the following fields and respond with ONLY raw JSON, no markdown fences, no preamble:
 
 {
@@ -120,7 +135,7 @@ export default async function handler(req, res) {
   "total": "final total amount paid, number only, no currency symbol",
   "hst": "HST/GST/tax amount, number only, 0 if none found",
   "currency": "3 letter currency code, guess CAD if unclear",
-  "category_suggestion": "pick the single best fit from this exact list: ${CATEGORIES.join(", ")}. Grocery stores are Groceries; rent, hydro, gas, phone and internet bills are Rent & Utilities; bank slips for transfers, e-Transfers, bill or loan payments and deposits are Bank Transfers & Payments; ATM slips are Cash Withdrawal. Use Other only when nothing fits.",
+  "category_suggestion": "pick the single best fit from this exact list: ${allowedCategories.join(", ")}.${customHint} Grocery stores are Groceries; rent, hydro, gas, phone and internet bills are Rent & Utilities; bank slips for transfers, e-Transfers, bill or loan payments and deposits are Bank Transfers & Payments; ATM slips are Cash Withdrawal. Use Other only when nothing fits.",
   "notes": "1 short phrase, e.g. 3 items purchased, or client dinner - leave empty string if nothing notable"
 }
 
@@ -175,11 +190,12 @@ If a field is unreadable, use your best reasonable guess rather than leaving it 
 
     // Safety net: if the reader still says Other (or something off-list),
     // file clear bank slips, ATM slips, grocers and utility bills by name.
-    if (!CATEGORIES.includes(parsed.category_suggestion) || parsed.category_suggestion === "Other") {
-      parsed.category_suggestion = suggestCategory(parsed.place) || "Other";
+    if (!allowedCategories.includes(parsed.category_suggestion) || parsed.category_suggestion === "Other") {
+      const byName = suggestCategory(parsed.place);
+      parsed.category_suggestion = allowedCategories.includes(byName) ? byName : "Other";
     }
 
-    return res.status(200).json({ result: parsed, categories: CATEGORIES });
+    return res.status(200).json({ result: parsed, categories: allowedCategories });
   } catch (err) {
     return res.status(500).json({ error: err.message || "Unknown server error" });
   }

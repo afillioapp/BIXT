@@ -15,7 +15,99 @@ import {
   Zap,
   ArrowLeftRight,
   Banknote,
+  Pizza,
+  Beer,
+  Wine,
+  Truck,
+  Bike,
+  TrainFront,
+  Hammer,
+  Wrench,
+  Paintbrush,
+  Ruler,
+  HardHat,
+  Scissors,
+  Printer,
+  Smartphone,
+  FileText,
+  Building2,
+  Droplets,
+  Wifi,
+  Phone,
+  KeyRound,
+  Users,
+  GraduationCap,
+  HeartPulse,
+  Stethoscope,
+  PawPrint,
+  Baby,
+  Tag,
+  Gift,
+  Shirt,
+  Camera,
+  Music,
+  Dumbbell,
+  Leaf,
+  Star,
+  Globe,
+  Sparkles,
 } from "lucide-react";
+import { BUILTIN_CATEGORIES, customIconName } from "../lib/categories";
+
+// The bank of icons a business can choose from for its own categories (owner
+// request 2026-11-02). All from the same line-icon set as the built-ins, so
+// they share one visual identity. The object keys are saved to the owner's
+// Drive, so never rename one; add new ones freely.
+export const ICON_BANK = {
+  Utensils,
+  Coffee,
+  Pizza,
+  Beer,
+  Wine,
+  ShoppingBasket,
+  CarFront,
+  Truck,
+  Bike,
+  Plane,
+  TrainFront,
+  Fuel,
+  Hammer,
+  Wrench,
+  Paintbrush,
+  Ruler,
+  HardHat,
+  Scissors,
+  Package,
+  Printer,
+  Laptop,
+  Smartphone,
+  Briefcase,
+  FileText,
+  Building2,
+  Zap,
+  Droplets,
+  Wifi,
+  Phone,
+  KeyRound,
+  Users,
+  GraduationCap,
+  HeartPulse,
+  Stethoscope,
+  PawPrint,
+  Baby,
+  Megaphone,
+  Tag,
+  Gift,
+  Shirt,
+  Camera,
+  Music,
+  Dumbbell,
+  Leaf,
+  Star,
+  Globe,
+  Ticket,
+  Sparkles,
+};
 
 // Single shared category -> icon mapping (owner request: replace the
 // tinted first-letter squares on History and Home's Recent Expenses rows
@@ -51,7 +143,7 @@ const CATEGORY_ICON_MAP = {
 };
 
 export function iconForCategory(category) {
-  return CATEGORY_ICON_MAP[category] || CATEGORY_ICON_MAP.Other;
+  return ICON_BANK[customIconName(category)] || CATEGORY_ICON_MAP[category] || CATEGORY_ICON_MAP.Other;
 }
 
 // One signature color per category (owner request): shown on the hero
@@ -97,32 +189,40 @@ export function paletteColor(i) {
   return CATEGORY_PALETTE[i % CATEGORY_PALETTE.length];
 }
 
+// Unknown names are the owner's own categories: hashed, so each keeps one
+// stable colour from the same palette.
 export function accentForCategory(category) {
-  return CATEGORY_ACCENT_MAP[category] || CATEGORY_ACCENT_MAP.Other;
+  if (CATEGORY_ACCENT_MAP[category]) return CATEGORY_ACCENT_MAP[category];
+  let hash = 0;
+  for (const ch of String(category || "")) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+  return CATEGORY_PALETTE[hash % CATEGORY_PALETTE.length];
 }
 
-// The official v1 12-category list, kept identical to pages/api/extract.js's
-// CATEGORIES (that file is untouched/server-only, so the edit-row category
-// <select> imports this copy instead — same exact names, since they're
-// written into users' sheets as a stable schema).
-export const OFFICIAL_CATEGORIES = [
-  "Dining & Meals",
-  "Coffee & Drinks",
-  "Travel",
-  "Ground Transport",
-  "Fuel",
-  "Accommodation",
-  "Office & Supplies",
-  "Software & Tech",
-  "Marketing",
-  "Professional Services",
-  "Meetings & Events",
-  "Groceries",
-  "Rent & Utilities",
-  "Bank Transfers & Payments",
-  "Cash Withdrawal",
-  "Other",
+// The built-in list, identical to pages/api/extract.js's CATEGORIES (those
+// names are written into users' sheets as a stable schema). The owner's own
+// categories come from lib/categories.js pickerCategories.
+export const OFFICIAL_CATEGORIES = BUILTIN_CATEGORIES;
+
+// Same stable per-category tint approach both pages used inline before this
+// component existed (design's bg-*-50/text-*-600 pairs, hashed per category
+// so a category always renders the same swatch).
+export const TINTS = [
+  "bg-brand-teal-soft text-brand-teal",
+  "bg-orange-50 text-orange-600 dark:bg-orange-400/15 dark:text-orange-300",
+  "bg-indigo-50 text-indigo-600 dark:bg-indigo-400/15 dark:text-indigo-300",
+  "bg-zinc-100 text-zinc-700 dark:bg-zinc-400/15 dark:text-zinc-300",
+  "bg-amber-50 text-amber-600 dark:bg-amber-400/15 dark:text-amber-300",
+  "bg-rose-50 text-rose-500 dark:bg-rose-400/15 dark:text-rose-300",
+  "bg-sky-50 text-sky-600 dark:bg-sky-400/15 dark:text-sky-300",
+  "bg-emerald-50 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-300",
 ];
+
+export function tintForCategory(category) {
+  const key = category || "Other";
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+  return TINTS[hash % TINTS.length];
+}
 
 export default function CategoryIcon({ category, className }) {
   const Icon = iconForCategory(category);

@@ -107,7 +107,11 @@ changed. Renaming the company in Settings also renames the folder to
 `BX - {name}` (`renameCompanyRootFolder`); the folder is found by its hidden
 `bxRoot` marker, so renames are safe. `currency` drives every amount in the
 app (`formatCurrency(n, { currency })`) and the Total/HST format of month
-sheets created after it is set. A user with no BX root folder yet is routed to
+sheets created after it is set. A business can add its own categories (name + icon from `ICON_BANK` in
+`components/CategoryIcon.js`, stored as `cat0`..`cat19` properties) and hide
+built-ins (`hiddenCats`); see `lib/categories.js`. Removing or renaming one of
+its own moves its receipts across every month (`findCategoryRows` /
+`moveCategoryRows`). A user with no BX root folder yet is routed to
 `pages/setup.js`; finding an existing one routes straight to the Camera tab.
 
 `lib/google.js` also exposes read-only lookup variants (`findFolderId`,
@@ -143,6 +147,8 @@ UI) → confirm writes through `saveExpenseToDrive`.
   reads; deliberately not a full walk of every month ever, for performance)
 - `pages/settings.js` — company name, connected account, editable
   accountant email, sign out
+- `pages/categories.js` — Settings > Categories: add/change/remove the
+  business's own categories, show/hide built-ins
 - `components/BottomNav.js` — Home | Camera (raised, teal, opens Take
   photo / Choose a photo) | Settings, hidden on `/login` and `/setup`
   (`pages/_app.js` decides this by route, not by re-deriving Drive state)

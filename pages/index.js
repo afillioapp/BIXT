@@ -56,6 +56,8 @@ export default function Home({ user }) {
     loadError,
     requestAccess,
     retryConnection,
+    refreshAccessToken,
+    reloadProfile,
   } = useDrive(user);
 
   const { getMonthRows, ensureMonths, invalidateMonth } = useMonthRows(accessToken, rootFolderId);
@@ -394,6 +396,7 @@ export default function Home({ user }) {
         row={editingRow}
         onClose={() => setEditingRow(null)}
         onSaved={handleSavedRow}
+        drive={{ accessToken, refreshAccessToken, rootFolderId, profile, reloadProfile }}
       />
     </div>
   );

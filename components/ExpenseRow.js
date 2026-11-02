@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { MoreHorizontal, ReceiptText, Pencil, Trash2, StickyNote } from "lucide-react";
-import CategoryIcon from "./CategoryIcon";
+import CategoryIcon, { tintForCategory } from "./CategoryIcon";
 import { isIncome } from "../lib/insights";
 
 // Swipe-to-act expense row (owner request, modeled on CamScanner's
@@ -23,27 +23,6 @@ const ACTION_WIDTH = 64;
 const MAX_OPEN = ACTION_WIDTH * 3; // 192px — three equal action slots
 const OPEN_THRESHOLD = MAX_OPEN / 2;
 const DRAG_SLOP = 4; // px of movement before a touch/click counts as a drag, not a tap
-
-// Same stable per-category tint approach both pages used inline before this
-// component existed (design's bg-*-50/text-*-600 pairs, hashed per category
-// so a category always renders the same swatch).
-const TINTS = [
-  "bg-brand-teal-soft text-brand-teal",
-  "bg-orange-50 text-orange-600 dark:bg-orange-400/15 dark:text-orange-300",
-  "bg-indigo-50 text-indigo-600 dark:bg-indigo-400/15 dark:text-indigo-300",
-  "bg-zinc-100 text-zinc-700 dark:bg-zinc-400/15 dark:text-zinc-300",
-  "bg-amber-50 text-amber-600 dark:bg-amber-400/15 dark:text-amber-300",
-  "bg-rose-50 text-rose-500 dark:bg-rose-400/15 dark:text-rose-300",
-  "bg-sky-50 text-sky-600 dark:bg-sky-400/15 dark:text-sky-300",
-  "bg-emerald-50 text-emerald-600 dark:bg-emerald-400/15 dark:text-emerald-300",
-];
-
-function tintForCategory(category) {
-  const key = category || "Other";
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
-  return TINTS[hash % TINTS.length];
-}
 
 export function rowIdFor(row) {
   return `${row.sheetId || ""}:${row.rowIndex ?? ""}`;

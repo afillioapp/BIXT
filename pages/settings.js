@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { signOut } from "firebase/auth";
 import {
   Building2,
   Coins,
   Tags,
+  LayoutGrid,
   Cloud,
   Mail,
   CalendarRange,
@@ -709,6 +711,12 @@ export default function Settings({ user }) {
             </div>
             <StatusLine status={currencyStatus} />
           </div>
+
+          <Link href="/categories" className="w-full flex items-center gap-3 p-4 text-left">
+            <LayoutGrid className="size-4 text-text-secondary shrink-0" />
+            <p className="flex-1 min-w-0 text-sm">Categories</p>
+            <ChevronRight className="size-4 text-text-tertiary shrink-0" />
+          </Link>
 
           <div className="p-4">
             {resort.phase === "preview" || resort.phase === "applying" ? (

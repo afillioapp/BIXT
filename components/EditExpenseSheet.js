@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { updateExpenseRow } from "../lib/google";
-import { OFFICIAL_CATEGORIES } from "./CategoryIcon";
+import CategoryPicker from "./CategoryPicker";
 import { rowIdFor } from "./ExpenseRow";
 import EntryTypePicker from "./EntryTypePicker";
 
@@ -14,7 +14,7 @@ import EntryTypePicker from "./EntryTypePicker";
 const inputClass =
   "w-full h-12 rounded-xl bg-card ring-1 ring-hairline-strong px-4 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-brand-teal disabled:opacity-60";
 
-export default function EditExpenseSheet({ accessToken, row, onClose, onSaved }) {
+export default function EditExpenseSheet({ accessToken, row, onClose, onSaved, drive }) {
   const [place, setPlace] = useState("");
   const [category, setCategory] = useState("Other");
   const [total, setTotal] = useState("");
@@ -101,18 +101,7 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved })
               placeholder="Vendor"
               disabled={saving}
             />
-            <select
-              className={inputClass}
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              disabled={saving}
-            >
-              {OFFICIAL_CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+            <CategoryPicker value={category} onChange={setCategory} drive={drive} disabled={saving} />
             <div className="flex gap-3">
               <input
                 className={inputClass}

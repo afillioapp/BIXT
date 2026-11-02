@@ -45,7 +45,18 @@ function formatDateHeader(dateStr) {
 }
 
 export default function History({ user }) {
-  const { accessToken, rootFolderId, profile, profileLoading, needsConnect, loadError, requestAccess, retryConnection } = useDrive(user);
+  const {
+    accessToken,
+    rootFolderId,
+    profile,
+    profileLoading,
+    needsConnect,
+    loadError,
+    requestAccess,
+    retryConnection,
+    refreshAccessToken,
+    reloadProfile,
+  } = useDrive(user);
   const [rows, setRows] = useState(null);
   const [error, setError] = useState("");
 
@@ -169,6 +180,7 @@ export default function History({ user }) {
         row={editingRow}
         onClose={() => setEditingRow(null)}
         onSaved={handleSavedRow}
+        drive={{ accessToken, refreshAccessToken, rootFolderId, profile, reloadProfile }}
       />
     </div>
   );
