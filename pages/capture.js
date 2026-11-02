@@ -19,9 +19,12 @@ import { currencyCode } from "../lib/insights";
 // 2 of 5"): check the fields, answer money out / money in, "Save & next".
 // Nothing is saved without being reviewed.
 //
-// The strip at the top shows the batch: a spinner while a photo is being
-// read, a tick once saved. Tap a thumbnail to review that one next; "+" adds
-// more from the camera or the phone's photos (several at once).
+// The strip at the top shows the batch, a mark on each photo: a spinner while
+// it's being read, a faded tick once it read fine, a "!" if something needs a
+// look, and a solid tick once saved. Tap a thumbnail to review that one next;
+// "+" adds more from the camera or the phone's photos (several at once), up to
+// MAX_BATCH waiting at a time. "Save all" saves every receipt that's fine in
+// one go and leaves the "!" ones for review (owner request 2026-11-03).
 //
 // A photo that can't be read still opens the form with blank fields, so it
 // can be typed in — an unreadable photo is never a dead end. /api/extract
@@ -46,6 +49,35 @@ const BLANK_FORM = { place: "", total: "", hst: "", date: "", category: "Other",
 
 let nextId = 1;
 
+// Receipts waiting to be saved at once (owner request 2026-11-03).
+const MAX_BATCH = 10;
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function validDate(dateStr) {
+  if (!DATE_RE.test(dateStr || "")) return false;
+  return !isNaN(new Date(`${dateStr}T00:00:00`).getTime());
+}
+
+// What's wrong with a read receipt, in plain words, or "" if it's fine. Behind
+// the "!" on its photo, and what keeps "Save all" from saving it.
+function problemWith(it) {
+  return it.status === "ready" ? fieldProblem(it) || it.saveProblem || "" : "";
+}
+
+// The part only the owner can fix. A receipt that merely failed to save (a
+// network blip) isn't in here, so "Save all" tries it again.
+function fieldProblem(it) {
+  if (it.status !== "ready") return "";
+  if (it.unusable) return "This photo couldn't be opened. Remove it and try again.";
+  const missing = [];
+  if (!(it.form?.place || "").trim()) missing.push("vendor");
+  if (!String(it.form?.total ?? "").trim()) missing.push("total");
+  if (!validDate(it.form?.date)) missing.push("date");
+  if (!missing.length) return "";
+  return `Please check the ${missing.join(", ").replace(/, ([^,]*)$/, " and $1")}.`;
+}
+
 export default function Capture({ user }) {
   const router = useRouter();
   const {
@@ -68,6 +100,11 @@ export default function Capture({ user }) {
   const [typeMissing, setTypeMissing] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [note, setNote] = useState(null); // { type, text } about the whole batch
+  const [batchMissing, setBatchMissing] = useState(false);
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+  const batchCardRef = useRef(null);
 
   const cameraInputRef = useRef(null);
   const galleryInputRef = useRef(null);
@@ -106,7 +143,20 @@ export default function Capture({ user }) {
   }
 
   function addFiles(fileList) {
-    const files = Array.from(fileList || []).filter(Boolean);
+    const picked = Array.from(fileList || []).filter(Boolean);
+    if (!picked.length) return;
+    const waiting = itemsRef.current.filter((it) => it.status !== "saved").length;
+    const files = picked.slice(0, Math.max(0, MAX_BATCH - waiting));
+    if (files.length < picked.length) {
+      setNote({
+        type: "error",
+        text: files.length
+          ? `You can add ${MAX_BATCH} at a time, so I added the first ${files.length}. Save these, then add the rest.`
+          : `You can add ${MAX_BATCH} at a time. Save these first, then add more.`,
+      });
+    } else {
+      setNote(null);
+    }
     if (!files.length) return;
     const fresh = files.map((file) => ({ id: nextId++, file, status: "reading" }));
     setItems((list) => [...list, ...fresh]);
@@ -197,6 +247,7 @@ export default function Capture({ user }) {
     batchTypeRef.current = value;
     setBatchType(value);
     setTypeMissing(false);
+    setBatchMissing(false);
     setItems((list) =>
       list.map((it) =>
         it.status !== "saved" && it.form && (it.form.type === "" || it.form.type === previous)
@@ -208,7 +259,7 @@ export default function Capture({ user }) {
 
   function updateField(key, value) {
     if (!current) return;
-    patch(current.id, { form: { ...current.form, [key]: value } });
+    patch(current.id, { form: { ...current.form, [key]: value }, saveProblem: "" });
     if (key === "type") setTypeMissing(false);
   }
 
@@ -224,26 +275,10 @@ export default function Capture({ user }) {
     goTo(nextOpenAfter(current.id));
   }
 
-  async function handleConfirm() {
-    const it = current;
-    if (!it || it.status !== "ready" || !it.base64 || !rootFolderId) return;
+  // Saves one receipt. tokenBox.token follows a renewed Drive connection, so a
+  // "Save all" only has to renew it once.
+  async function saveOne(it, tokenBox) {
     const form = it.form;
-    if (!form.type) {
-      // The picker turns red and says why. On a phone it can be above the
-      // fold when Save is tapped, so bring it into view and move focus to it
-      // (screen readers then land on the question, not a silent Save button).
-      setTypeMissing(true);
-      typePickerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      typeInputRef.current?.focus({ preventScroll: true });
-      return;
-    }
-    const parsedDate = form.date ? new Date(`${form.date}T00:00:00`) : null;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(form.date || "") || !parsedDate || isNaN(parsedDate.getTime())) {
-      setSaveError("Please enter the date as YYYY-MM-DD (e.g. 2026-07-04)");
-      return;
-    }
-    setSaving(true);
-    setSaveError("");
     const doSave = (token) =>
       saveExpenseToDrive(token, {
         rootId: rootFolderId,
@@ -260,24 +295,87 @@ export default function Capture({ user }) {
         currency: currencyCode(profile),
       });
     try {
-      try {
-        await doSave(accessToken);
-      } catch (err) {
-        // Expired Drive token (401): silently fetch a fresh one and retry
-        // once, so "left the tab open for an hour" doesn't fail the save.
-        if (!/\(401\)/.test(err.message || "")) throw err;
-        const freshToken = await refreshAccessToken();
-        await doSave(freshToken);
-      }
-      const next = nextOpenAfter(it.id);
-      // The photo is in Drive now; drop the big strings, keep the thumbnail.
-      patch(it.id, { status: "saved", base64: null });
-      goTo(next);
+      await doSave(tokenBox.token);
+    } catch (err) {
+      // Expired Drive token (401): silently fetch a fresh one and retry
+      // once, so "left the tab open for an hour" doesn't fail the save.
+      if (!/\(401\)/.test(err.message || "")) throw err;
+      tokenBox.token = await refreshAccessToken();
+      await doSave(tokenBox.token);
+    }
+    // The photo is in Drive now; drop the big strings, keep the thumbnail.
+    patch(it.id, { status: "saved", base64: null, savingNow: false, saveProblem: "" });
+  }
+
+  async function handleConfirm() {
+    const it = current;
+    if (!it || it.status !== "ready" || !it.base64 || !rootFolderId) return;
+    if (!it.form.type) {
+      // The picker turns red and says why. On a phone it can be above the
+      // fold when Save is tapped, so bring it into view and move focus to it
+      // (screen readers then land on the question, not a silent Save button).
+      setTypeMissing(true);
+      typePickerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      typeInputRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    if (!validDate(it.form.date)) {
+      setSaveError("Please enter the date as YYYY-MM-DD (e.g. 2026-07-04)");
+      return;
+    }
+    setSaving(true);
+    setSaveError("");
+    setNote(null);
+    try {
+      await saveOne(it, { token: accessToken });
+      goTo(nextOpenAfter(it.id));
     } catch (err) {
       setSaveError(err.message || "Couldn't save — try again");
     } finally {
       setSaving(false);
     }
+  }
+
+  // Saves every receipt that's fine, one after another, without stopping at
+  // each. Waits for photos still being read. Anything with a "!" stays for
+  // review, and a failed save just earns that receipt a "!" of its own.
+  async function saveAll() {
+    if (!rootFolderId || saving) return;
+    const unanswered = itemsRef.current.some((it) => it.status !== "saved" && !it.form?.type);
+    if (!batchTypeRef.current && unanswered) {
+      setBatchMissing(true);
+      batchCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    setSaving(true);
+    setSaveError("");
+    setTypeMissing(false);
+    setNote({ type: "info", text: "Saving your receipts…" });
+    await readChain.current;
+    // Let the last read land in state before looking at the list.
+    await new Promise((r) => setTimeout(r, 60));
+    const tokenBox = { token: accessToken };
+    let savedNow = 0;
+    for (const it of itemsRef.current.filter((x) => x.status === "ready")) {
+      if (fieldProblem(it) || !it.base64 || !it.form?.type) continue;
+      patch(it.id, { savingNow: true });
+      try {
+        await saveOne(it, tokenBox);
+        savedNow += 1;
+      } catch {
+        patch(it.id, { savingNow: false, saveProblem: "This one didn't save. Check your connection and try again." });
+      }
+    }
+    await new Promise((r) => setTimeout(r, 30));
+    const left = itemsRef.current.filter((x) => x.status !== "saved");
+    const saved = `Saved ${savedNow} receipt${savedNow === 1 ? "" : "s"}.`;
+    setNote(
+      left.length
+        ? { type: "error", text: `${saved} ${left.length} need${left.length === 1 ? "s" : ""} a look: tap the photos marked !` }
+        : null
+    );
+    goTo(left[0]?.id ?? null);
+    setSaving(false);
   }
 
   if (profileLoading || !profile) {
@@ -293,6 +391,12 @@ export default function Capture({ user }) {
     );
   }
 
+  const reading = open.filter((it) => it.status === "reading").length;
+  const readyToSave = open.filter((it) => it.status === "ready" && !fieldProblem(it)).length;
+  const batchFull = open.length >= MAX_BATCH;
+  const warnIfFull = () => {
+    if (batchFull) setNote({ type: "error", text: `You can add ${MAX_BATCH} at a time. Save these first, then add more.` });
+  };
   const form = current?.form;
   const message = current?.message;
   const messageColor = message?.type === "error" ? "text-destructive" : "text-brand-teal-deep";
@@ -359,19 +463,34 @@ export default function Capture({ user }) {
 
         {items.length > 0 && (
           <>
-            {/* Asked once for the whole batch (2 or more receipts). */}
-            {items.length > 1 && (
-              <div className="mb-4 rounded-2xl bg-card ring-1 ring-hairline p-4">
+            {/* Asked once for the whole batch, with "Save all" beside it. */}
+            {open.length > 1 && (
+              <div ref={batchCardRef} className="mb-4 rounded-2xl bg-card ring-1 ring-hairline p-4">
                 <EntryTypePicker
-                  legend={`What are these ${items.length} receipts?`}
+                  legend={`What are these ${open.length} receipts?`}
                   value={batchType}
                   onChange={answerBatch}
                   disabled={saving}
+                  missing={batchMissing}
                 />
                 <p className="mt-2 text-[11px] text-text-secondary">
                   {batchType ? "Applied to every receipt. You can still change one below." : "Answer once for the whole batch."}
                 </p>
+                <button
+                  type="button"
+                  onClick={saveAll}
+                  disabled={saving}
+                  className="w-full mt-3 rounded-full bg-brand-teal py-3 font-semibold text-white hover:opacity-90 transition disabled:opacity-60"
+                >
+                  {saving ? "Saving…" : readyToSave + reading === 1 ? "Save 1 receipt" : `Save all ${readyToSave + reading}`}
+                </button>
               </div>
+            )}
+
+            {note && (
+              <p className={`text-sm mb-3 ${note.type === "error" ? "text-danger" : "text-text-secondary"}`} role="status">
+                {note.text}
+              </p>
             )}
 
             {/* The batch strip */}
@@ -383,16 +502,36 @@ export default function Capture({ user }) {
                     key={it.id}
                     type="button"
                     onClick={() => it.status !== "saved" && goTo(it.id)}
-                    aria-label={`Receipt ${i + 1}${it.status === "saved" ? ", saved" : it.status === "reading" ? ", being read" : ""}`}
+                    aria-label={`Receipt ${i + 1}${
+                      it.status === "saved"
+                        ? ", saved"
+                        : it.status === "reading"
+                          ? ", being read"
+                          : problemWith(it)
+                            ? ", needs a look"
+                            : ", ready to save"
+                    }`}
                     aria-current={active ? "true" : undefined}
                     className={`relative size-14 shrink-0 rounded-xl overflow-hidden bg-muted ${
                       active ? "ring-2 ring-brand-teal" : "ring-1 ring-hairline"
                     }`}
                   >
-                    {it.preview && <img src={it.preview} alt="" className={`size-full object-cover ${it.status === "saved" ? "opacity-50" : ""}`} />}
-                    {it.status === "reading" && (
+                    {it.preview && <img src={it.preview} alt="" className="size-full object-cover" />}
+                    {(it.status === "reading" || it.savingNow) && (
                       <span className="absolute inset-0 grid place-items-center bg-black/25">
                         <span className="size-4 rounded-full border-2 border-white/40 border-t-white animate-spin" aria-hidden="true" />
+                      </span>
+                    )}
+                    {it.status === "ready" && !it.savingNow && !problemWith(it) && (
+                      <span className="absolute inset-0 grid place-items-center">
+                        <span className="size-6 rounded-full bg-brand-teal text-white grid place-items-center opacity-50">
+                          <Check className="size-4" strokeWidth={2.6} />
+                        </span>
+                      </span>
+                    )}
+                    {it.status === "ready" && !it.savingNow && problemWith(it) && (
+                      <span className="absolute inset-0 grid place-items-center">
+                        <span className="size-6 rounded-full bg-destructive text-white grid place-items-center text-sm font-bold leading-none">!</span>
                       </span>
                     )}
                     {it.status === "saved" && (
@@ -406,16 +545,18 @@ export default function Capture({ user }) {
                 );
               })}
               <label
-                htmlFor="receiptInput"
+                htmlFor={batchFull ? undefined : "receiptInput"}
+                onClick={warnIfFull}
                 aria-label="Take another receipt photo"
-                className="size-14 shrink-0 rounded-xl border border-dashed border-text-tertiary bg-card grid place-items-center cursor-pointer text-brand-teal-deep"
+                className={`size-14 shrink-0 rounded-xl border border-dashed border-text-tertiary bg-card grid place-items-center cursor-pointer text-brand-teal-deep ${batchFull ? "opacity-40" : ""}`}
               >
                 <Plus className="size-5" />
               </label>
               <label
-                htmlFor="receiptImport"
+                htmlFor={batchFull ? undefined : "receiptImport"}
+                onClick={warnIfFull}
                 aria-label="Add receipts from your photos"
-                className="size-14 shrink-0 rounded-xl ring-1 ring-hairline-strong bg-card grid place-items-center cursor-pointer text-text-secondary"
+                className={`size-14 shrink-0 rounded-xl ring-1 ring-hairline-strong bg-card grid place-items-center cursor-pointer text-text-secondary ${batchFull ? "opacity-40" : ""}`}
               >
                 <GalleryIcon className="size-5" />
               </label>
@@ -479,7 +620,14 @@ export default function Capture({ user }) {
 
                 {current.status === "ready" && form && (
                   <>
-                    {message && <p className={`text-sm ${messageColor}`}>{message.text}</p>}
+                    {problemWith(current) ? (
+                      <p className="text-sm text-danger">
+                        {/* The reader's own reason beats a generic "check the total". */}
+                        {message?.type === "error" ? message.text : problemWith(current)}
+                      </p>
+                    ) : (
+                      message?.type === "success" && <p className={`text-sm ${messageColor}`}>{message.text}</p>
+                    )}
 
                     <div ref={typePickerRef}>
                       <EntryTypePicker

@@ -123,9 +123,11 @@ used on the save path.
 ### Receipt capture pipeline
 
 `pages/capture.js` (reached from the camera in the bottom menu) → user takes
-photos or picks several from their library — a batch; each is read in the
-background, one after another, then reviewed one at a time ("Receipt 2 of
-5", Save & next / Skip for now) → `lib/image.js` compresses it
+photos or picks several from their library — a batch of up to 10; each is read
+in the background, one after another, and marked on its photo (faded tick =
+looks fine, ! = needs a look, solid tick = saved), then reviewed one at a time
+("Receipt 2 of 5", Save & next / Skip for now) or saved together with "Save
+all", which leaves the ! ones behind → `lib/image.js` compresses it
 client-side via canvas (target ~200KB, JPEG re-encode regardless of source
 format) → POST to `pages/api/extract.js` (server-side, keeps
 `ANTHROPIC_API_KEY` off the client) → Claude vision returns structured
