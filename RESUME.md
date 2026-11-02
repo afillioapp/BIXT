@@ -4,13 +4,12 @@ _Last updated: 2026-11-02_
 
 ## Status
 
-Live on `main` at `d1c4e18`: duplicate warnings, Net amount, GIFI categories, the
-first annual report, and a fix so columns are found by title (the owner moved Net
-to column F by hand in the October 2026 sheet).
+Live on `main`: duplicate warnings, Net amount, GIFI categories, and one file per
+fiscal year (month tabs hold the receipts, Overview first). Columns are found by
+title, because the owner moved Net to column F by hand in the October 2026 sheet.
 
-**Not live:** one file per fiscal year, on `feature/yearly-files`, uncommitted,
-waiting for the owner's "make it live". It replaces the annual report: month tabs
-hold the receipts, and the owner runs the move from Settings.
+**The owner's own move hasn't run yet.** Their Drive stays on monthly files until
+they tap Settings > One file per year > Check my files > Move them.
 
 ## Not verified yet
 
