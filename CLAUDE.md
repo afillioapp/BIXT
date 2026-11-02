@@ -80,8 +80,21 @@ BX - {Company Name}/          <- root, found via a Drive search for
   {Year}/
     {Month name}/
       Supporting Documents/    <- compressed receipt photos
-      Expenses                <- Google Sheet: Date | Vendor | Category | Total | HST | Receipt Link | Type | Note for accountant
+      Expenses                <- Google Sheet: Date | Vendor | Category | Total | HST | Receipt Link | Type | Note for accountant | Net amount
+  {Fiscal year} Annual Report  <- Google Sheet: Overview tab, then a tab per month
 ```
+
+The annual report (`lib/annualReport.js`, `refreshAnnualReport` in
+`lib/google.js`, `lib/reportQueue.js`) is one sheet per fiscal year, rebuilt from
+the monthly sheets after every save, edit or delete, and on demand in Settings.
+The monthly sheets stay the source of truth: the report holds plain values, a
+rebuild overwrites hand edits, and its tabs warn before editing. The Overview
+totals cost per GIFI code.
+
+Categories are the CRA's GIFI names (`GIFI_CATEGORIES` in `lib/categories.js`).
+Older rows keep their old name in the sheet and read back as the GIFI successor
+(`canonicalCategory`); bank transfers and cash withdrawals have no code and stay
+out of the totals. Income reports under 8000.
 
 Year folders are calendar years even when the business's fiscal year isn't
 (the fiscal year only changes how the app's Year view groups months).
@@ -92,7 +105,8 @@ the header on their next save or row edit and their blank cells read as
 `Expense`. The Type column is found by its header, not its position, and is
 only ever added: if column G already holds anything of the owner's, a new
 column is inserted so theirs moves right. "Note for accountant" (H, right
-after Type) works the same way; both go through `ensureBxColumns`. Run
+after Type) and "Net amount" (I, a `=D-E` formula, filled in for existing rows
+when the column is added) work the same way; all go through `ensureBxColumns`. Run
 `../.claude/tools/sheet-test/test.mjs` before changing any of this.
 Income is excluded from every spending total (`spendingRows` in
 `lib/insights.js`). `ensureHeaderRow` migrates every older layout in place;
@@ -108,7 +122,7 @@ changed. Renaming the company in Settings also renames the folder to
 `bxRoot` marker, so renames are safe. `currency` drives every amount in the
 app (`formatCurrency(n, { currency })`) and the Total/HST format of month
 sheets created after it is set. A business can add its own categories (name + icon from `ICON_BANK` in
-`components/CategoryIcon.js`, stored as `cat0`..`cat19` properties) and hide
+`components/CategoryIcon.js` + GIFI code, stored as `cat0`..`cat19` properties) and hide
 built-ins (`hiddenCats`); see `lib/categories.js`. Removing or renaming one of
 its own moves its receipts across every month (`findCategoryRows` /
 `moveCategoryRows`). A user with no BX root folder yet is routed to
@@ -127,7 +141,8 @@ photos or picks several from their library — a batch of up to 10; each is read
 in the background, one after another, and marked on its photo (faded tick =
 looks fine, ! = needs a look, solid tick = saved), then reviewed one at a time
 ("Receipt 2 of 5", Save & next / Skip for now) or saved together with "Save
-all", which leaves the ! ones behind → `lib/image.js` compresses it
+all", which leaves the ! ones behind. A receipt matching a saved one or an
+earlier one in the batch (`lib/duplicates.js`) is a ! with "Save anyway" → `lib/image.js` compresses it
 client-side via canvas (target ~200KB, JPEG re-encode regardless of source
 format) → POST to `pages/api/extract.js` (server-side, keeps
 `ANTHROPIC_API_KEY` off the client) → Claude vision returns structured

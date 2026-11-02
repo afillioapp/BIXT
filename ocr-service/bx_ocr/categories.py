@@ -1,7 +1,8 @@
 """The v1 expense categories, and the rules that pick one.
 
-CATEGORIES must stay identical to the list in pages/api/extract.js — those
-strings are written into users' expense sheets and are treated as schema.
+These are the pre-GIFI names. pages/api/extract.js turns whatever a reader
+answers into the current GIFI list (lib/categories.js canonicalCategory), so this
+service can keep them until the OCR switch-over; move to the GIFI list then.
 """
 from __future__ import annotations
 

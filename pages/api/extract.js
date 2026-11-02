@@ -6,7 +6,7 @@
 // would be an open proxy to the Anthropic API on our bill.
 
 import { createRemoteJWKSet, jwtVerify } from "jose";
-import { suggestCategory } from "../../lib/categories";
+import { BUILTIN_CATEGORIES, OTHER_CATEGORY, canonicalCategory, suggestCategory } from "../../lib/categories";
 
 export const config = {
   api: {
@@ -63,29 +63,6 @@ function overRateLimit(uid) {
 // wildly larger than that is not a legitimate request from our app.
 const MAX_IMAGE_BASE64_CHARS = 7 * 1024 * 1024; // ~5MB of image data
 
-// The official v1 category list (owner-approved 2026-07-08). These names are
-// written into users' expense sheets — treat them as a stable schema: add new
-// ones if needed, but don't rename existing ones (old rows keep old strings;
-// lib/insights.js carries legacy aliases for pre-v1 names).
-const CATEGORIES = [
-  "Dining & Meals",
-  "Coffee & Drinks",
-  "Travel",
-  "Ground Transport",
-  "Fuel",
-  "Accommodation",
-  "Office & Supplies",
-  "Software & Tech",
-  "Marketing",
-  "Professional Services",
-  "Meetings & Events",
-  "Groceries",
-  "Rent & Utilities",
-  "Bank Transfers & Payments",
-  "Cash Withdrawal",
-  "Other",
-];
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -117,12 +94,12 @@ export default async function handler(req, res) {
   const cleanNames = (v) =>
     (Array.isArray(v) ? v : [])
       .filter((n) => typeof n === "string")
-      .map((n) => n.replace(/[^\p{L}\p{N} &'./()-]/gu, "").trim().slice(0, 40))
+      .map((n) => n.replace(/[^\p{L}\p{N} &'./(),-]/gu, "").trim().slice(0, 60))
       .filter(Boolean)
-      .slice(0, 20);
+      .slice(0, 40);
   const customNames = cleanNames(req.body?.customCategories);
   const hiddenNames = new Set(cleanNames(req.body?.hiddenCategories));
-  const allowedCategories = [...customNames, ...CATEGORIES.filter((c) => !hiddenNames.has(c))];
+  const allowedCategories = [...customNames, ...BUILTIN_CATEGORIES.filter((c) => !hiddenNames.has(c))];
   const customHint = customNames.length
     ? ` The business created these categories itself, so prefer one of them when it clearly fits: ${customNames.join(", ")}.`
     : "";
@@ -135,7 +112,7 @@ export default async function handler(req, res) {
   "total": "final total amount paid, number only, no currency symbol",
   "hst": "HST/GST/tax amount, number only, 0 if none found",
   "currency": "3 letter currency code, guess CAD if unclear",
-  "category_suggestion": "pick the single best fit from this exact list: ${allowedCategories.join(", ")}.${customHint} Grocery stores are Groceries; rent, hydro, gas, phone and internet bills are Rent & Utilities; bank slips for transfers, e-Transfers, bill or loan payments and deposits are Bank Transfers & Payments; ATM slips are Cash Withdrawal. Use Other only when nothing fits.",
+  "category_suggestion": "pick the single best fit from this exact list, separated by semicolons, and copy the name exactly: ${allowedCategories.join("; ")}.${customHint} Restaurants and coffee shops are Meals and entertainment; grocery stores are Food and catering; gas stations, parking, car washes and tolls are Vehicle expenses; flights, hotels, taxis, ride-hailing and transit are Travel expenses; software and subscriptions are Computer-related expenses; rent is Real estate rental; hydro, heating gas and water bills are Utilities; phone bills are Telephone and telecommunications; bank slips for transfers, e-Transfers, bill or loan payments and deposits are Bank Transfers & Payments; ATM slips are Cash Withdrawal. Use ${OTHER_CATEGORY} only when nothing fits.",
   "notes": "1 short phrase, e.g. 3 items purchased, or client dinner - leave empty string if nothing notable"
 }
 
@@ -188,11 +165,14 @@ If a field is unreadable, use your best reasonable guess rather than leaving it 
       return res.status(500).json({ error: "Could not parse Claude's response", raw: rawText });
     }
 
-    // Safety net: if the reader still says Other (or something off-list),
-    // file clear bank slips, ATM slips, grocers and utility bills by name.
-    if (!allowedCategories.includes(parsed.category_suggestion) || parsed.category_suggestion === "Other") {
+    // Safety net: if the reader still says Other expenses (or something
+    // off-list), file clear bank slips, ATM slips, grocers and utility bills by
+    // name. canonicalCategory keeps a pre-GIFI name from any reader out of the
+    // sheets.
+    parsed.category_suggestion = canonicalCategory(parsed.category_suggestion, parsed.place);
+    if (!allowedCategories.includes(parsed.category_suggestion) || parsed.category_suggestion === OTHER_CATEGORY) {
       const byName = suggestCategory(parsed.place);
-      parsed.category_suggestion = allowedCategories.includes(byName) ? byName : "Other";
+      parsed.category_suggestion = allowedCategories.includes(byName) ? byName : OTHER_CATEGORY;
     }
 
     return res.status(200).json({ result: parsed, categories: allowedCategories });

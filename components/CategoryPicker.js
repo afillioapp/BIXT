@@ -7,6 +7,7 @@ import {
   customCategories,
   encodeCustomCategory,
   freeCategoryKey,
+  gifiCodeFor,
   pickerCategories,
   registerCustomCategories,
 } from "../lib/categories";
@@ -27,10 +28,10 @@ export default function CategoryPicker({ value, onChange, drive, disabled = fals
   const ownNames = new Set(customCategories(profile).map((c) => c.name));
   const canAdd = !!freeCategoryKey(profile);
 
-  async function createCategory({ name, icon }) {
+  async function createCategory({ name, icon, gifi }) {
     const key = freeCategoryKey(profile);
     if (!key) throw new Error("You've reached the limit of 20 of your own categories.");
-    const fields = { [key]: encodeCustomCategory(name, icon) };
+    const fields = { [key]: encodeCustomCategory(name, icon, gifi) };
     try {
       await withFreshToken(drive.accessToken, drive.refreshAccessToken, (token) =>
         saveProfile(token, drive.rootFolderId, fields)
@@ -78,7 +79,10 @@ export default function CategoryPicker({ value, onChange, drive, disabled = fals
               </button>
             </div>
             <ul className="mx-auto w-full max-w-md px-4 pb-6 overflow-y-auto overscroll-contain">
-              {options.map((c) => (
+              {options.map((c) => {
+                const code = gifiCodeFor(c, profile);
+                const small = [ownNames.has(c) ? "Yours" : "", code ? `GIFI ${code}` : "No GIFI code, not an expense"].filter(Boolean).join(" · ");
+                return (
                 <li key={c}>
                   <button
                     type="button"
@@ -93,12 +97,13 @@ export default function CategoryPicker({ value, onChange, drive, disabled = fals
                     </span>
                     <span className="flex-1 min-w-0">
                       <span className="block text-sm truncate">{c}</span>
-                      {ownNames.has(c) && <span className="block text-[11px] text-text-secondary">Yours</span>}
+                      <span className="block text-[11px] text-text-secondary">{small}</span>
                     </span>
                     {c === value && <Check className="size-4 text-brand-teal-deep shrink-0" aria-hidden="true" />}
                   </button>
                 </li>
-              ))}
+                );
+              })}
               {canAdd && (
                 <li>
                   <button

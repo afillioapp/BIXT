@@ -313,16 +313,20 @@ def test_one_stray_item_does_not_outvote_the_rest_of_the_basket():
     assert r["category_suggestion"] == "Office & Supplies"
 
 
-def test_category_list_matches_the_app():
-    """These strings are written into user spreadsheets — they must not drift
-    between the Node route and this service."""
-    js = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
-        os.path.abspath(__file__)))), "pages", "api", "extract.js")
-    if not os.path.exists(js):
+def test_every_category_is_one_the_app_can_file():
+    """The app files receipts under GIFI names now. Each name this service can
+    answer has to be something lib/categories.js knows or converts, or the
+    receipt would land under a category that doesn't exist."""
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__)))), "lib", "categories.js")
+    if not os.path.exists(path):
         pytest.skip("app source not present")
-    block = re.search(r"const CATEGORIES = \[(.*?)\];", open(js).read(), re.S)
-    assert block, "CATEGORIES not found in pages/api/extract.js"
-    assert re.findall(r'"([^"]+)"', block.group(1)) == CATEGORIES
+    with open(path) as fh:
+        source = fh.read()
+    for name in CATEGORIES:
+        assert f'"{name}"' in source or re.search(rf"^\s*{re.escape(name)}:", source, re.M), (
+            f"{name} is unknown to lib/categories.js"
+        )
 
 
 # ------------------------------------------------------------- robustness

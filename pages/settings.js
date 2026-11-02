@@ -15,6 +15,7 @@ import {
   ScanFace,
   LogOut,
   ChevronRight,
+  FileSpreadsheet,
 } from "lucide-react";
 import { auth } from "../lib/firebase";
 import { useDrive } from "../lib/useDrive";
@@ -27,13 +28,15 @@ import {
   findMonthExpenseSheetId,
   listExpenseRows,
   updateExpenseRow,
+  refreshAnnualReport,
 } from "../lib/google";
-import { suggestCategory } from "../lib/categories";
+import { OTHER_CATEGORY, suggestCategory } from "../lib/categories";
+import { scheduleReportRefresh } from "../lib/reportQueue";
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
 import { biometricAvailable, isLockEnabled, enableLock, disableLock } from "../lib/biometric";
 import { getTheme, setTheme } from "../lib/theme";
-import { MONTH_NAMES, fiscalStartMonth, CURRENCIES, currencyCode, currencySymbol, formatCurrency } from "../lib/insights";
+import { MONTH_NAMES, fiscalStartMonth, fiscalYear, CURRENCIES, currencyCode, currencySymbol, formatCurrency } from "../lib/insights";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LAST4_RE = /^\d{4}$/;
@@ -152,6 +155,8 @@ export default function Settings({ user }) {
   // One-tap re-sort of receipts filed as "Other" (owner request 2026-10-30).
   // phase: idle | scanning | preview | applying
   const [resort, setResort] = useState({ phase: "idle", items: [] });
+  // The annual report: { phase: "idle" | "building" | "ready" | "error", label, url }
+  const [report, setReport] = useState({ phase: "idle" });
   const [resortStatus, setResortStatus] = useState(null);
 
   useEffect(() => {
@@ -454,7 +459,7 @@ export default function Settings({ user }) {
           if (!sheetId) continue;
           const rows = await listExpenseRows(token, sheetId);
           for (const row of rows) {
-            if ((row.category || "Other") !== "Other") continue;
+            if (row.category !== OTHER_CATEGORY) continue;
             // Old-layout rows with no category column have nowhere to write it.
             if (row.layout === "v1" && !row.hadTrailingCategory) continue;
             const to = suggestCategory(row.place);
@@ -464,13 +469,26 @@ export default function Settings({ user }) {
       });
       if (!found.length) {
         setResort({ phase: "idle", items: [] });
-        setResortStatus({ type: "success", text: "Nothing to re-sort — no receipts in Other match a new category." });
+        setResortStatus({ type: "success", text: "Nothing to re-sort — no receipts in Other expenses match a category." });
         return;
       }
       setResort({ phase: "preview", items: found });
     } catch {
       setResort({ phase: "idle", items: [] });
       setResortStatus({ type: "error", text: SAVE_FAILED });
+    }
+  }
+
+  // Builds the sheet there and then, so it's complete before the link appears.
+  async function buildReport(fy) {
+    setReport({ phase: "building", label: fy.label });
+    try {
+      const { url, label } = await withFreshToken((token) =>
+        refreshAnnualReport(token, { rootId: rootFolderId, profile, dates: [fy.months[0]], full: true })
+      );
+      setReport({ phase: "ready", url, label });
+    } catch {
+      setReport({ phase: "error", label: fy.label });
     }
   }
 
@@ -487,6 +505,7 @@ export default function Settings({ user }) {
       }
       setResort({ phase: "idle", items: [] });
       setResortStatus({ type: "success", text: `Re-sorted ${done} receipt${done === 1 ? "" : "s"}.` });
+      scheduleReportRefresh({ accessToken, refreshAccessToken, rootFolderId, profile }, { full: true });
     } catch {
       setResort({ phase: "idle", items: [] });
       setResortStatus({
@@ -722,7 +741,7 @@ export default function Settings({ user }) {
             {resort.phase === "preview" || resort.phase === "applying" ? (
               <div>
                 <p className="text-sm mb-1">
-                  {resort.items.length} receipt{resort.items.length === 1 ? "" : "s"} in Other can be re-sorted:
+                  {resort.items.length} receipt{resort.items.length === 1 ? "" : "s"} in Other expenses can be re-sorted:
                 </p>
                 <ul className="mb-3 max-h-56 overflow-y-auto divide-y divide-hairline">
                   {resort.items.map(({ row, to }, i) => (
@@ -759,7 +778,7 @@ export default function Settings({ user }) {
                 disabled={resort.phase === "scanning"}
               >
                 <Tags className="size-4 text-text-secondary shrink-0" />
-                <p className="flex-1 min-w-0 text-sm">Re-sort receipts in "Other"</p>
+                <p className="flex-1 min-w-0 text-sm">Re-sort receipts in "Other expenses"</p>
                 <span className="text-xs text-text-secondary shrink-0">
                   {resort.phase === "scanning" ? "Checking…" : ""}
                 </span>
@@ -767,6 +786,44 @@ export default function Settings({ user }) {
               </button>
             )}
             <StatusLine status={resortStatus} />
+          </div>
+
+          <div className="p-4">
+            <div className="flex items-center gap-3">
+              <FileSpreadsheet className="size-4 text-text-secondary shrink-0" />
+              <p className="flex-1 min-w-0 text-sm">Annual report</p>
+            </div>
+            <p className="text-xs text-text-secondary mt-1 mb-3">
+              One sheet for your accountant: an overview by GIFI category, then a tab for each month.
+            </p>
+            <div className="flex flex-col gap-2">
+              {[0, 1].map((back) => {
+                const fy = fiscalYear(fiscalStartMonth(profile), back);
+                const building = report.phase === "building" && report.label === fy.label;
+                return (
+                  <button
+                    key={fy.label}
+                    type="button"
+                    onClick={() => buildReport(fy)}
+                    disabled={report.phase === "building"}
+                    className="w-full h-10 rounded-full ring-1 ring-hairline-strong text-sm font-medium disabled:opacity-60"
+                  >
+                    {building ? "Building your report…" : `Update ${fy.label}`}
+                  </button>
+                );
+              })}
+            </div>
+            {report.phase === "ready" && (
+              <a
+                href={report.url}
+                target="_blank"
+                rel="noreferrer"
+                className="block w-full mt-2 py-2.5 rounded-full bg-brand-teal text-sm font-semibold text-white text-center"
+              >
+                Open {report.label} report
+              </a>
+            )}
+            <StatusLine status={report.phase === "error" ? { type: "error", text: "Couldn't build the report. Check your connection and try again." } : null} />
           </div>
 
           <div className="p-4">

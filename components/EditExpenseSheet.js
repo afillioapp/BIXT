@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { updateExpenseRow } from "../lib/google";
+import { OTHER_CATEGORY } from "../lib/categories";
 import CategoryPicker from "./CategoryPicker";
 import { rowIdFor } from "./ExpenseRow";
 import EntryTypePicker from "./EntryTypePicker";
@@ -16,7 +17,7 @@ const inputClass =
 
 export default function EditExpenseSheet({ accessToken, row, onClose, onSaved, drive }) {
   const [place, setPlace] = useState("");
-  const [category, setCategory] = useState("Other");
+  const [category, setCategory] = useState(OTHER_CATEGORY);
   const [total, setTotal] = useState("");
   const [hst, setHst] = useState("");
   const [date, setDate] = useState("");
@@ -31,7 +32,7 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved, d
   useEffect(() => {
     if (!row) return;
     setPlace(row.place || "");
-    setCategory(row.category || "Other");
+    setCategory(row.category || OTHER_CATEGORY);
     setTotal(String(row.total ?? ""));
     setHst(String(row.hst ?? ""));
     setDate(row.date || "");

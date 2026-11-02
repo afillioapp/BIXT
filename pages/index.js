@@ -24,6 +24,7 @@ import SwipeSlide from "../components/SwipeSlide";
 import { accentForCategory, paletteColor } from "../components/CategoryIcon";
 import ExpenseRow, { rowIdFor } from "../components/ExpenseRow";
 import EditExpenseSheet from "../components/EditExpenseSheet";
+import { scheduleRowChange } from "../lib/reportQueue";
 
 // Home, top to bottom: one card with the month's total, the Week / Month /
 // Year tabs and that period's activity squares (components/ActivityGraph.js);
@@ -92,6 +93,7 @@ export default function Home({ user }) {
     setActionError("");
     try {
       await deleteExpenseRow(accessToken, row.sheetId, row.rowIndex);
+      scheduleRowChange({ accessToken, refreshAccessToken, rootFolderId, profile }, row);
       refreshVisibleMonths();
     } catch (err) {
       setActionError(err.message || "Couldn't delete — try again");
@@ -99,8 +101,9 @@ export default function Home({ user }) {
     }
   }
 
-  function handleSavedRow() {
+  function handleSavedRow(row) {
     setEditingRow(null);
+    scheduleRowChange({ accessToken, refreshAccessToken, rootFolderId, profile }, row);
     refreshVisibleMonths();
   }
 

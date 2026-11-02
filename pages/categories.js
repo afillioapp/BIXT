@@ -7,10 +7,12 @@ import {
   BUILTIN_CATEGORIES,
   HIDDEN_CATEGORIES_KEY,
   MAX_CUSTOM_CATEGORIES,
+  OTHER_CATEGORY,
   customCategories,
   encodeCustomCategory,
   encodeHiddenCategories,
   freeCategoryKey,
+  gifiCodeFor,
   hiddenCategories,
   pickerCategories,
   registerCustomCategories,
@@ -19,6 +21,7 @@ import CategoryIcon, { tintForCategory } from "../components/CategoryIcon";
 import CategoryEditor from "../components/CategoryEditor";
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
+import { scheduleReportRefresh } from "../lib/reportQueue";
 
 // Settings > Categories (owner request 2026-11-02): add the business's own
 // categories with an icon, change or remove them, and hide built-ins it never
@@ -84,15 +87,17 @@ export default function Categories({ user }) {
     await run((token) => saveProfile(token, rootFolderId, fields));
     registerCustomCategories({ ...profile, ...fields });
     await reloadProfile?.();
+    // A new code or a moved receipt changes the accountant's report.
+    scheduleReportRefresh({ accessToken, refreshAccessToken, rootFolderId, profile: { ...profile, ...fields } }, { full: true });
   }
 
-  async function handleSave({ name, icon }) {
+  async function handleSave({ name, icon, gifi }) {
     const current = editor?.category;
     try {
       if (!current) {
         const key = freeCategoryKey(profile);
         if (!key) throw new Error(`You've reached the limit of ${MAX_CUSTOM_CATEGORIES} of your own categories.`);
-        await saveCategoryFields({ [key]: encodeCustomCategory(name, icon) });
+        await saveCategoryFields({ [key]: encodeCustomCategory(name, icon, gifi) });
         setStatus({ type: "success", text: `Added "${name}".` });
       } else {
         // Renaming moves its receipts first. If that fails part-way, saving
@@ -104,7 +109,7 @@ export default function Categories({ user }) {
             await moveCategoryRows(token, plan, name);
           });
         }
-        await saveCategoryFields({ [current.key]: encodeCustomCategory(name, icon) });
+        await saveCategoryFields({ [current.key]: encodeCustomCategory(name, icon, gifi) });
         setStatus({ type: "success", text: `Saved "${name}".` });
       }
       setEditor(null);
@@ -124,7 +129,7 @@ export default function Categories({ user }) {
         await finishRemove(cat);
         return;
       }
-      setRemoval({ phase: "confirm", plan, count, to: "Other" });
+      setRemoval({ phase: "confirm", plan, count, to: OTHER_CATEGORY });
     } catch {
       setRemoval({ phase: "error", error: SAVE_FAILED });
     }
@@ -223,14 +228,17 @@ export default function Categories({ user }) {
                 <span className={`size-10 rounded-lg grid place-items-center shrink-0 ${tintForCategory(c.name)}`}>
                   <CategoryIcon category={c.name} className="size-4" />
                 </span>
-                <span className="flex-1 min-w-0 text-sm font-medium truncate">{c.name}</span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-medium truncate">{c.name}</span>
+                  <span className="block text-[11px] text-text-secondary">GIFI {gifiCodeFor(c.name, profile)}</span>
+                </span>
                 <ChevronRight className="size-4 text-text-tertiary shrink-0" />
               </button>
             ))}
           </div>
         )}
 
-        <h2 className="text-[11px] font-semibold tracking-wider text-text-secondary mt-2">BUILT-IN</h2>
+        <h2 className="text-[11px] font-semibold tracking-wider text-text-secondary mt-2">GIFI CATEGORIES</h2>
         <p className="text-xs text-text-secondary -mt-1">Turn off the ones you never use. Old receipts keep their category.</p>
         <div className="bg-card ring-1 ring-hairline rounded-2xl divide-y divide-hairline overflow-hidden">
           {BUILTIN_CATEGORIES.map((c) => (
@@ -238,8 +246,11 @@ export default function Categories({ user }) {
               <span className={`size-10 rounded-lg grid place-items-center shrink-0 ${tintForCategory(c)}`}>
                 <CategoryIcon category={c} className="size-4" />
               </span>
-              <span className={`flex-1 min-w-0 text-sm font-medium truncate ${hidden.includes(c) ? "text-text-tertiary" : ""}`}>{c}</span>
-              {c === "Other" ? (
+              <span className="flex-1 min-w-0">
+                <span className={`block text-sm font-medium truncate ${hidden.includes(c) ? "text-text-tertiary" : ""}`}>{c}</span>
+                <span className="block text-[11px] text-text-secondary">{gifiCodeFor(c, profile) ? `GIFI ${gifiCodeFor(c, profile)}` : "No GIFI code, not an expense"}</span>
+              </span>
+              {c === OTHER_CATEGORY ? (
                 <Lock className="size-4 text-text-tertiary shrink-0 mr-4" aria-label="Always available" />
               ) : (
                 <Toggle on={!hidden.includes(c)} onClick={() => toggleBuiltin(c)} label={`Show ${c}`} />

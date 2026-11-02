@@ -51,8 +51,14 @@ import {
   Star,
   Globe,
   Sparkles,
+  Calculator,
+  CreditCard,
+  Landmark,
+  Paperclip,
+  Scale,
+  ShieldCheck,
 } from "lucide-react";
-import { BUILTIN_CATEGORIES, customIconName } from "../lib/categories";
+import { BUILTIN_CATEGORIES, OTHER_CATEGORY, customIconName } from "../lib/categories";
 
 // The bank of icons a business can choose from for its own categories (owner
 // request 2026-11-02). All from the same line-icon set as the built-ins, so
@@ -117,6 +123,36 @@ export const ICON_BANK = {
 // sheets and must keep resolving to their successor's icon forever, or old
 // receipts lose their icon.
 const CATEGORY_ICON_MAP = {
+  // GIFI categories (lib/categories.js)
+  "Meals and entertainment": Utensils,
+  "Food and catering": ShoppingBasket,
+  "Office stationery and supplies": Paperclip,
+  "Vehicle expenses": Fuel,
+  "Motor vehicle rentals": CarFront,
+  "Travel expenses": Plane,
+  "Meetings and conventions": Ticket,
+  "Purchases/cost of materials": Package,
+  Supplies: Package,
+  "Small tools": Hammer,
+  "Computer-related expenses": Laptop,
+  Internet: Wifi,
+  "Telephone and telecommunications": Phone,
+  Utilities: Zap,
+  "Real estate rental": Building2,
+  "Repairs and maintenance": Wrench,
+  Advertising: Megaphone,
+  "Professional fees": Briefcase,
+  "Legal fees": Scale,
+  "Accounting fees": Calculator,
+  "Sub-contracts": HardHat,
+  "Salaries and wages": Users,
+  Insurance: ShieldCheck,
+  "Business taxes, licences, and memberships": Landmark,
+  "Bank charges": ArrowLeftRight,
+  "Credit card charges": CreditCard,
+  "Delivery, freight and express": Truck,
+  "Other expenses": ReceiptText,
+  // Pre-GIFI names, kept so nothing loses its icon
   "Dining & Meals": Utensils,
   "Coffee & Drinks": Coffee,
   Travel: Plane,
@@ -143,7 +179,7 @@ const CATEGORY_ICON_MAP = {
 };
 
 export function iconForCategory(category) {
-  return ICON_BANK[customIconName(category)] || CATEGORY_ICON_MAP[category] || CATEGORY_ICON_MAP.Other;
+  return ICON_BANK[customIconName(category)] || CATEGORY_ICON_MAP[category] || CATEGORY_ICON_MAP[OTHER_CATEGORY];
 }
 
 // One signature color per category (owner request): shown on the hero
@@ -218,7 +254,7 @@ export const TINTS = [
 ];
 
 export function tintForCategory(category) {
-  const key = category || "Other";
+  const key = category || OTHER_CATEGORY;
   let hash = 0;
   for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
   return TINTS[hash % TINTS.length];

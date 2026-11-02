@@ -3,13 +3,15 @@ import { useRouter } from "next/router";
 import { Camera, Image as GalleryIcon, Plus, Check, X } from "lucide-react";
 import { useDrive } from "../lib/useDrive";
 import { compressImage } from "../lib/image";
-import { saveExpenseToDrive } from "../lib/google";
+import { saveExpenseToDrive, findMonthExpenseSheetId, listExpenseRows, withFreshToken } from "../lib/google";
 import { takePendingCapture } from "../lib/pendingCapture";
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
 import EntryTypePicker from "../components/EntryTypePicker";
 import CategoryPicker from "../components/CategoryPicker";
-import { customCategories, hiddenCategories } from "../lib/categories";
+import { OTHER_CATEGORY, customCategories, hiddenCategories } from "../lib/categories";
+import { normalizeDate, sameReceipt } from "../lib/duplicates";
+import { scheduleReportRefresh } from "../lib/reportQueue";
 import { currencyCode } from "../lib/insights";
 
 // Receipt capture, in batches (owner request 2026-10-29): shoot or pick as
@@ -25,6 +27,11 @@ import { currencyCode } from "../lib/insights";
 // "+" adds more from the camera or the phone's photos (several at once), up to
 // MAX_BATCH waiting at a time. "Save all" saves every receipt that's fine in
 // one go and leaves the "!" ones for review (owner request 2026-11-03).
+//
+// A receipt that matches one already saved, or an earlier one in this batch, is
+// a "!" too (owner request 2026-11-02). Two real purchases can look the same, so
+// the owner can still choose "Save anyway". If the saved receipts can't be read,
+// the check quietly passes rather than getting in the way of saving.
 //
 // A photo that can't be read still opens the form with blank fields, so it
 // can be typed in — an unreadable photo is never a dead end. /api/extract
@@ -45,7 +52,7 @@ function formatReceiptFilename(dateStr, place) {
 const inputClass =
   "w-full h-12 rounded-xl bg-card ring-1 ring-hairline-strong px-4 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-brand-teal";
 
-const BLANK_FORM = { place: "", total: "", hst: "", date: "", category: "Other", type: "", note: "" };
+const BLANK_FORM = { place: "", total: "", hst: "", date: "", category: OTHER_CATEGORY, type: "", note: "" };
 
 let nextId = 1;
 
@@ -59,12 +66,6 @@ function validDate(dateStr) {
   return !isNaN(new Date(`${dateStr}T00:00:00`).getTime());
 }
 
-// What's wrong with a read receipt, in plain words, or "" if it's fine. Behind
-// the "!" on its photo, and what keeps "Save all" from saving it.
-function problemWith(it) {
-  return it.status === "ready" ? fieldProblem(it) || it.saveProblem || "" : "";
-}
-
 // The part only the owner can fix. A receipt that merely failed to save (a
 // network blip) isn't in here, so "Save all" tries it again.
 function fieldProblem(it) {
@@ -76,6 +77,18 @@ function fieldProblem(it) {
   if (!validDate(it.form?.date)) missing.push("date");
   if (!missing.length) return "";
   return `Please check the ${missing.join(", ").replace(/, ([^,]*)$/, " and $1")}.`;
+}
+
+// Why this looks like a receipt we already have, or "". items is the whole batch
+// and monthRows the saved receipts by "YYYY-MM".
+function duplicateProblem(it, items, monthRows) {
+  if (it.status !== "ready" || !it.form || it.keepDuplicate) return "";
+  const earlier = items.slice(0, Math.max(0, items.findIndex((other) => other.id === it.id)));
+  const twin = earlier.find((other) => other.form && sameReceipt(it.form, other.form));
+  if (twin) return `This looks like a duplicate of receipt ${items.indexOf(twin) + 1} in this batch.`;
+  const date = normalizeDate(it.form.date);
+  const saved = (monthRows[date.slice(0, 7)] || []).find((row) => sameReceipt(it.form, row));
+  return saved ? `This looks like a duplicate: ${saved.place}, ${saved.total} on ${date} is already saved.` : "";
 }
 
 export default function Capture({ user }) {
@@ -105,6 +118,11 @@ export default function Capture({ user }) {
   const itemsRef = useRef(items);
   itemsRef.current = items;
   const batchCardRef = useRef(null);
+  // Receipts already saved, by "YYYY-MM", for the duplicate check.
+  const [monthRows, setMonthRows] = useState({});
+  const monthRowsRef = useRef(monthRows);
+  monthRowsRef.current = monthRows;
+  const monthLoads = useRef({});
 
   const cameraInputRef = useRef(null);
   const galleryInputRef = useRef(null);
@@ -137,6 +155,35 @@ export default function Capture({ user }) {
     if (files.length) addFiles(files);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
+
+  function loadMonth(dateStr) {
+    if (!validDate(dateStr) || !rootFolderId) return Promise.resolve();
+    const key = dateStr.slice(0, 7);
+    if (!monthLoads.current[key]) {
+      monthLoads.current[key] = withFreshToken(accessToken, refreshAccessToken, async (token) => {
+        const sheetId = await findMonthExpenseSheetId(token, rootFolderId, new Date(`${dateStr}T00:00:00`));
+        return sheetId ? listExpenseRows(token, sheetId) : [];
+      })
+        .catch(() => [])
+        .then((rows) => {
+          monthRowsRef.current = { ...monthRowsRef.current, [key]: rows };
+          setMonthRows(monthRowsRef.current);
+        });
+    }
+    return monthLoads.current[key];
+  }
+
+  useEffect(() => {
+    for (const it of items) loadMonth(it.form?.date);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, rootFolderId]);
+
+  // What's wrong with a read receipt, in plain words, or "" if it's fine. Behind
+  // the "!" on its photo, and what keeps "Save all" from saving it.
+  const duplicateOf = (it) => duplicateProblem(it, itemsRef.current, monthRowsRef.current);
+  const problemWith = (it) => (it.status === "ready" ? fieldProblem(it) || duplicateOf(it) || it.saveProblem || "" : "");
+
+  const reportDrive = { accessToken, refreshAccessToken, rootFolderId, profile };
 
   function patch(id, changes) {
     setItems((list) => list.map((it) => (it.id === id ? { ...it, ...changes } : it)));
@@ -199,7 +246,7 @@ export default function Capture({ user }) {
           total: data.result.total || "",
           hst: data.result.hst || "",
           date: data.result.date || "",
-          category: data.result.category_suggestion || "Other",
+          category: data.result.category_suggestion || OTHER_CATEGORY,
           // The batch answer if there is one; otherwise deliberately
           // unanswered — the photo can't tell money in from money out.
           type: batchTypeRef.current,
@@ -259,7 +306,7 @@ export default function Capture({ user }) {
 
   function updateField(key, value) {
     if (!current) return;
-    patch(current.id, { form: { ...current.form, [key]: value }, saveProblem: "" });
+    patch(current.id, { form: { ...current.form, [key]: value }, saveProblem: "", keepDuplicate: false });
     if (key === "type") setTypeMissing(false);
   }
 
@@ -305,9 +352,11 @@ export default function Capture({ user }) {
     }
     // The photo is in Drive now; drop the big strings, keep the thumbnail.
     patch(it.id, { status: "saved", base64: null, savingNow: false, saveProblem: "" });
+    scheduleReportRefresh(reportDrive, { date: new Date(`${form.date}T00:00:00`) });
   }
 
-  async function handleConfirm() {
+  // keepAnyway is "Save anyway", on a receipt already showing as a duplicate.
+  async function handleConfirm({ keepAnyway = false } = {}) {
     const it = current;
     if (!it || it.status !== "ready" || !it.base64 || !rootFolderId) return;
     if (!it.form.type) {
@@ -326,6 +375,14 @@ export default function Capture({ user }) {
     setSaving(true);
     setSaveError("");
     setNote(null);
+    // Tapped before the saved receipts finished loading? Wait, then check.
+    await loadMonth(it.form.date);
+    if (keepAnyway) {
+      patch(it.id, { keepDuplicate: true });
+    } else if (duplicateOf(it)) {
+      setSaving(false);
+      return;
+    }
     try {
       await saveOne(it, { token: accessToken });
       goTo(nextOpenAfter(it.id));
@@ -354,10 +411,14 @@ export default function Capture({ user }) {
     await readChain.current;
     // Let the last read land in state before looking at the list.
     await new Promise((r) => setTimeout(r, 60));
+    await Promise.all(itemsRef.current.map((it) => loadMonth(it.form?.date)));
+    await new Promise((r) => setTimeout(r, 60));
     const tokenBox = { token: accessToken };
     let savedNow = 0;
     for (const it of itemsRef.current.filter((x) => x.status === "ready")) {
       if (fieldProblem(it) || !it.base64 || !it.form?.type) continue;
+      // An earlier receipt saved a moment ago still counts: it's in the batch.
+      if (duplicateOf(it)) continue;
       patch(it.id, { savingNow: true });
       try {
         await saveOne(it, tokenBox);
@@ -392,7 +453,7 @@ export default function Capture({ user }) {
   }
 
   const reading = open.filter((it) => it.status === "reading").length;
-  const readyToSave = open.filter((it) => it.status === "ready" && !fieldProblem(it)).length;
+  const readyToSave = open.filter((it) => it.status === "ready" && !fieldProblem(it) && !duplicateOf(it)).length;
   const batchFull = open.length >= MAX_BATCH;
   const warnIfFull = () => {
     if (batchFull) setNote({ type: "error", text: `You can add ${MAX_BATCH} at a time. Save these first, then add more.` });
@@ -621,9 +682,9 @@ export default function Capture({ user }) {
                 {current.status === "ready" && form && (
                   <>
                     {problemWith(current) ? (
-                      <p className="text-sm text-danger">
+                      <p className="text-sm text-danger" role="alert">
                         {/* The reader's own reason beats a generic "check the total". */}
-                        {message?.type === "error" ? message.text : problemWith(current)}
+                        {!duplicateOf(current) && message?.type === "error" ? message.text : problemWith(current)}
                       </p>
                     ) : (
                       message?.type === "success" && <p className={`text-sm ${messageColor}`}>{message.text}</p>
@@ -690,10 +751,10 @@ export default function Capture({ user }) {
                       )}
                       <button
                         className="flex-1 rounded-full bg-brand-teal py-4 font-semibold text-white hover:opacity-90 transition disabled:opacity-60"
-                        onClick={handleConfirm}
+                        onClick={() => handleConfirm({ keepAnyway: !!duplicateOf(current) })}
                         disabled={saving || current.unusable}
                       >
-                        {saving ? "Saving…" : isLast ? "✓ Save" : "Save & next"}
+                        {saving ? "Saving…" : duplicateOf(current) ? "Save anyway" : isLast ? "✓ Save" : "Save & next"}
                       </button>
                     </div>
                   </>
