@@ -28,7 +28,10 @@ import {
   findMonthExpenseSheetId,
   listExpenseRows,
   updateExpenseRow,
-  refreshAnnualReport,
+  refreshYearOverview,
+  renameYearFiles,
+  planYearlyMove,
+  moveToYearlyFiles,
 } from "../lib/google";
 import { OTHER_CATEGORY, suggestCategory } from "../lib/categories";
 import { scheduleReportRefresh } from "../lib/reportQueue";
@@ -155,8 +158,10 @@ export default function Settings({ user }) {
   // One-tap re-sort of receipts filed as "Other" (owner request 2026-10-30).
   // phase: idle | scanning | preview | applying
   const [resort, setResort] = useState({ phase: "idle", items: [] });
-  // The annual report: { phase: "idle" | "building" | "ready" | "error", label, url }
+  // The yearly file: { phase: "idle" | "building" | "ready" | "error", label, url }
   const [report, setReport] = useState({ phase: "idle" });
+  // Moving to yearly files: { phase: "idle" | "checking" | "ready" | "moving" | "done" | "error", plan, text }
+  const [yearlyMove, setYearlyMove] = useState({ phase: "idle" });
   const [resortStatus, setResortStatus] = useState(null);
 
   useEffect(() => {
@@ -276,6 +281,7 @@ export default function Settings({ user }) {
       await withFreshToken(async (token) => {
         await renameCompanyRootFolder(token, rootFolderId, name);
         await saveProfile(token, rootFolderId, { companyName: name });
+        await renameYearFiles(token, rootFolderId, name);
       });
       setCompanyName(name);
       setCompanyEditing(false);
@@ -484,11 +490,45 @@ export default function Settings({ user }) {
     setReport({ phase: "building", label: fy.label });
     try {
       const { url, label } = await withFreshToken((token) =>
-        refreshAnnualReport(token, { rootId: rootFolderId, profile, dates: [fy.months[0]], full: true })
+        refreshYearOverview(token, { rootId: rootFolderId, profile, date: fy.months[0] })
       );
       setReport({ phase: "ready", url, label });
     } catch {
       setReport({ phase: "error", label: fy.label });
+    }
+  }
+
+  // A move that stopped part-way keeps offering to finish, even after a restart.
+  const showYearlyFile = profile?.layout === "yearly" && !profile?.moveLeft;
+
+  async function checkYearlyMove() {
+    setYearlyMove({ phase: "checking" });
+    try {
+      const plan = await withFreshToken((token) => planYearlyMove(token, rootFolderId));
+      setYearlyMove(
+        plan.problems.length
+          ? { phase: "error", text: `${plan.problems.join(" ")} Move that information to its own month first.` }
+          : { phase: "ready", plan }
+      );
+    } catch {
+      setYearlyMove({ phase: "error", text: SAVE_FAILED });
+    }
+  }
+
+  async function runYearlyMove() {
+    const plan = yearlyMove.plan;
+    setYearlyMove({ phase: "moving", plan, text: "Starting…" });
+    try {
+      await withFreshToken((token) =>
+        moveToYearlyFiles(token, rootFolderId, (text) => setYearlyMove({ phase: "moving", plan, text }))
+      );
+      setYearlyMove({ phase: "done", plan });
+      reloadProfile();
+    } catch (err) {
+      setYearlyMove({
+        phase: "error",
+        text: /copy across/.test(err?.message || "") ? err.message : "The move stopped part-way. Nothing is lost; tap to try again and it picks up where it left off.",
+      });
     }
   }
 
@@ -505,7 +545,7 @@ export default function Settings({ user }) {
       }
       setResort({ phase: "idle", items: [] });
       setResortStatus({ type: "success", text: `Re-sorted ${done} receipt${done === 1 ? "" : "s"}.` });
-      scheduleReportRefresh({ accessToken, refreshAccessToken, rootFolderId, profile }, { full: true });
+      scheduleReportRefresh({ accessToken, refreshAccessToken, rootFolderId, profile });
     } catch {
       setResort({ phase: "idle", items: [] });
       setResortStatus({
@@ -695,7 +735,8 @@ export default function Settings({ user }) {
                 id="fiscal-start"
                 value={fyStart}
                 onChange={(e) => handleFiscalChange(e.target.value)}
-                className="text-sm text-text-secondary bg-transparent text-right appearance-none rounded-md px-1 cursor-pointer focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-teal"
+                disabled={profile.layout === "yearly"}
+                className="text-sm text-text-secondary bg-transparent text-right appearance-none rounded-md px-1 cursor-pointer disabled:cursor-default focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-teal"
               >
                 {MONTH_NAMES.map((m, i) => (
                   <option key={m} value={String(i + 1)}>
@@ -705,6 +746,9 @@ export default function Settings({ user }) {
               </select>
               <ChevronRight className="size-4 text-text-tertiary shrink-0" />
             </div>
+            {profile.layout === "yearly" && (
+              <p className="mt-1 text-xs text-text-secondary">Your yearly files are built around this month, so it's locked.</p>
+            )}
             <StatusLine status={fyStatus} />
           </div>
 
@@ -791,39 +835,93 @@ export default function Settings({ user }) {
           <div className="p-4">
             <div className="flex items-center gap-3">
               <FileSpreadsheet className="size-4 text-text-secondary shrink-0" />
-              <p className="flex-1 min-w-0 text-sm">Annual report</p>
+              <p className="flex-1 min-w-0 text-sm">{showYearlyFile ? "Yearly file" : "One file per year"}</p>
             </div>
-            <p className="text-xs text-text-secondary mt-1 mb-3">
-              One sheet for your accountant: an overview by GIFI category, then a tab for each month.
-            </p>
-            <div className="flex flex-col gap-2">
-              {[0, 1].map((back) => {
-                const fy = fiscalYear(fiscalStartMonth(profile), back);
-                const building = report.phase === "building" && report.label === fy.label;
-                return (
+            {showYearlyFile ? (
+              <>
+                <p className="text-xs text-text-secondary mt-1 mb-3">
+                  One file for your accountant: an overview by GIFI category, then a tab for each month.
+                </p>
+                {yearlyMove.phase === "done" && (
+                  <p className="text-sm text-brand-teal-deep mb-3" role="status">
+                    Done. Your receipts are now in {yearlyMove.plan.fileNames.join(", ")}.
+                  </p>
+                )}
+                <div className="flex flex-col gap-2">
+                  {[0, 1].map((back) => {
+                    const fy = fiscalYear(fiscalStartMonth(profile), back);
+                    const building = report.phase === "building" && report.label === fy.label;
+                    return (
+                      <button
+                        key={fy.label}
+                        type="button"
+                        onClick={() => buildReport(fy)}
+                        disabled={report.phase === "building"}
+                        className="w-full h-10 rounded-full ring-1 ring-hairline-strong text-sm font-medium disabled:opacity-60"
+                      >
+                        {building ? "Updating…" : `Update ${fy.label}`}
+                      </button>
+                    );
+                  })}
+                </div>
+                {report.phase === "ready" && (
+                  <a
+                    href={report.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block w-full mt-2 py-2.5 rounded-full bg-brand-teal text-sm font-semibold text-white text-center"
+                  >
+                    Open {report.label}
+                  </a>
+                )}
+                <StatusLine status={report.phase === "error" ? { type: "error", text: "Couldn't update the file. Check your connection and try again." } : null} />
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-text-secondary mt-1 mb-3">
+                  Puts each year's receipts into one Excel file with a tab for each month. Your photos move too and their links
+                  keep working. Your old sheets are kept in a folder called Old monthly sheets.
+                </p>
+                {yearlyMove.phase === "ready" ? (
+                  <>
+                    <p className="text-sm mb-1">
+                      {yearlyMove.plan.files} monthly file{yearlyMove.plan.files === 1 ? "" : "s"} and {yearlyMove.plan.receipts} receipt
+                      {yearlyMove.plan.receipts === 1 ? "" : "s"} will go into:
+                    </p>
+                    <ul className="text-sm text-text-secondary mb-3">
+                      {yearlyMove.plan.fileNames.map((name) => (
+                        <li key={name}>{name}</li>
+                      ))}
+                    </ul>
+                    <button
+                      type="button"
+                      onClick={runYearlyMove}
+                      className="w-full h-10 rounded-full bg-brand-teal text-sm font-semibold text-white"
+                    >
+                      Move them
+                    </button>
+                  </>
+                ) : yearlyMove.phase === "moving" ? (
+                  <p className="text-sm text-text-secondary" role="status">
+                    {yearlyMove.text} Please keep this screen open.
+                  </p>
+                ) : yearlyMove.phase === "done" ? (
+                  <p className="text-sm text-brand-teal-deep" role="status">
+                    Done. Your receipts are now in {yearlyMove.plan.fileNames.join(", ")}.
+                  </p>
+                ) : (
                   <button
-                    key={fy.label}
                     type="button"
-                    onClick={() => buildReport(fy)}
-                    disabled={report.phase === "building"}
+                    onClick={checkYearlyMove}
+                    disabled={yearlyMove.phase === "checking"}
                     className="w-full h-10 rounded-full ring-1 ring-hairline-strong text-sm font-medium disabled:opacity-60"
                   >
-                    {building ? "Building your report…" : `Update ${fy.label}`}
+                    {yearlyMove.phase === "checking" ? "Checking your files…" : "Check my files"}
                   </button>
-                );
-              })}
-            </div>
-            {report.phase === "ready" && (
-              <a
-                href={report.url}
-                target="_blank"
-                rel="noreferrer"
-                className="block w-full mt-2 py-2.5 rounded-full bg-brand-teal text-sm font-semibold text-white text-center"
-              >
-                Open {report.label} report
-              </a>
+                )}
+                <StatusLine status={yearlyMove.phase === "error" ? { type: "error", text: yearlyMove.text } : null} />
+              </>
             )}
-            <StatusLine status={report.phase === "error" ? { type: "error", text: "Couldn't build the report. Check your connection and try again." } : null} />
           </div>
 
           <div className="p-4">

@@ -36,8 +36,10 @@ npm run build   # production build (also runs lint + type checking)
 npm run start   # run a production build locally
 ```
 
-No test suite exists (no test files, no test script). `npm run build` will
-fail locally at the "Collecting page data" step with a Firebase
+The app has no test script. `ocr-service/tests` runs under pytest, and
+`../.claude/tools/sheet-test/test.mjs <absolute path to lib/google.js>` tests the
+sheet layer and annual report against a fake Google (not the real API).
+`npm run build` will fail locally at the "Collecting page data" step with a Firebase
 `auth/invalid-api-key` error unless a real `.env.local` is present — this
 is expected (see Environment variables below), not a regression signal;
 "Compiled successfully" before that point is what to check.
@@ -77,27 +79,32 @@ No database. Everything lives in the user's own Drive:
 BX - {Company Name}/          <- root, found via a Drive search for
                                   name contains 'BX - ' (single company
                                   per Google account is assumed)
-  {Year}/
-    {Month name}/
-      Supporting Documents/    <- compressed receipt photos
-      Expenses                <- Google Sheet: Date | Vendor | Category | Total | HST | Receipt Link | Type | Note for accountant | Net amount
-  {Fiscal year} Annual Report  <- Google Sheet: Overview tab, then a tab per month
+  {Fiscal year}/              <- the year the fiscal year STARTS in
+    {Company} {Year}          <- Google Sheet: Overview, then a tab per month
+    Supporting Documents/
+      {Month name}/           <- compressed receipt photos
+  Old monthly sheets/         <- the pre-yearly month folders, kept as a backup
 ```
 
-The annual report (`lib/annualReport.js`, `refreshAnnualReport` in
-`lib/google.js`, `lib/reportQueue.js`) is one sheet per fiscal year, rebuilt from
-the monthly sheets after every save, edit or delete, and on demand in Settings.
-The monthly sheets stay the source of truth: the report holds plain values, a
-rebuild overwrites hand edits, and its tabs warn before editing. The Overview
-totals cost per GIFI code.
+Each month tab: Date | Vendor | Category | Total | HST | Net | Receipt Link | Type |
+Note for accountant. The tabs are the source of truth and can be edited by hand.
+The Overview (cost per GIFI code) is plain values rebuilt from them after a save,
+edit or delete in the app, and from Settings, so a hand edit to a tab reaches it
+at the next rebuild. A year file is found by its hidden `bxYearFile` marker, not
+its name. The fiscal year start is locked in Settings once on yearly files,
+because it decides which file a month belongs to.
+
+Businesses still on the old structure (`{Year}/{Month}/Expenses` +
+`Supporting Documents`; the `layout` profile property is blank) keep working until
+they run the move in Settings: `moveToYearlyFiles` in `lib/google.js`, whose comment
+explains why its order is safe. New businesses start on yearly. Code handles both
+through a sheet "ref": a bare id is a monthly file, `fileId|Oct` is a tab. The
+parked Chrome extension still writes the old monthly structure.
 
 Categories are the CRA's GIFI names (`GIFI_CATEGORIES` in `lib/categories.js`).
 Older rows keep their old name in the sheet and read back as the GIFI successor
 (`canonicalCategory`); bank transfers and cash withdrawals have no code and stay
 out of the totals. Income reports under 8000.
-
-Year folders are calendar years even when the business's fiscal year isn't
-(the fiscal year only changes how the app's Year view groups months).
 
 Type (column G) is `Expense` (the owner was invoiced, money out) or `Income`
 (the owner is invoicing, money in), asked on every capture. Older sheets get
@@ -113,7 +120,7 @@ Income is excluded from every spending total (`spendingRows` in
 `lib/google.js` documents each one.
 
 The user's profile (company name, accountant email, `fiscalYearStart` 1-12,
-`currency` code (default CAD), optional `bankName` + `bankLast4`) is stored as custom Drive **file
+`currency` code (default CAD), optional `bankName` + `bankLast4`, `layout`, `moveLeft`) is stored as custom Drive **file
 properties** on the root folder itself (`getProfile`/`saveProfile` in
 `lib/google.js`) — no separate profile file clutters the user's Drive.
 `saveProfile` writes only the keys it is given, so pass just the field being
@@ -146,9 +153,10 @@ earlier one in the batch (`lib/duplicates.js`) is a ! with "Save anyway" → `li
 client-side via canvas (target ~200KB, JPEG re-encode regardless of source
 format) → POST to `pages/api/extract.js` (server-side, keeps
 `ANTHROPIC_API_KEY` off the client) → Claude vision returns structured
-fields → editable review UI shows only 4 of them (place/total/hst/date;
-the API also returns currency/category/notes, intentionally unused in the
-UI) → confirm writes through `saveExpenseToDrive`.
+fields → editable review UI shows place/total/hst/date/category, plus money
+in or out and the note for the accountant (the API also returns currency and
+notes, intentionally unused in the UI) → confirm writes through
+`saveExpenseToDrive`.
 
 ### Routes
 
@@ -163,9 +171,11 @@ UI) → confirm writes through `saveExpenseToDrive`.
 - `pages/history.js` — current + previous month's receipts (two Sheet
   reads; deliberately not a full walk of every month ever, for performance)
 - `pages/settings.js` — company name, connected account, editable
-  accountant email, sign out
+  accountant email, fiscal year, currency, bank details, re-sort of Other
+  expenses, annual report (build and open), sign out
 - `pages/categories.js` — Settings > Categories: add/change/remove the
-  business's own categories, show/hide built-ins
+  business's own categories with their GIFI code, show/hide the built-in GIFI
+  list
 - `components/BottomNav.js` — Home | Camera (raised, teal, opens Take
   photo / Choose a photo) | Settings, hidden on `/login` and `/setup`
   (`pages/_app.js` decides this by route, not by re-deriving Drive state)

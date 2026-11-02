@@ -88,7 +88,7 @@ export default function Categories({ user }) {
     registerCustomCategories({ ...profile, ...fields });
     await reloadProfile?.();
     // A new code or a moved receipt changes the accountant's report.
-    scheduleReportRefresh({ accessToken, refreshAccessToken, rootFolderId, profile: { ...profile, ...fields } }, { full: true });
+    scheduleReportRefresh({ accessToken, refreshAccessToken, rootFolderId, profile: { ...profile, ...fields } });
   }
 
   async function handleSave({ name, icon, gifi }) {

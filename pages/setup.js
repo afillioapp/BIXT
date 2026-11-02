@@ -79,6 +79,9 @@ export default function Setup({ user }) {
         fiscalYearStart,
         bankName: bankName.trim(),
         bankLast4,
+        // A business starting fresh begins on yearly files. A folder that already
+        // exists may hold monthly ones, which move from Settings.
+        ...(existingRootId ? {} : { layout: "yearly" }),
       });
       await ensureMonthFolders(accessToken, rootId, new Date());
       setDone(true);

@@ -1,64 +1,59 @@
-# Expense Tracker
+# BX
 
-Snap a receipt → AI extracts date/place/total/HST/category → saved to Google Drive
-(`Business Expenses / YYYY-MM / Photos` + `Business Expenses / YYYY-MM / Table` as a Google Sheet).
+Snap a receipt, Claude reads the vendor, total, HST and date, and it's saved to
+your own Google Drive, with your accountant given access automatically. No
+database: Drive is the data store.
 
-## 1. Deploy (same flow as Afillio/FBC)
+The repo and folder still say BIXT and expense-tracker for historical reasons.
+See `CLAUDE.md` for how the code is put together.
 
-1. Push this folder to a new GitHub repo (GitHub Desktop, like your other projects).
-2. Import it into Vercel → New Project → select the repo.
-3. Don't deploy yet — add environment variables first (step 3 below).
+## What ends up in Drive
 
-## 2. Google Cloud setup (~15 min, one time)
+```
+BX - {Company}/
+  {Fiscal year}/                <- the year the fiscal year starts in
+    {Company} {Year}            <- Google Sheet: Overview, then a tab per month
+    Supporting Documents/
+      {Month}/                  <- compressed receipt photos
+  Old monthly sheets/           <- backup of the earlier month-by-month files
+```
 
-1. Go to https://console.cloud.google.com → create a new project (e.g. "Expense Tracker").
-2. **Enable APIs**: search and enable both:
-   - Google Drive API
-   - Google Sheets API
-3. **OAuth consent screen**: APIs & Services → OAuth consent screen.
-   - User type: External (fine even for personal use).
-   - Fill app name, your email. Add scopes: `drive.file` and `spreadsheets`.
-   - Add yourself as a test user.
-4. **Create credentials**: APIs & Services → Credentials → Create Credentials → OAuth client ID.
-   - Application type: **Web application**.
-   - Authorized JavaScript origins: add your Vercel URL, e.g. `https://expense-tracker-yourname.vercel.app`
-     (you'll get this URL after the first Vercel deploy — you can add it after and redeploy).
-   - Copy the **Client ID** it gives you.
-5. **Anthropic API key**: https://console.anthropic.com → API Keys → create one.
+Folders and sheets are created the first time they're needed. Businesses that
+started on monthly files move across from Settings.
 
-## 3. Environment variables in Vercel
+## Run it
 
-Project Settings → Environment Variables, add:
+```
+npm run dev     # local dev server
+npm run build   # production build
+```
+
+`npm run build` fails at "Collecting page data" without real Firebase keys. That's
+expected; "Compiled successfully" is the line to check.
+
+## Environment variables
+
+Set in Vercel. No `.env.local` is kept in this repo.
 
 | Name | Value |
 |---|---|
-| `ANTHROPIC_API_KEY` | your Anthropic key |
-| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | your Google OAuth client ID |
+| `ANTHROPIC_API_KEY` | Anthropic key, used server-side by `pages/api/extract.js` |
+| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase web config |
+| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase web config |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase web config |
+| `NEXT_PUBLIC_FIREBASE_APP_ID` | Firebase web config |
+| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google OAuth client ID |
 
-Redeploy after adding these.
+The Google Cloud project needs the Drive API and Sheets API enabled. The app asks
+only for the `drive.file` scope, which covers the files it creates.
 
-## 4. First use
+## Deploying
 
-1. Open the app on your phone (add to home screen for app-like feel).
-2. Tap "Connect Google Drive" → sign in → allow.
-3. Tap "Take / Upload Receipt Photo" → snap it.
-4. Review the AI's guess (date, place, total, HST, category) → edit anything wrong.
-5. Tap "Save to Drive". Done — check your Drive for the `Business Expenses` folder.
+Every push to `main` deploys to production at `bixt.vercel.app`. See
+`docs/REPO-WORKFLOW.md`.
 
-## How the Drive structure works
+## Categories
 
-```
-Business Expenses/
-  2026-07/
-    Photos/        <- receipt images
-    Table/
-      Expenses - 2026-07   <- Google Sheet, one row per receipt
-```
-
-A new month folder + sheet is created automatically the first time you save a receipt in that month.
-
-## Notes / next steps
-
-- Categories are a fixed list in `pages/api/extract.js` (`CATEGORIES` array) — edit that list to match how you file expenses for taxes.
-- The app currently supports one Google account per session (yours). No login system needed since it's just for you.
-- If you want multi-currency handling, exchange rates, or a running monthly total on the app itself (not just the sheet), that's a quick add-on later.
+Categories are the CRA's GIFI names, listed in `GIFI_CATEGORIES` in
+`lib/categories.js`. Add to that list rather than renaming: the names are written
+into users' sheets.

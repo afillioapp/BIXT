@@ -40,9 +40,12 @@ so nothing is downloaded at runtime and the service works with no egress.
 | `bx_ocr/engine.py` | OCR engine adapter (swappable) |
 | `bx_ocr/layout.py` | detection boxes -> deskewed lines |
 | `bx_ocr/parser.py` | lines -> date/place/total/tax |
-| `bx_ocr/categories.py` | the 12 v1 categories + rules |
+| `bx_ocr/categories.py` | the pre-GIFI categories + rules |
 
-`CATEGORIES` must stay identical to the list in `pages/api/extract.js`.
+`CATEGORIES` holds the names from before the app moved to GIFI categories.
+`pages/api/extract.js` converts them with `canonicalCategory` in
+`lib/categories.js`, and a test checks the app knows each one. Move this list to
+GIFI at the OCR switch-over.
 
 ## Tests
 
