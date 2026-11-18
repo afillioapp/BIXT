@@ -15,11 +15,14 @@ import {
   periodBounds,
   monthsBetween,
   spendBetween,
+  hstBetween,
+  fiscalYear,
 } from "../lib/insights";
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
 import HomeCarousel from "../components/HomeCarousel";
 import ActivityGraph from "../components/ActivityGraph";
+import HstMeter from "../components/HstMeter";
 import SwipeSlide from "../components/SwipeSlide";
 import { accentForCategory, paletteColor } from "../components/CategoryIcon";
 import ExpenseRow, { rowIdFor } from "../components/ExpenseRow";
@@ -117,6 +120,12 @@ export default function Home({ user }) {
     ensureMonths(monthsBetween(prev.start, cur.end));
   }, [range, offsets, profile, ensureMonths]);
 
+  // The HST card always covers this fiscal year so far, whatever tab is shown.
+  useEffect(() => {
+    if (!profile) return;
+    ensureMonths(monthsBetween(fiscalYear(fiscalStartMonth(profile)).months[0], new Date()));
+  }, [profile, ensureMonths]);
+
   // Only send someone to onboarding when we positively know they have no BX
   // folder — i.e. Drive answered us. A connection problem (loadError) or a
   // missing token (needsConnect) must never re-onboard an existing customer.
@@ -202,6 +211,12 @@ export default function Home({ user }) {
   // emphasis on its row instead.
   const monthBreakdown = rows ? categoryTotals(rows, now) : null;
 
+  // HST since the fiscal year began (owner request 2026-11-18), null until
+  // every month of it has loaded.
+  const fyStart = fiscalYear(fiscalStart, 0, now).months[0];
+  const fyMonths = monthsBetween(fyStart, now);
+  const hst = fyMonths.every((d) => getMonthRows(d)) ? hstBetween(fyMonths.flatMap((d) => getMonthRows(d)), fyStart, now) : null;
+
   return (
     <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
       {/* One top card (owner request 2026-10-24): the month total and avatar,
@@ -278,6 +293,12 @@ export default function Home({ user }) {
       </PageHeader>
 
       <div className="mx-auto max-w-md px-5 pt-6">
+        <HstMeter
+          hst={hst}
+          currency={currency}
+          since={fyStart.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
+        />
+
         {/* Category pills sit between the top card and the chart (owner
             request 2026-10-25); they narrow everything on the page. */}
         {rows && rows.length > 0 && (
