@@ -165,8 +165,8 @@ notes, intentionally unused in the UI) → confirm writes through
 - `pages/setup.js` — one-time onboarding (company name + accountant email),
   only reached when authenticated but no BX root folder exists yet
 - `pages/index.js` — Home: an HST card for the fiscal year so far
-  (`components/HstMeter.js`, `hstBetween` in `lib/insights.js`: HST paid,
-  HST charged, and which way the difference goes), fiscal-year activity grid
+  (`components/HstMeter.js`, `hstBetween` in `lib/insights.js`: HST paid
+  and HST charged), fiscal-year activity grid
   (`components/ActivityGraph.js`, money out vs in, shade = amount), month
   total, spending bar chart (`components/HomeCarousel.js`), Top Categories,
   recent receipts

@@ -1,24 +1,17 @@
 import { formatCurrency } from "../lib/insights";
 
 // Home's HST card (owner request 2026-11-18): the HST on this fiscal year's
-// receipts so far. What was paid on expenses is usually claimed back; what was
-// charged on invoices is owed; the bottom line says which way the difference
-// goes. Not narrowed by the category filter: it's about the whole business.
+// receipts so far, paid on expenses and charged on invoices. The owner asked
+// for no "who owes whom" line under it. Not narrowed by the category filter:
+// it's about the whole business.
 //
-// hst: { paid, charged, net } from lib/insights.js hstBetween, or null while
-// the year's months are still loading.
+// hst: { paid, charged } from lib/insights.js hstBetween, or null while the
+// year's months are still loading.
 export default function HstMeter({ hst, currency, since }) {
   const money = (n) => formatCurrency(n, { decimals: 2, currency });
   const both = hst ? hst.paid + hst.charged : 0;
   const paidShare = both > 0 ? (hst.paid / both) * 100 : 0;
   const chargedShare = both > 0 ? 100 - paidShare : 0;
-
-  let bottomLine = "";
-  if (hst) {
-    if (hst.net < 0) bottomLine = `The CRA owes you about ${money(-hst.net)}`;
-    else if (hst.net > 0) bottomLine = `You owe the CRA about ${money(hst.net)}`;
-    else bottomLine = "Nothing owed either way so far";
-  }
 
   return (
     <section aria-label="HST this fiscal year" className="mb-4 rounded-2xl bg-card ring-1 ring-hairline p-4">
@@ -55,9 +48,6 @@ export default function HstMeter({ hst, currency, since }) {
             <span style={{ width: `${paidShare}%`, background: "var(--activity-out)" }} />
             <span style={{ width: `${chargedShare}%`, background: "var(--activity-in)" }} />
           </div>
-
-          <p className="mt-3 text-sm font-semibold">{bottomLine}</p>
-          <p className="mt-0.5 text-[11px] text-text-tertiary">An estimate from your saved receipts. Your accountant files the actual return.</p>
         </>
       )}
     </section>
