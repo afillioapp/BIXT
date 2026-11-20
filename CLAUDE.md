@@ -87,7 +87,7 @@ BX - {Company Name}/          <- root, found via a Drive search for
 ```
 
 Each month tab: Date | Vendor | Category | Total | HST | Net | Receipt Link | Type |
-Note for accountant. The tabs are the source of truth and can be edited by hand.
+Note for accountant | Card or account. The tabs are the source of truth and can be edited by hand.
 The Overview (cost per GIFI code) is plain values rebuilt from them after a save,
 edit or delete in the app, and from Settings, so a hand edit to a tab reaches it
 at the next rebuild. A year file is found by its hidden `bxYearFile` marker, not
@@ -112,8 +112,9 @@ the header on their next save or row edit and their blank cells read as
 `Expense`. The Type column is found by its header, not its position, and is
 only ever added: if column G already holds anything of the owner's, a new
 column is inserted so theirs moves right. "Note for accountant" (H, right
-after Type) and "Net amount" (I, a `=D-E` formula, filled in for existing rows
-when the column is added) work the same way; all go through `ensureBxColumns`. Run
+after Type), "Net amount" (I, a `=D-E` formula, filled in for existing rows
+when the column is added) and "Card or account" (after those) work the same
+way; all go through `ensureBxColumns`. Run
 `../.claude/tools/sheet-test/test.mjs` before changing any of this.
 Income is excluded from every spending total (`spendingRows` in
 `lib/insights.js`). `ensureHeaderRow` migrates every older layout in place;
@@ -122,7 +123,10 @@ Income is excluded from every spending total (`spendingRows` in
 The user's profile (company name, accountant email, `fiscalYearStart` 1-12,
 `currency` code (default CAD), optional `bankName` + `bankLast4`, `layout`, `moveLeft`) is stored as custom Drive **file
 properties** on the root folder itself (`getProfile`/`saveProfile` in
-`lib/google.js`) — no separate profile file clutters the user's Drive.
+`lib/google.js`) — no separate profile file clutters the user's Drive. The cards
+and accounts a receipt can be paid with or into (`lib/cards.js`, `card0`..`card7`
+= "1234|Amex") are appProperties on the same folder, read and written through the
+same two functions; the setup bank account counts as the first one.
 `saveProfile` writes only the keys it is given, so pass just the field being
 changed. Renaming the company in Settings also renames the folder to
 `BX - {name}` (`renameCompanyRootFolder`); the folder is found by its hidden
@@ -149,7 +153,9 @@ in the background, one after another, and marked on its photo (faded tick =
 looks fine, ! = needs a look, solid tick = saved), then reviewed one at a time
 ("Receipt 2 of 5", Save & next / Skip for now) or saved together with "Save
 all", which leaves the ! ones behind. A receipt matching a saved one or an
-earlier one in the batch (`lib/duplicates.js`) is a ! with "Save anyway" → `lib/image.js` compresses it
+earlier one in the batch (`lib/duplicates.js`) is a ! with "Save anyway".
+Each receipt must say which card or account paid for it (or, for money in,
+which account it went into), asked once for a batch like money in / out → `lib/image.js` compresses it
 client-side via canvas (target ~200KB, JPEG re-encode regardless of source
 format) → POST to `pages/api/extract.js` (server-side, keeps
 `ANTHROPIC_API_KEY` off the client) → Claude vision returns structured
@@ -164,16 +170,17 @@ notes, intentionally unused in the UI) → confirm writes through
   reveal the same Google/Apple/Phone buttons)
 - `pages/setup.js` — one-time onboarding (company name + accountant email),
   only reached when authenticated but no BX root folder exists yet
-- `pages/index.js` — Home: an HST card for the fiscal year so far
-  (`components/HstMeter.js`, `hstBetween` in `lib/insights.js`: HST paid
-  and HST charged), fiscal-year activity grid
+- `pages/index.js` — Home: the top card holds the period total, the fiscal
+  year's HST paid and charged so far (`components/HstMeter.js`, `hstBetween`
+  in `lib/insights.js`), the Week / Month / Year tabs with a Today button once
+  you've slid back, and the fiscal-year activity grid
   (`components/ActivityGraph.js`, money out vs in, shade = amount), month
   total, spending bar chart (`components/HomeCarousel.js`), Top Categories,
   recent receipts
 - `pages/history.js` — current + previous month's receipts (two Sheet
   reads; deliberately not a full walk of every month ever, for performance)
 - `pages/settings.js` — company name, connected account, editable
-  accountant email, fiscal year, currency, bank details, re-sort of Other
+  accountant email, fiscal year, currency, cards and accounts, re-sort of Other
   expenses, annual report (build and open), sign out
 - `pages/categories.js` — Settings > Categories: add/change/remove the
   business's own categories with their GIFI code, show/hide the built-in GIFI

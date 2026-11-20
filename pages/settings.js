@@ -9,13 +9,13 @@ import {
   Cloud,
   Mail,
   CalendarRange,
-  Landmark,
   Sun,
   Moon,
   ScanFace,
   LogOut,
   ChevronRight,
   FileSpreadsheet,
+  CreditCard,
 } from "lucide-react";
 import { auth } from "../lib/firebase";
 import { useDrive } from "../lib/useDrive";
@@ -34,6 +34,8 @@ import {
   moveToYearlyFiles,
 } from "../lib/google";
 import { OTHER_CATEGORY, suggestCategory } from "../lib/categories";
+import { cardFields, cardLabel, freeCardKey, paymentCards } from "../lib/cards";
+import CardEditor from "../components/CardEditor";
 import { scheduleReportRefresh } from "../lib/reportQueue";
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
@@ -42,14 +44,7 @@ import { getTheme, setTheme } from "../lib/theme";
 import { MONTH_NAMES, fiscalStartMonth, fiscalYear, CURRENCIES, currencyCode, currencySymbol, formatCurrency } from "../lib/insights";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const LAST4_RE = /^\d{4}$/;
 const SAVE_FAILED = "Couldn't save. Check your connection and try again.";
-
-// Keeps only the digits and, if more than four arrive at once (a pasted full
-// account number), the LAST four — never the first four, never the whole thing.
-function lastFourDigits(v) {
-  return v.replace(/\D/g, "").slice(-4);
-}
 
 // Always mounted, so a screen reader announces the message when it appears.
 function StatusLine({ status }) {
@@ -139,11 +134,10 @@ export default function Settings({ user }) {
   const fySaveChain = useRef(Promise.resolve());
   const fyPending = useRef(0);
 
-  const [bankEditing, setBankEditing] = useState(false);
-  const [bankName, setBankName] = useState("");
-  const [bankLast4, setBankLast4] = useState("");
-  const [bankSaving, setBankSaving] = useState(false);
-  const [bankStatus, setBankStatus] = useState(null);
+  // Cards and accounts: which one is open in the editor ({ card } — card null
+  // for a new one), and the last save's message.
+  const [cardEditor, setCardEditor] = useState(null);
+  const [cardStatus, setCardStatus] = useState(null);
 
   const [currency, setCurrency] = useState("CAD");
   const [currencyStatus, setCurrencyStatus] = useState(null);
@@ -178,8 +172,6 @@ export default function Settings({ user }) {
   // on each reload used to wipe whatever was being typed in another row.
   const savedEmail = profile?.accountantEmail || "";
   const savedFy = String(fiscalStartMonth(profile));
-  const savedBankName = profile?.bankName || "";
-  const savedBankLast4 = profile?.bankLast4 || "";
   const savedFyRef = useRef(savedFy);
   savedFyRef.current = savedFy;
   const savedCurrency = currencyCode(profile);
@@ -204,13 +196,6 @@ export default function Settings({ user }) {
   useEffect(() => {
     if (fyPending.current === 0) setFyStart(savedFy);
   }, [savedFy]);
-
-  useEffect(() => {
-    if (bankEditing) return;
-    setBankName(savedBankName);
-    setBankLast4(savedBankLast4);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [savedBankName, savedBankLast4]);
 
   // Settings is the page most likely to sit open past the ~1 hour Drive
   // token. Retry once with a fresh token rather than failing the save.
@@ -294,34 +279,19 @@ export default function Settings({ user }) {
     }
   }
 
-  function cancelBankEdit() {
-    setBankEditing(false);
-    setBankName(savedBankName);
-    setBankLast4(savedBankLast4);
-    setBankStatus(null);
-  }
-
-  async function handleSaveBank() {
-    if (bankLast4 && !LAST4_RE.test(bankLast4)) {
-      setBankStatus({ type: "error", text: "Enter exactly the last 4 digits" });
-      return;
-    }
-    setBankSaving(true);
-    setBankStatus(null);
+  // Saves a card or account, or with blank name and digits, removes it.
+  // Receipts already saved keep the name they were saved with.
+  async function saveCard(card, name, last4) {
+    const key = card?.key || freeCardKey(profile);
+    if (!key) throw new Error("You've reached the limit of 8 cards and accounts.");
     try {
-      const name = bankName.trim();
-      await withFreshToken((token) => saveProfile(token, rootFolderId, { bankName: name, bankLast4 }));
-      // The row below shows these local values, so it reads the new account
-      // straight away instead of waiting on the profile reload.
-      setBankName(name);
-      setBankStatus({ type: "success", text: "Bank account saved" });
-      setBankEditing(false);
-      reloadProfile();
+      await withFreshToken((token) => saveProfile(token, rootFolderId, cardFields(key, name, last4)));
     } catch {
-      setBankStatus({ type: "error", text: SAVE_FAILED });
-    } finally {
-      setBankSaving(false);
+      throw new Error(SAVE_FAILED);
     }
+    await reloadProfile();
+    setCardEditor(null);
+    setCardStatus({ type: "success", text: name ? `Saved ${cardLabel(name, last4)}` : `Removed ${card.label}` });
   }
 
   // Only show the lock toggle on devices that actually have a platform
@@ -925,66 +895,64 @@ export default function Settings({ user }) {
           </div>
 
           <div className="p-4">
-            {bankEditing ? (
-              <div>
-                <p className="text-sm text-text-secondary mb-2">Business bank account</p>
-                <div className="flex gap-2 mb-3">
-                  <input
-                    className="flex-1 min-w-0 h-11 rounded-lg bg-card ring-1 ring-hairline-strong px-3 text-sm focus:outline-none focus:ring-brand-teal"
-                    value={bankName}
-                    onChange={(e) => setBankName(e.target.value)}
-                    placeholder="Bank name"
-                    maxLength={40}
-                    autoFocus
-                  />
-                  <input
-                    className="w-24 h-11 rounded-lg bg-card ring-1 ring-hairline-strong px-3 text-sm focus:outline-none focus:ring-brand-teal"
-                    value={bankLast4}
-                    onChange={(e) => setBankLast4(lastFourDigits(e.target.value))}
-                    onKeyDown={(e) => e.key === "Enter" && handleSaveBank()}
-                    placeholder="Last 4"
-                    inputMode="numeric"
-                    aria-label="Last 4 digits of the account"
-                  />
-                </div>
-                <div className="flex gap-2">
+            <div className="flex items-center gap-3">
+              <CreditCard className="size-4 text-text-secondary shrink-0" />
+              <p className="flex-1 min-w-0 text-sm">Cards and accounts</p>
+            </div>
+            <p className="text-xs text-text-secondary mt-1 mb-1">
+              Each receipt records which one paid, or which one got paid. Only the last 4 digits are kept.
+            </p>
+            <ul>
+              {paymentCards(profile).map((c) => (
+                <li key={c.key}>
                   <button
-                    className="flex-1 h-9 rounded-full ring-1 ring-hairline-strong text-sm font-medium"
-                    onClick={cancelBankEdit}
-                    disabled={bankSaving}
+                    type="button"
+                    onClick={() => {
+                      setCardStatus(null);
+                      setCardEditor({ card: c });
+                    }}
+                    className="w-full flex items-center gap-2 py-2 text-left text-sm"
                   >
-                    Cancel
+                    {/* Only the name truncates; the last 4 digits tell cards apart. */}
+                    <span className="flex-1 min-w-0 truncate">{c.name}</span>
+                    {c.last4 && <span className="shrink-0 text-text-secondary">••{c.last4}</span>}
+                    <ChevronRight className="size-4 text-text-tertiary shrink-0" />
                   </button>
-                  <button
-                    className="flex-1 h-9 rounded-full bg-brand-teal text-white text-sm font-semibold disabled:opacity-60"
-                    onClick={handleSaveBank}
-                    disabled={bankSaving}
-                  >
-                    {bankSaving ? "Saving…" : "Save"}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <button className="w-full flex items-center gap-3 text-left" onClick={() => setBankEditing(true)}>
-                <Landmark className="size-4 text-text-secondary shrink-0" />
-                <p className="flex-1 min-w-0 text-sm">Bank account</p>
-                {/* Only the bank name truncates; the last 4 digits are what
-                    tell accounts apart, so they always show in full. */}
-                <span className="flex min-w-0 max-w-[60%] items-center gap-1 text-sm text-text-secondary">
-                  {bankName || bankLast4 ? (
-                    <>
-                      {bankName && <span className="min-w-0 truncate">{bankName}</span>}
-                      {bankLast4 && <span className="shrink-0">••{bankLast4}</span>}
-                    </>
-                  ) : (
-                    "Add"
-                  )}
-                </span>
-                <ChevronRight className="size-4 text-text-tertiary shrink-0" />
+                </li>
+              ))}
+            </ul>
+            {freeCardKey(profile) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCardStatus(null);
+                  setCardEditor({ card: null });
+                }}
+                className="mt-1 text-sm font-semibold text-brand-teal-deep"
+              >
+                + Add card or account
               </button>
             )}
-            <StatusLine status={bankStatus} />
+            <StatusLine status={cardStatus} />
           </div>
+          {cardEditor && (
+            <CardEditor
+              initial={cardEditor.card}
+              profile={profile}
+              onSave={({ name, last4 }) => saveCard(cardEditor.card, name, last4)}
+              onClose={() => setCardEditor(null)}
+            >
+              {cardEditor.card && (
+                <button
+                  type="button"
+                  onClick={() => saveCard(cardEditor.card, "", "").catch((err) => setCardStatus({ type: "error", text: err.message }))}
+                  className="w-full mt-3 py-2 text-sm font-medium text-destructive"
+                >
+                  Remove (saved receipts keep it)
+                </button>
+              )}
+            </CardEditor>
+          )}
 
           <div className="p-4">
             <div className="flex items-center gap-3">

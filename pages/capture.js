@@ -9,6 +9,7 @@ import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
 import EntryTypePicker from "../components/EntryTypePicker";
 import CategoryPicker from "../components/CategoryPicker";
+import CardPicker from "../components/CardPicker";
 import { OTHER_CATEGORY, customCategories, hiddenCategories } from "../lib/categories";
 import { normalizeDate, sameReceipt } from "../lib/duplicates";
 import { scheduleReportRefresh } from "../lib/reportQueue";
@@ -33,6 +34,10 @@ import { currencyCode } from "../lib/insights";
 // the owner can still choose "Save anyway". If the saved receipts can't be read,
 // the check quietly passes rather than getting in the way of saving.
 //
+// Every receipt also says which card or account paid for it, or which account
+// it was paid into (owner request 2026-11-20). Like money in / money out, it
+// must be answered, once for a whole batch if you like.
+//
 // A photo that can't be read still opens the form with blank fields, so it
 // can be typed in — an unreadable photo is never a dead end. /api/extract
 // allows 30 reads an hour per user; past that, receipts fall back to typing.
@@ -52,7 +57,7 @@ function formatReceiptFilename(dateStr, place) {
 const inputClass =
   "w-full h-12 rounded-xl bg-card ring-1 ring-hairline-strong px-4 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-brand-teal";
 
-const BLANK_FORM = { place: "", total: "", hst: "", date: "", category: OTHER_CATEGORY, type: "", note: "" };
+const BLANK_FORM = { place: "", total: "", hst: "", date: "", category: OTHER_CATEGORY, type: "", card: "", note: "" };
 
 let nextId = 1;
 
@@ -117,7 +122,7 @@ export default function Capture({ user }) {
   const [batchMissing, setBatchMissing] = useState(false);
   const itemsRef = useRef(items);
   itemsRef.current = items;
-  const batchCardRef = useRef(null);
+  const batchBoxRef = useRef(null);
   // Receipts already saved, by "YYYY-MM", for the duplicate check.
   const [monthRows, setMonthRows] = useState({});
   const monthRowsRef = useRef(monthRows);
@@ -137,6 +142,13 @@ export default function Capture({ user }) {
   // switched on its own. "" until answered.
   const [batchType, setBatchType] = useState("");
   const batchTypeRef = useRef("");
+  // The card or account, asked the same way.
+  const [batchCard, setBatchCard] = useState("");
+  const batchCardRef = useRef("");
+  const [batchCardMissing, setBatchCardMissing] = useState(false);
+  const [cardMissing, setCardMissing] = useState(false);
+  const cardPickerRef = useRef(null);
+  const cardInputRef = useRef(null);
 
   // Only send someone to onboarding when we positively know they have no BX
   // folder — i.e. Drive answered us. A connection problem (loadError) or a
@@ -250,6 +262,7 @@ export default function Capture({ user }) {
           // The batch answer if there is one; otherwise deliberately
           // unanswered — the photo can't tell money in from money out.
           type: batchTypeRef.current,
+          card: batchCardRef.current,
           note: "",
         },
         message: { type: "success", text: "Receipt read. Review and confirm." },
@@ -257,7 +270,7 @@ export default function Capture({ user }) {
     } catch (err) {
       patch(it.id, {
         status: "ready",
-        form: { ...BLANK_FORM, type: batchTypeRef.current },
+        form: { ...BLANK_FORM, type: batchTypeRef.current, card: batchCardRef.current },
         message: { type: "error", text: `${err.message} — please enter the details below.` },
       });
     }
@@ -276,6 +289,7 @@ export default function Capture({ user }) {
   function goTo(id) {
     setCurrentId(id);
     setTypeMissing(false);
+    setCardMissing(false);
     setSaveError("");
   }
 
@@ -304,10 +318,27 @@ export default function Capture({ user }) {
     );
   }
 
+  // Same rule for the card or account.
+  function answerBatchCard(value) {
+    const previous = batchCardRef.current;
+    batchCardRef.current = value;
+    setBatchCard(value);
+    setCardMissing(false);
+    setBatchCardMissing(false);
+    setItems((list) =>
+      list.map((it) =>
+        it.status !== "saved" && it.form && (it.form.card === "" || it.form.card === previous)
+          ? { ...it, form: { ...it.form, card: value } }
+          : it
+      )
+    );
+  }
+
   function updateField(key, value) {
     if (!current) return;
     patch(current.id, { form: { ...current.form, [key]: value }, saveProblem: "", keepDuplicate: false });
     if (key === "type") setTypeMissing(false);
+    if (key === "card") setCardMissing(false);
   }
 
   function removeCurrent() {
@@ -338,6 +369,7 @@ export default function Capture({ user }) {
         date: form.date,
         category: form.category,
         type: form.type,
+        card: form.card,
         note: form.note || "",
         currency: currencyCode(profile),
       });
@@ -366,6 +398,12 @@ export default function Capture({ user }) {
       setTypeMissing(true);
       typePickerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       typeInputRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    if (!it.form.card) {
+      setCardMissing(true);
+      cardPickerRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      cardInputRef.current?.focus({ preventScroll: true });
       return;
     }
     if (!validDate(it.form.date)) {
@@ -398,10 +436,13 @@ export default function Capture({ user }) {
   // review, and a failed save just earns that receipt a "!" of its own.
   async function saveAll() {
     if (!rootFolderId || saving) return;
-    const unanswered = itemsRef.current.some((it) => it.status !== "saved" && !it.form?.type);
-    if (!batchTypeRef.current && unanswered) {
-      setBatchMissing(true);
-      batchCardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const waiting = itemsRef.current.filter((it) => it.status !== "saved");
+    const typeUnanswered = !batchTypeRef.current && waiting.some((it) => !it.form?.type);
+    const cardUnanswered = !batchCardRef.current && waiting.some((it) => !it.form?.card);
+    if (typeUnanswered || cardUnanswered) {
+      setBatchMissing(typeUnanswered);
+      setBatchCardMissing(cardUnanswered);
+      batchBoxRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
     setSaving(true);
@@ -416,7 +457,7 @@ export default function Capture({ user }) {
     const tokenBox = { token: accessToken };
     let savedNow = 0;
     for (const it of itemsRef.current.filter((x) => x.status === "ready")) {
-      if (fieldProblem(it) || !it.base64 || !it.form?.type) continue;
+      if (fieldProblem(it) || !it.base64 || !it.form?.type || !it.form?.card) continue;
       // An earlier receipt saved a moment ago still counts: it's in the batch.
       if (duplicateOf(it)) continue;
       patch(it.id, { savingNow: true });
@@ -526,7 +567,7 @@ export default function Capture({ user }) {
           <>
             {/* Asked once for the whole batch, with "Save all" beside it. */}
             {open.length > 1 && (
-              <div ref={batchCardRef} className="mb-4 rounded-2xl bg-card ring-1 ring-hairline p-4">
+              <div ref={batchBoxRef} className="mb-4 rounded-2xl bg-card ring-1 ring-hairline p-4">
                 <EntryTypePicker
                   legend={`What are these ${open.length} receipts?`}
                   value={batchType}
@@ -534,8 +575,18 @@ export default function Capture({ user }) {
                   disabled={saving}
                   missing={batchMissing}
                 />
+                <div className="mt-4">
+                  <CardPicker
+                    value={batchCard}
+                    onChange={answerBatchCard}
+                    drive={{ accessToken, refreshAccessToken, rootFolderId, profile, reloadProfile }}
+                    legend={batchType === "Income" ? "Which account were these paid into?" : "Which card or account paid for these?"}
+                    missing={batchCardMissing}
+                    disabled={saving}
+                  />
+                </div>
                 <p className="mt-2 text-[11px] text-text-secondary">
-                  {batchType ? "Applied to every receipt. You can still change one below." : "Answer once for the whole batch."}
+                  {batchType && batchCard ? "Applied to every receipt. You can still change one below." : "Answer once for the whole batch."}
                 </p>
                 <button
                   type="button"
@@ -697,6 +748,18 @@ export default function Capture({ user }) {
                         disabled={saving}
                         missing={typeMissing}
                         inputRef={typeInputRef}
+                      />
+                    </div>
+
+                    <div ref={cardPickerRef}>
+                      <CardPicker
+                        value={form.card}
+                        onChange={(v) => updateField("card", v)}
+                        drive={{ accessToken, refreshAccessToken, rootFolderId, profile, reloadProfile }}
+                        type={form.type}
+                        missing={cardMissing}
+                        disabled={saving}
+                        inputRef={cardInputRef}
                       />
                     </div>
 

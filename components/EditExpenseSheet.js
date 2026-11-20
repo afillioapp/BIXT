@@ -5,6 +5,7 @@ import { OTHER_CATEGORY } from "../lib/categories";
 import CategoryPicker from "./CategoryPicker";
 import { rowIdFor } from "./ExpenseRow";
 import EntryTypePicker from "./EntryTypePicker";
+import CardPicker from "./CardPicker";
 
 // Bottom-sheet edit form for a single expense row (owner request, part of
 // swipe-to-act rows). Shared by Home and History's Edit action. Writes
@@ -23,6 +24,7 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved, d
   const [date, setDate] = useState("");
   const [type, setType] = useState("Expense");
   const [note, setNote] = useState("");
+  const [card, setCard] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -38,6 +40,7 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved, d
     setDate(row.date || "");
     setType(row.type || "Expense");
     setNote(row.note || "");
+    setCard(row.card || "");
     setError("");
     setSaving(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -58,6 +61,7 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved, d
         receiptLink: row.receiptLink,
         type,
         note,
+        card,
         hadTrailingCategory: row.hadTrailingCategory,
       });
       onSaved(row);
@@ -95,6 +99,8 @@ export default function EditExpenseSheet({ accessToken, row, onClose, onSaved, d
             {row.layout === "v2" && (
               <EntryTypePicker value={type} onChange={setType} disabled={saving} />
             )}
+            {/* Receipts saved before cards existed have none; picking one is optional here. */}
+            {row.layout === "v2" && <CardPicker value={card} onChange={setCard} drive={drive} type={type} disabled={saving} />}
             <input
               className={inputClass}
               value={place}

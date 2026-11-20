@@ -204,6 +204,13 @@ export default function Home({ user }) {
     day: "numeric",
   })}`;
   const filterAccent = filterCat ? accentForCategory(filterCat) : null;
+  const shortDay = (d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const periodLabel =
+    range === "Week"
+      ? `${shortDay(cur.start)} – ${shortDay(cur.end)}`
+      : range === "Month"
+        ? cur.start.toLocaleDateString("en-US", { month: "long", year: "numeric" })
+        : fiscalYear(fiscalStart, offsets.Year, now).label;
   // Share-of-spend for the whole month, deliberately NOT narrowed by
   // filterCat. The rest of the page narrows, but a breakdown whose only bar
   // reads 100% tells you nothing — the card's entire job is the proportion
@@ -262,6 +269,8 @@ export default function Home({ user }) {
           </Link>
         </header>
 
+        <HstMeter hst={hst} currency={currency} />
+
         <div className="flex p-1 bg-muted rounded-lg mt-5 mb-4" role="tablist" aria-label="Period">
           {["Week", "Month", "Year"].map((t) => (
             <button
@@ -279,6 +288,21 @@ export default function Home({ user }) {
           ))}
         </div>
 
+        {/* Once you've slid back, which period this is and a way straight
+            back to today (owner request 2026-11-20). */}
+        {offsets[range] > 0 && (
+          <div className="flex items-center justify-between -mt-1 mb-3">
+            <p className="text-[11px] text-text-secondary">{periodLabel}</p>
+            <button
+              type="button"
+              onClick={() => setOffsets((o) => ({ ...o, [range]: 0 }))}
+              className="rounded-full bg-brand-teal-soft px-2.5 py-1 text-[11px] font-semibold text-brand-teal-deep"
+            >
+              Today
+            </button>
+          </div>
+        )}
+
         {/* Drag sideways to slide to the previous / next period. */}
         <SwipeSlide onStep={stepPeriod} canForward={offsets[range] > 0}>
           <ActivityGraph
@@ -293,12 +317,6 @@ export default function Home({ user }) {
       </PageHeader>
 
       <div className="mx-auto max-w-md px-5 pt-6">
-        <HstMeter
-          hst={hst}
-          currency={currency}
-          since={fyStart.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}
-        />
-
         {/* Category pills sit between the top card and the chart (owner
             request 2026-10-25); they narrow everything on the page. */}
         {rows && rows.length > 0 && (
