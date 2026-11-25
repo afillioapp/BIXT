@@ -166,10 +166,14 @@ notes, intentionally unused in the UI) → confirm writes through
 
 ### Routes
 
-- `pages/login.js` — splash (Sign In / Sign Up copy-only distinction, both
-  reveal the same Google/Apple/Phone buttons)
-- `pages/setup.js` — one-time onboarding (company name + accountant email),
-  only reached when authenticated but no BX root folder exists yet
+- `pages/login.js` — sign-in: Google, or phone with a texted code (local
+  Canadian/US numbers accepted, `lib/phone.js`); plain-language errors
+- `pages/setup.js` — first-time setup in two steps: 1. connect Drive (Google
+  opens on the signed-in account via `login_hint`), 2. company name (required),
+  accountant email and fiscal year (optional / defaulted); ends on "Snap your
+  first receipt". Home sends anyone who has never connected Drive here
+  (`connectedBefore` in `lib/useDrive.js`)
+- `pages/terms.js`, `pages/privacy.js` — plain-language policies, public
 - `pages/index.js` — Home: the top card holds the period total, the fiscal
   year's HST paid and charged so far (`components/HstMeter.js`, `hstBetween`
   in `lib/insights.js`), the Week / Month / Year tabs with a Today button once
@@ -220,6 +224,22 @@ Set in Vercel only — no `.env.local` exists in this repo:
 - `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`,
   `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`
 - `NEXT_PUBLIC_GOOGLE_CLIENT_ID`
+- Payments (optional; without the first two, billing is off and everyone can
+  use BX): `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID` (the $2.99 CAD monthly price),
+  `BX_FREE_ACCOUNTS` (comma-separated emails that never pay),
+  `STRIPE_AUTOMATIC_TAX=true` (Stripe Tax on Checkout), `BX_APP_URL` (optional,
+  where Stripe returns to)
+
+### Payments (Stripe)
+
+Stripe is the only record of who has paid; there's still no database
+(`lib/server/billing.js`). Each account is a Stripe customer tagged with its
+Firebase uid. The first `/api/billing/status` call for an account creates the
+customer and a 14-day trial subscription with no card, which Stripe cancels if
+no card is added. States and the rule "only new receipts stop when a plan
+ends" are in `lib/billing.js`; `/api/extract` enforces it on the server.
+`/api/billing/checkout` (subscribe after a plan ended) and
+`/api/billing/portal` (add a card, manage, cancel) return a Stripe URL.
 
 ## Known, deliberate gaps (not bugs)
 

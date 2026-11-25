@@ -13,6 +13,9 @@ import CardPicker from "../components/CardPicker";
 import { OTHER_CATEGORY, customCategories, hiddenCategories } from "../lib/categories";
 import { normalizeDate, sameReceipt } from "../lib/duplicates";
 import { scheduleReportRefresh } from "../lib/reportQueue";
+import { useBilling } from "../lib/useBilling";
+import { canAddReceipts } from "../lib/billing";
+import Paywall from "../components/Paywall";
 import { currencyCode } from "../lib/insights";
 
 // Receipt capture, in batches (owner request 2026-10-29): shoot or pick as
@@ -110,6 +113,9 @@ export default function Capture({ user }) {
     retryConnection,
     reloadProfile,
   } = useDrive(user);
+
+  // Once a trial or plan ends, new receipts stop (owner decision 2026-11-25).
+  const { billing } = useBilling(user);
 
   // The batch. status: "reading" | "ready" | "saved"
   // ready items carry { base64, mime, preview, form, message }.
@@ -488,6 +494,19 @@ export default function Capture({ user }) {
         </PageHeader>
         <div className="mx-auto max-w-md px-5 pt-6">
           <DriveFallback needsConnect={needsConnect} loadError={loadError} onConnect={requestAccess} onRetry={retryConnection} />
+        </div>
+      </div>
+    );
+  }
+
+  if (!canAddReceipts(billing)) {
+    return (
+      <div className="min-h-screen bg-background font-sans text-text-primary pb-28">
+        <PageHeader>
+          <h1 className="text-2xl font-semibold tracking-tight">New receipts</h1>
+        </PageHeader>
+        <div className="mx-auto max-w-md px-5 pt-6">
+          <Paywall user={user} trial={!billing.hasCard} />
         </div>
       </div>
     );

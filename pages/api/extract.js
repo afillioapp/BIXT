@@ -5,7 +5,8 @@
 // signed-in BX user) in the Authorization header. Without this, the endpoint
 // would be an open proxy to the Anthropic API on our bill.
 
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import { verifyCaller } from "../../lib/server/firebaseAuth";
+import { accountStatus } from "../../lib/server/billing";
 import { BUILTIN_CATEGORIES, OTHER_CATEGORY, canonicalCategory, suggestCategory } from "../../lib/categories";
 
 export const config = {
@@ -15,30 +16,6 @@ export const config = {
     },
   },
 };
-
-// Firebase signs ID tokens with Google-hosted keys; verifying against them
-// needs no service-account secret on our side.
-const FIREBASE_JWKS = createRemoteJWKSet(
-  new URL("https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com")
-);
-
-// Returns the caller's Firebase user id, or null if the token is missing/bad.
-async function verifyCaller(req) {
-  const header = req.headers.authorization || "";
-  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
-  if (!token) return null;
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-  if (!projectId) return null;
-  try {
-    const { payload } = await jwtVerify(token, FIREBASE_JWKS, {
-      issuer: `https://securetoken.google.com/${projectId}`,
-      audience: projectId,
-    });
-    return payload.sub || null;
-  } catch {
-    return null;
-  }
-}
 
 // Per-user scan budget. In-memory, so each serverless instance counts
 // separately — coarse, but enough to keep any single account from burning
@@ -68,9 +45,22 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const uid = await verifyCaller(req);
-  if (!uid) {
+  const user = await verifyCaller(req);
+  if (!user) {
     return res.status(401).json({ error: "Please sign in again to scan receipts." });
+  }
+  const uid = user.uid;
+
+  // Reading a receipt is what costs money, so this is where an ended plan
+  // stops (owner decision 2026-11-25: only new receipts stop). If Stripe can't
+  // be reached, let it through rather than fail a paying customer.
+  try {
+    const plan = await accountStatus(user);
+    if (plan.state === "ended") {
+      return res.status(402).json({ error: "Your free trial has ended. Subscribe to keep adding receipts.", code: "subscribe" });
+    }
+  } catch (err) {
+    console.error("billing check", err?.message);
   }
   if (overRateLimit(uid)) {
     return res.status(429).json({ error: "Too many scans in the last hour. Please try again later." });

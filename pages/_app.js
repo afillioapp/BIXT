@@ -21,8 +21,9 @@ const inter = Inter({
   display: "swap",
 });
 
-const PUBLIC_ROUTES = ["/login"];
-const NO_NAV_ROUTES = ["/login", "/setup"];
+// Terms and Privacy are open to everyone: they're linked from the login screen.
+const PUBLIC_ROUTES = ["/login", "/terms", "/privacy"];
+const NO_NAV_ROUTES = ["/login", "/setup", "/terms", "/privacy"];
 
 export default function App({ Component, pageProps }) {
   const router = useRouter();

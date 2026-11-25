@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useDrive } from "../lib/useDrive";
+import { useDrive, connectedBefore } from "../lib/useDrive";
 import { useMonthRows } from "../lib/useMonthRows";
 import { deleteExpenseRow } from "../lib/google";
 import {
@@ -23,6 +23,7 @@ import PageHeader from "../components/PageHeader";
 import HomeCarousel from "../components/HomeCarousel";
 import ActivityGraph from "../components/ActivityGraph";
 import HstMeter from "../components/HstMeter";
+import PlanBanner from "../components/PlanBanner";
 import SwipeSlide from "../components/SwipeSlide";
 import { accentForCategory, paletteColor } from "../components/CategoryIcon";
 import ExpenseRow, { rowIdFor } from "../components/ExpenseRow";
@@ -131,6 +132,11 @@ export default function Home({ user }) {
   // missing token (needsConnect) must never re-onboard an existing customer.
   useEffect(() => {
     if (!profileLoading && !profile && accessToken && !loadError && !needsConnect) {
+      router.replace("/setup");
+    }
+    // Brand new on this device (never connected Drive here): setup walks them
+    // through connecting, rather than a "Connect" box on an empty Home.
+    if (!profileLoading && needsConnect && !connectedBefore()) {
       router.replace("/setup");
     }
   }, [profileLoading, profile, accessToken, loadError, needsConnect]);
@@ -317,6 +323,8 @@ export default function Home({ user }) {
       </PageHeader>
 
       <div className="mx-auto max-w-md px-5 pt-6">
+        <PlanBanner user={user} />
+
         {/* Category pills sit between the top card and the chart (owner
             request 2026-10-25); they narrow everything on the page. */}
         {rows && rows.length > 0 && (

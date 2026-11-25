@@ -36,6 +36,7 @@ import {
 import { OTHER_CATEGORY, suggestCategory } from "../lib/categories";
 import { cardFields, cardLabel, freeCardKey, paymentCards } from "../lib/cards";
 import CardEditor from "../components/CardEditor";
+import PlanCard from "../components/PlanCard";
 import { scheduleReportRefresh } from "../lib/reportQueue";
 import DriveFallback from "../components/DriveFallback";
 import PageHeader from "../components/PageHeader";
@@ -575,6 +576,8 @@ export default function Settings({ user }) {
       </PageHeader>
 
       <div className="mx-auto max-w-md px-5 pt-6">
+        <PlanCard user={user} />
+
         <div className="bg-card ring-1 ring-hairline rounded-2xl divide-y divide-hairline overflow-hidden mb-6">
           <div className="p-4">
             {companyEditing ? (
